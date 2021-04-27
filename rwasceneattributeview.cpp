@@ -1,0 +1,306 @@
+#include "rwasceneattributeview.h"
+
+RwaSceneAttributeView::RwaSceneAttributeView(QWidget *parent, RwaScene *scene) :
+    RwaAttributeView(parent, scene)
+{
+    RwaScene *nextScene;
+
+    mother = (RwaView *)parent;
+    innerLayout = new QGridLayout(this);
+    innerLayout->setVerticalSpacing(2);
+    innerLayout->setContentsMargins(0,4,0,4);
+    innerLayout->setAlignment(this, Qt::AlignLeft);
+
+    visitedSceneConditionCount = 0;
+
+    QStringList areaTypes;
+    areaTypes << "Undetermined" << "Circle" << "Rectangle" << "Square" << "Polygon";
+    addComboBoxAndLabel(innerLayout, "Area Type", areaTypes);
+
+    QStringList nextScenes;
+    nextScenes << "None";
+    foreach(nextScene, backend->getScenes())
+        nextScenes << QString::fromStdString(nextScene->objectName());
+
+    addComboBoxAndLabel(innerLayout, "Next Scene", nextScenes);
+    addLineEditAndLabel(innerLayout, "Time Out");
+    QLineEdit *requiredScenes = addLineEditAndLabel(innerLayout, "Required Scenes");
+    setLineEditSignal2editingFinished(requiredScenes);
+
+    addLineEditAndLabel(innerLayout, "Level");
+    addLineEditAndLabel(innerLayout, "Scene Radius");
+    addLineEditAndLabel(innerLayout, "Scene Width");
+    addLineEditAndLabel(innerLayout, "Scene Height");
+    addLineEditAndLabel(innerLayout, "Enter Offset");
+    addLineEditAndLabel(innerLayout, "Exit Offset");
+
+    addAttrCheckbox(innerLayout, "States follow scene", RWASTATEATTRIBUTE_FOLLOWINGASSETS);
+    addAttrCheckbox(innerLayout, "Lock Position", RWASTATEATTRIBUTE_LOCKPOSITION);
+    addAttrCheckbox(innerLayout, "Disable Fallback", RWASCENEATTRIBUTE_DISABLEFALLBACK);
+
+    connect(this, SIGNAL(sendCurrentSceneRadiusEdited()), backend, SLOT(receiveCurrentSceneRadiusEdited()));
+
+    this->setMinimumHeight((assetAttrCounter)*16);
+    this->setMaximumHeight((assetAttrCounter)*16);
+    this->setMinimumWidth(20);
+    this->setMaximumWidth(240);
+}
+
+void RwaSceneAttributeView::setCurrentScene(RwaScene *currentScene)
+{
+    this->currentScene = currentScene;
+
+    if(!currentScene)
+        return;
+
+    QCheckBox *attrCheckBox = nullptr;
+    QComboBox *attrComboBox = nullptr;
+    QLineEdit *attrLineEdit = nullptr;
+
+    updateSceneArea();
+
+    attrLineEdit = this->findChild<QLineEdit *>("Required States");
+    if(attrLineEdit)
+    {
+        QString requiredStatesText;
+        attrLineEdit->clear();
+        foreach(std::string state, currentState->requiredStates)
+            requiredStatesText.append(QString::fromStdString(state)).append(", ");
+
+        attrLineEdit->setText(requiredStatesText);
+    }
+
+    attrLineEdit = this->findChild<QLineEdit *>("Level");
+    if(attrLineEdit)
+        attrLineEdit->setText(QString::number(currentScene->getLevel()));
+
+    attrLineEdit = this->findChild<QLineEdit *>("Enter Offset");
+    if(attrLineEdit)
+        attrLineEdit->setText(QString::number(currentScene->getEnterOffset()));
+
+    attrLineEdit = this->findChild<QLineEdit *>("Exit Offset");
+    if(attrLineEdit)
+        attrLineEdit->setText(QString::number(currentScene->getExitOffset()));
+
+    attrLineEdit = this->findChild<QLineEdit *>("Time Out");
+    if(attrLineEdit)
+        attrLineEdit->setText(QString::number(currentScene->getTimeOut()));
+
+    attrCheckBox = this->findChild<QCheckBox *>("States follow scene");
+    if(attrCheckBox)
+        attrCheckBox->setChecked(currentScene->childrenDoFollowMe());
+
+    attrCheckBox = this->findChild<QCheckBox *>("Lock Position");
+    if(attrCheckBox)
+        attrCheckBox->setChecked(currentScene->positionIsLocked());
+
+    attrCheckBox = this->findChild<QCheckBox *>("Disable Fallback");
+    if(attrCheckBox)
+        attrCheckBox->setChecked(currentScene->fallbackDisabled());
+
+    attrComboBox = this->findChild<QComboBox *>("Area Type");
+    if(attrComboBox)
+        attrComboBox->setCurrentIndex(currentScene->getAreaType());
+}
+
+void RwaSceneAttributeView::updateSceneArea()
+{
+    QLineEdit *attrLineEdit;
+    attrLineEdit = this->findChild<QLineEdit *>("Scene Radius");
+    if(attrLineEdit)
+        attrLineEdit->setText(QString::number(currentScene->getRadius()));
+
+    attrLineEdit = this->findChild<QLineEdit *>("Scene Width");
+    if(attrLineEdit)
+        attrLineEdit->setText(QString::number(currentScene->getWidth()));
+
+    attrLineEdit = this->findChild<QLineEdit *>("Scene Height");
+    if(attrLineEdit)
+        attrLineEdit->setText(QString::number(currentScene->getHeight()));
+}
+
+void RwaSceneAttributeView::updateSceneAttr(QComboBox *attrComboBox, QString scene2compare)
+{
+    int index = 0;
+
+    if(scene2compare.compare(""))
+         index = attrComboBox->findText(scene2compare);
+
+    attrComboBox->setCurrentIndex(index);
+}
+
+void RwaSceneAttributeView::updateSceneComboBox(QComboBox *attrComboBox)
+{
+    if(!currentScene)
+        return;
+
+    RwaScene *scene;
+
+    disconnect(attrComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(receiveComboBoxAttributeValue(QString)));
+    attrComboBox->clear();
+    attrComboBox->addItem("None");
+
+    foreach(scene, backend->getScenes())
+        attrComboBox->addItem(QString::fromStdString(scene->objectName()));
+
+    connect(attrComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(receiveComboBoxAttributeValue(QString)));
+}
+
+
+void RwaSceneAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
+{
+    if(!currentState)
+        return;
+
+    switch(id)
+    {
+        case RWASTATEATTRIBUTE_FOLLOWINGASSETS:
+        {
+            currentScene->letChildrenFollowMe(value);
+            break;
+        }
+
+        case RWASTATEATTRIBUTE_LOCKPOSITION:
+        {
+            currentScene->lockPosition(value);
+            break;
+        }
+
+    case RWASCENEATTRIBUTE_DISABLEFALLBACK:
+    {
+        currentScene->setDisableFallback(value);
+        break;
+    }
+
+            default:break;
+        }
+}
+
+void RwaSceneAttributeView::receiveLineEditAttributeValue()
+{
+    if(!currentState)
+        return;
+
+    if(!QObject::sender()->objectName().compare("Required Scenes"))
+    {
+        QLineEdit *attrLineEdit = (QLineEdit *)QObject::sender();
+        QStringList requiredScenes = attrLineEdit->text().split(",",QString::SkipEmptyParts);
+
+        currentScene->requiredScenes.clear();
+        QString requiredScene;
+        foreach(requiredScene, requiredScenes)
+        {
+            foreach(RwaScene *scene, backend->getScenes() )
+            {
+                if(!requiredScene.trimmed().compare(QString::fromStdString(scene->objectName())))
+                    currentScene->requiredScenes.push_back(scene->objectName());
+
+            }
+        }
+    }
+}
+
+void RwaSceneAttributeView::receiveEditingFinished()
+{
+    if(QObject::sender() != this->backend)
+        emit sendCurrentState(currentState);
+    qDebug() << "Editing Finished";
+}
+
+void RwaSceneAttributeView::receiveLineEditAttributeValue(const QString &value)
+{
+    if(!currentScene)
+        return;
+
+    if(!QObject::sender()->objectName().compare("Time Out"))
+    {
+        currentScene->setTimeOut(value.toFloat());
+    }
+
+    if(!QObject::sender()->objectName().compare("Scene Radius"))
+    {
+        currentScene->setRadius(value.toFloat());
+    }
+
+    if(!QObject::sender()->objectName().compare("Scene Width"))
+    {
+        currentScene->setWidth(value.toFloat());
+        if(currentScene->getAreaType() == RWAAREATYPE_SQUARE)
+            currentScene->setHeight(value.toFloat());
+    }
+
+    if(!QObject::sender()->objectName().compare("Scene Height"))
+    {
+        currentScene->setHeight(value.toFloat());
+        if(currentScene->getAreaType() == RWAAREATYPE_SQUARE)
+            currentScene->setWidth(value.toFloat());
+    }
+
+    if(!QObject::sender()->objectName().compare("Enter Offset"))
+    {
+        currentScene->setEnterOffset(value.toFloat());
+    }
+
+    if(!QObject::sender()->objectName().compare("Exit Offset"))
+    {
+        currentScene->setExitOffset(value.toFloat());
+    }
+
+    if(!QObject::sender()->objectName().compare("Level"))
+    {
+        currentScene->setLevel(value.toInt());
+    }
+}
+
+void RwaSceneAttributeView::receiveComboBoxAttributeValue(QString value)
+{
+    QString nextState = NULL;
+    QString nextScene = NULL;
+
+    if(!currentScene)
+        return;
+
+    QComboBox *attrComboBox = NULL;
+
+
+    if(!QObject::sender()->objectName().compare("Area Type"))
+    {
+        if(!value.compare("Undetermined"))
+            currentScene->setAreaType(RWA_UNDETERMINED);
+
+        if(!value.compare("Circle"))
+            currentScene->setAreaType(RWAAREATYPE_CIRCLE);
+
+        if(!value.compare("Rectangle"))
+            currentScene->setAreaType(RWAAREATYPE_RECTANGLE);
+
+        if(!value.compare("Square"))
+            currentScene->setAreaType(RWAAREATYPE_SQUARE);
+
+        if(!value.compare("Polygon"))
+            currentScene->setAreaType(RWAAREATYPE_POLYGON);
+
+        sendCurrentSceneRadiusEdited();
+    }
+
+    if(!QObject::sender()->objectName().compare("Next Scene"))
+    {
+        attrComboBox = this->findChild<QComboBox *>("Next Scene");
+
+        if(attrComboBox->currentIndex() <= 0)
+            currentScene->setNextScene("");
+        else
+            currentScene->setNextScene(attrComboBox->currentText().toStdString());
+    }
+}
+
+void RwaSceneAttributeView::receiveFaderAttributeValue(int id)
+{
+
+}
+
+void RwaSceneAttributeView::adaptSize(qint32 width, qint32 height)
+{
+   qDebug() << height;
+
+}

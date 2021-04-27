@@ -1,0 +1,15 @@
+[submodule "vas_library"]
+	path = vas_library
+	url = https://github.com/funkerresch/vas_library.git
+[submodule "libpd"]
+	path = libpd
+	url = https://github.com/libpd/libpd.git
+[submodule "portaudio"]
+	path = portaudio
+	url = https://github.com/PortAudio/portaudio.git
+[submodule "ofq"]
+	path = ofq
+	url = https://github.com/kampfschlaefer/ofq.git
+[submodule "pd-extra/pd"]
+	path = pd-extra/pd
+	url = https://github.com/pd-l2ork/pd.git

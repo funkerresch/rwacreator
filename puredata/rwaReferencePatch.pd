@@ -1,0 +1,102 @@
+#N canvas 108 23 1484 992 24;
+#X obj 122 535 readsf~ 2;
+#X msg 78 398 start;
+#X obj 122 713 throw~ out1;
+#X obj 170 750 throw~ out2;
+#X obj 646 -97 r \$0-end;
+#X obj 218 182 switch~;
+#X msg 218 146 1;
+#X obj 122 -104 r \$0-play;
+#X obj 1139 539 r \$0-azimuth1;
+#X obj 1139 320 r \$0-elevation1;
+#X obj 646 190 s \$0-playfinished;
+#X msg 698 117 0;
+#X obj 646 47 delay 10;
+#X obj 646 11 t b b;
+#X obj 731 7 r \$0-fadeouttime;
+#X obj 754 47 s \$0-startfadeout;
+#X obj 721 414 f 5000;
+#X obj 784 377 r \$0-fadeouttime;
+#X obj 170 679 *~ 0;
+#X obj 122 647 *~ 0;
+#X obj 498 373 r \$0-fadeintime;
+#X obj 435 415 f 1000;
+#X msg 435 455 1 \$1;
+#X msg 721 454 0 \$1;
+#X obj 435 506 line 0;
+#X obj 435 331 r \$0-startfadein;
+#X obj 721 333 r \$0-startfadeout;
+#X obj 122 -8 t b b b b;
+#X obj 186 96 s \$0-startfadein;
+#X obj 257 534 adc~ 1 2;
+#X obj 968 430 receive \$0-distance1;
+#X obj 1139 361 print elevation:;
+#X obj 968 474 print distance:;
+#X obj 1139 585 print azimuth:;
+#X text 754 -108 end is send by the app \, whenever an exit condition
+is met \, for example when one leaves the state radius.;
+#X text 756 79 when the fadeout is done \, the patcher should be turned
+off with switch~ and must send playfinished back to the app in order
+set the "busy" flag of the asset to false;
+#X obj 646 82 t b b;
+#X text 118 -72 play is send by the app when enterconditions are fulfilled
+\, for example when the hero enters the state radius.;
+#X text 44 24 after receiving the playmessage \, dsp should be turned
+on for the patch by using the switch~ object.;
+#X text 317 722 send any signal to out1 & out2;
+#X obj 557 547 print gain:;
+#X text 428 250 gain \, startfadein \, startfadeout \, fadeintime &
+fadouttime is send by the app on entering/exiting the state;
+#X obj 557 507 r \$0-gain;
+#X obj 546 595 r \$0-lon;
+#X obj 676 595 r \$0-lat;
+#X obj 546 630 print lon:;
+#X obj 672 626 print lat:;
+#X obj 758 727 r \$0-offset;
+#X obj 969 725 r \$0-step;
+#X text 989 759 receive a bang for every step from the headtracker
+;
+#X text 941 626 elevation \, distance and azimuth are send continously
+\; the "1" is there on purpose \, for audio assets it refers to the
+channel number..;
+#X obj 970 819 print STEP;
+#X msg 199 402 open XXX.wav;
+#X text 789 766;
+#X text 1147 459 Check the influence of the damping parameters;
+#X connect 0 0 19 0;
+#X connect 0 1 18 0;
+#X connect 1 0 0 0;
+#X connect 4 0 13 0;
+#X connect 6 0 5 0;
+#X connect 7 0 27 0;
+#X connect 8 0 33 0;
+#X connect 9 0 31 0;
+#X connect 11 0 5 0;
+#X connect 12 0 36 0;
+#X connect 13 0 12 0;
+#X connect 13 1 15 0;
+#X connect 14 0 12 1;
+#X connect 16 0 23 0;
+#X connect 17 0 16 1;
+#X connect 18 0 3 0;
+#X connect 19 0 2 0;
+#X connect 20 0 21 1;
+#X connect 21 0 22 0;
+#X connect 22 0 24 0;
+#X connect 23 0 24 0;
+#X connect 24 0 18 1;
+#X connect 24 0 19 1;
+#X connect 25 0 21 0;
+#X connect 26 0 16 0;
+#X connect 27 2 28 0;
+#X connect 27 3 6 0;
+#X connect 29 0 19 0;
+#X connect 29 1 18 0;
+#X connect 30 0 32 0;
+#X connect 36 0 10 0;
+#X connect 36 1 11 0;
+#X connect 42 0 40 0;
+#X connect 43 0 45 0;
+#X connect 44 0 46 0;
+#X connect 48 0 51 0;
+#X connect 52 0 0 0;
