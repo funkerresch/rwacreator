@@ -180,11 +180,6 @@ INSTALLS += installs
 copydata.commands = $(COPY_DIR) $$PWD/images $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/rwainit.txt $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/fabian_dir256.txt $$OUT_PWD/rwacreator.app/Contents/MacOS \
-&& $(COPY_FILE) $$PWD/puredata/fr_pos3.txt $$OUT_PWD/rwacreator.app/Contents/MacOS \
-&& $(COPY_FILE) $$PWD/puredata/fr_pos4.txt $$OUT_PWD/rwacreator.app/Contents/MacOS \
-&& $(COPY_FILE) $$PWD/puredata/fr_pos5.txt $$OUT_PWD/rwacreator.app/Contents/MacOS \
-&& $(COPY_FILE) $$PWD/puredata/fr_pos6.txt $$OUT_PWD/rwacreator.app/Contents/MacOS \
-&& $(COPY_FILE) $$PWD/puredata/fr_pos7.txt $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/rwaloopplayermono.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/rwaloopplayerstereo.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/rwaplayer5_1channelbinaural_fabian.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
