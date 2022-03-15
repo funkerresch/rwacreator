@@ -67,12 +67,13 @@ void RwaStateList::setCurrentState(RwaState *state)
              setCurrentItem(items.at(0));
              int row = QListWidget::row(currentItem());
              setCurrentRow(row);
-             emit sendSelectedStates( getSelectedStates() );
+             emit sendSelectedStates(getSelectedStates());
          }
-
      }
+
      if(!(QObject::sender() == this->backend))
      {
+         qDebug();
          emit sendCurrentState(currentState);
      }
 }
@@ -88,11 +89,6 @@ void RwaStateList::setCurrentStateFromCurrentListItem()
         if(state)
             setCurrentState(state);
     }
-
-    if(!(QObject::sender() == this->backend))
-    {
-        emit sendSelectedStates(getSelectedStates());
-    }
 }
 
 void RwaStateList::mousePressEvent(QMouseEvent *event)
@@ -105,10 +101,7 @@ void RwaStateList::mouseReleaseEvent(QMouseEvent *event)
 {
     QListWidget::mouseReleaseEvent(event);
     if(currentScene)
-    {
-        if(!(QObject::sender() == this->backend))
-            emit sendSelectedStates( getSelectedStates() );
-    }
+         emit sendSelectedStates( getSelectedStates() );
 }
 
 void RwaStateList::update()

@@ -168,7 +168,6 @@ namespace qmapcontrol
             y<0 || y>pow(2,z)-1)
         {
             return false;
-            qDebug() << "INVALID ZOOM";
         }
         return true;
 

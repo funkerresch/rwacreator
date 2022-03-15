@@ -1,4 +1,7 @@
 #include "rwaruntime.h"
+#ifdef QT_VERSION
+#include "rwabackend.h"
+#endif
 
 std::list <RwaEntity *> RwaRuntime::entities;
 bool RwaRuntime::debug;
@@ -15,10 +18,11 @@ pdPatcher RwaRuntime::stereoPatchers[RWARUNTIME_MAXNUMBEROFPATCHERS];
 pdPatcher RwaRuntime::monoPatchers[RWARUNTIME_MAXNUMBEROFPATCHERS];
 
 std::list<pdPatcher *> RwaRuntime::dynamicPatchers1;
+RwaBackend *RwaRuntime::backend;
 
 #ifdef QT_VERSION
 #define INIT_LIBPD_QUEUED
-RwaRuntime::RwaRuntime(QObject *parent, const char *pdpath, const char *assetPath, float sampleRate, float schedulerRate, mutex *pdMutex) :
+RwaRuntime::RwaRuntime(QObject *parent, const char *pdpath, const char *assetPath, float sampleRate, float schedulerRate, mutex *pdMutex, RwaBackend *_backend) :
     QObject(parent)
 #else
 RwaRuntime::RwaRuntime(const char *pdpath, const char *assetPath, float sampleRate, float schedulerRate, mutex *pdMutex)
@@ -30,6 +34,9 @@ RwaRuntime::RwaRuntime(const char *pdpath, const char *assetPath, float sampleRa
     this->sampleRate = sampleRate;
     this->schedulerRate = schedulerRate;
     this->pdMutex = pdMutex;
+#ifdef QT_VERSION
+    backend = _backend;
+#endif
 
 #ifdef INIT_LIBPD_QUEUED
     libpd_set_queued_printhook (static_cast<t_libpd_printhook>(RwaRuntime::printpd));
@@ -44,6 +51,7 @@ RwaRuntime::RwaRuntime(const char *pdpath, const char *assetPath, float sampleRa
 #endif
     rwa_binauralsimple_tilde_setup();
     freeverb_tilde_setup();
+    //oggread_tilde_setup();
 
     libpd_openfile("stereoout.pd", pdpath);
     libpd_openfile("rwagetmetadata.pd", pdpath);
@@ -99,7 +107,7 @@ RwaRuntime::RwaRuntime(const char *pdpath, const char *assetPath, float sampleRa
         createAndBindPlayFinishedReceiver(&binaural7channelPatchers_fabian[i]);
     }
 
-    openFile4MetaData("unitclick.wav"); // first message gets lost somehow..
+    openFile4MetaData("unitclick.wav"); // first message gets lost somehow, sending an init dummy message
 }
 
 RwaRuntime::~RwaRuntime()
@@ -126,14 +134,18 @@ void RwaRuntime::createAndBindPlayFinishedReceiver(pdPatcher *patcher)
 
 void RwaRuntime::printpd(const char *s)
 {
-    if(!debug)
+    if(!backend)
         return;
 
-    RwaUtilities::debug2Terminal(__FILE__, __FUNCTION__, __LINE__, std::string(s));
+    if(backend->logPd)
+        qDebug() << s;
 }
 
 void RwaRuntime::floatpd(const char *source, float value)
 {
+    if(!backend)
+        return;
+
      if(!strcmp(source, "duration4metadata"))
         assetDuration = value;
 
@@ -143,12 +155,8 @@ void RwaRuntime::floatpd(const char *source, float value)
      if(!strcmp(source, "samplerate4metadata"))
         assetSampleRate = value;
 
-     if(!debug)
-         return;
-
-     std::ostringstream debugstream;
-     debugstream <<  source << ": " << value;
-     RwaUtilities::debug2Terminal(__FILE__, __FUNCTION__, __LINE__, debugstream.str());
+     if(backend->logPd)
+         qDebug() << source << " " << value;
 }
 
 pdPatcher *RwaRuntime::findDynamicPatcher(int32_t patcherTag)
@@ -235,12 +243,9 @@ void RwaRuntime::bangpdHelp(int32_t patcherTag, std::map<string, RwaEntity::Asse
         {
             i = assetItemMap.erase(i);
             releasePatcherFromItem(item);
-            if(debug)
-            {
-                std::ostringstream debugstream;
-                debugstream <<  "Released Asset" << ": " << assetItem->fileName;
-                RwaUtilities::debug2Terminal(__FILE__, __FUNCTION__, __LINE__, debugstream.str());
-            }
+            if(backend->logSim)
+                qDebug() <<  "Released Asset" << ": " << QString::fromStdString(assetItem->fileName);
+
             return;
         }
         else
@@ -342,17 +347,12 @@ void *RwaRuntime::findFreeDynamicPatcher(RwaAsset1 *asset)
     pdPatcher *patcher;
     foreach(patcher, dynamicPatchers1)
     {
-        qDebug() << QString::fromStdString(patcher->name);
         if( (asset->fileName == patcher->name) && !patcher->isBusy)
         {
              patcher->isBusy = true;
 
-             if(debug)
-             {
-                 std::ostringstream debugstream;
-                 debugstream <<  "Found Dynamic PD Asset" << ": " << patcher->name;
-                 RwaUtilities::debug2Terminal(__FILE__, __FUNCTION__, __LINE__, debugstream.str());
-             }
+             if(backend->logSim)
+                 qDebug() <<  "Found Dynamic PD Asset" << ": " << QString::fromStdString(patcher->name);
 
              return patcher->patcherTag;
         }
@@ -376,12 +376,8 @@ void RwaRuntime::freeDynamicPdPatchers1()
 
     dynamicPatchers1.clear();
 
-    if(debug)
-    {
-        std::ostringstream debugstream;
-        debugstream <<  "Freed all dynamic Patchers";
-        RwaUtilities::debug2Terminal(__FILE__, __FUNCTION__, __LINE__, debugstream.str());
-    }
+    if(backend->logSim)
+        qDebug() <<  "Freed all dynamic Patchers";
 }
 
 void RwaRuntime::initDynamicPdPatchers(RwaEntity *entitiy)
@@ -407,12 +403,8 @@ void RwaRuntime::initDynamicPdPatchers(RwaEntity *entitiy)
                         newPatcher->name = asset->fileName;
                         createAndBindPlayFinishedReceiver(newPatcher);
                         dynamicPatchers1.push_back(newPatcher);
-                        if(debug)
-                        {
-                            std::ostringstream debugstream;
-                            debugstream <<  "Initialize Pd Asset" << ": " << newPatcher->name;
-                            RwaUtilities::debug2Terminal(__FILE__, __FUNCTION__, __LINE__, debugstream.str());
-                        }
+                        if(backend->logSim)
+                            qDebug() <<  "Initialize Pd Asset" << ": " << QString::fromStdString(newPatcher->name);
                     }
                 }
             }
@@ -443,12 +435,8 @@ void RwaRuntime::sendEnd2backgroundAssets(RwaEntity *entity)
             if(pdMutex != nullptr)
                 pdMutex->unlock();
 
-            if(debug)
-            {
-                std::ostringstream debugstream;
-                debugstream <<  "End background asset: "  << assetItem->fileName;
-                RwaUtilities::debug2Terminal(__FILE__, __FUNCTION__, __LINE__, debugstream.str());
-            }
+            if(backend->logSim)
+                qDebug() <<  "End background asset: "  << QString::fromStdString(assetItem->fileName);
 
             ++i;
         }
@@ -478,12 +466,8 @@ void RwaRuntime::sendEnd2activeAssets(RwaEntity *entity)
             if(pdMutex != nullptr)
                 pdMutex->unlock();
 
-            if(debug)
-            {
-                std::ostringstream debugstream;
-                debugstream <<  "End background asset: "  << assetItem->fileName;
-                RwaUtilities::debug2Terminal(__FILE__, __FUNCTION__, __LINE__, debugstream.str());
-            }
+            if(backend->logSim)
+                qDebug() <<  "End active asset: "  << QString::fromStdString(assetItem->fileName);
 
             ++i;
         }
@@ -536,6 +520,7 @@ void *RwaRuntime::findFreeBinauralMonoFabianPatcher()
         if(!binauralMonoPatchers_fabian[i].isBusy)
         {
             binauralMonoPatchers_fabian[i].isBusy = true;
+
             return binauralMonoPatchers_fabian[i].patcherTag;
 
         }
@@ -662,9 +647,11 @@ int32_t RwaRuntime::findFreePatcher(RwaAsset1 *asset)
 
 void RwaRuntime::sendInitValues2pd(RwaAsset1 *asset, int patcherTag)
 {
+    if(backend->logSim)
+        qDebug();
+
     char pdReceiver[50];
     std::ostringstream fullAssetPath;
-
     float firstCrossfadeAfter = asset->getFadeOutAfter();
     asset->playheadPositionWithoutOffset = 0;
     asset->updatePlayheadPosition = true;
@@ -721,6 +708,7 @@ void RwaRuntime::sendInitValues2pd(RwaAsset1 *asset, int patcherTag)
      sprintf(pdReceiver, "%d-dampingmax", patcherTag);
      pdMutex->lock();
      libpd_float(pdReceiver, asset->getDampingMax());
+     qDebug("%s %f", asset->fileName.c_str(), asset->getDampingMax());
      pdMutex->unlock();
 
      sprintf(pdReceiver, "%d-offset", patcherTag);
@@ -776,21 +764,18 @@ void RwaRuntime::processAssets(RwaEntity *entity)
     int patcherTag;
 
     if(entity->getCurrentState() == nullptr)
-    {
-        qDebug() << "NO Current State";
         return;
-    }
 
     foreach(asset, entity->getCurrentState()->getAssets())
     {
         if(!entity->isActiveAsset(asset->uniqueId) && !asset->getBlocked() && !asset->mute)
         {
              patcherTag = findFreePatcher(asset);
-             qDebug() << patcherTag;
              sendInitValues2pd(asset, patcherTag);
              entity->addActiveAsset(asset->uniqueId, asset, patcherTag);
-             //if(backend->getLogSim())
-             qDebug() << "Add Active Asset: " << QString::fromStdString(asset->fileName);
+
+             if(backend->logSim)
+                qDebug() << "Add Active Asset: " << QString::fromStdString(asset->fileName);
              break;
         }
     }
@@ -1056,7 +1041,7 @@ void RwaRuntime::sendData2Asset(RwaEntity *entity, RwaEntity::AssetMapItem item)
         }
     }
 
-    if( ( (entity->getTimeInCurrentState() * 1000) > (asset->getDuration() + asset->getOffset()) ) && !asset->getLoop() && !asset->getBlocked() && !asset->type == RWAASSETTYPE_PD)
+    if( ( (entity->getTimeInCurrentState() * 1000) > (asset->getDuration() + asset->getOffset()) ) && !asset->getLoop() && !asset->getBlocked() && !(asset->type == RWAASSETTYPE_PD))
     {
         asset->setBlocked(true);
         entity->appendAsset2unblock(asset);
@@ -1213,10 +1198,11 @@ void RwaRuntime::setEntityScene(RwaEntity *entity)
         {
             if(scene != entity->getCurrentScene())
             {
+
                 if(entityIsWithinArea(entity, scene, RWAAREAOFFSETTYPE_ENTER))
                 {
-                    //if(backend->getLogSim())
-                    qDebug() << "Enter New Scene: " << QString::fromStdString(scene->objectName());
+                    if(backend->logSim)
+                        qDebug() << "Enter New Scene: " << QString::fromStdString(scene->objectName());
 
                     sendEnd2backgroundAssets(entity);
                     entity->getCurrentState()->setBlockUntilRadiusHasBeenLeft(false);
@@ -1373,7 +1359,7 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
                         unblockAssets(state);
                         entity->setTimeInCurrentState(0);
                         emit sendSelectedState(state);
-                        //if(backend->getLogSim())
+                        if(backend->logSim)
                             qDebug() << "Enter new State: " << QString::fromStdString(state->objectName());
                     }
                 }
@@ -1535,7 +1521,6 @@ void RwaRuntime::endBackgroundState()
             key = i->first;
             item = i->second;
             intPatcherTag = item.getPatcherTag();
-            qDebug() << "Free Background Asset: " << intPatcherTag;
             i = entity->backgroundAssets.erase(i);
             releasePatcherFromItem(item);
             sprintf(end2pd,"%d-", intPatcherTag);
@@ -1543,6 +1528,9 @@ void RwaRuntime::endBackgroundState()
             pdMutex->lock();
             libpd_bang(end2pd);
             pdMutex->unlock();
+
+            if(backend->logSim)
+                qDebug() << "Free Background Asset: " << intPatcherTag;
         }
     }
 }
@@ -1555,7 +1543,9 @@ void RwaRuntime::freeAllPatchers()
     RwaEntity::AssetMapItem item;
     string key;
 
-    qDebug() << "Free all Patchers";
+    if(backend->logSim)
+        qDebug() << "Free all Patchers";
+
     foreach(entity, entities)
     {
         std::map<string, RwaEntity::AssetMapItem>::iterator i = entity->activeAssets.begin();

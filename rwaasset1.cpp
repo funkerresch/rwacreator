@@ -463,6 +463,11 @@ void RwaAsset1::setHeadtrackerRelative2Source(bool value)
     headtrackerRelative2Source = value;
 }
 
+bool RwaAsset1::getHasCoordinates() const
+{
+    return hasCoordinates;
+}
+
 int32_t RwaAsset1::getType() const
 {
     return type;
@@ -799,9 +804,17 @@ int32_t RwaAsset1::getPlaybackType() const
 void RwaAsset1::setPlaybackType(const int32_t &value)
 {
     playbackType = value;
+
+    if(playbackType == RWAPLAYBACKTYPE_BINAURALMONO_FABIAN)
+        channelRadius = 0;
+    else
+    {
+        if(channelRadius <= 0)
+            channelRadius = 20;
+    }
+
     calculateChannelPositions();
     calculateReflectionPositions();
-
 }
 
 bool RwaAsset1::getIsExclusive() const

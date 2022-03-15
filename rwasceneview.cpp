@@ -41,7 +41,6 @@ void RwaSceneView::deleteState(const QString &stateName)
         currentScene->removeState(currentScene->getState(stateName.toStdString()));
         emit sendCurrentScene(currentScene);
     }
-
 }
 
 void RwaSceneView::adaptSize(qint32 width, qint32 height)
@@ -53,7 +52,7 @@ void RwaSceneView::adaptSize(qint32 width, qint32 height)
 void RwaSceneView::setCurrentScene(RwaScene *currentScene)
 {
     this->currentScene = currentScene;
-    this->stateList->setCurrentScene(currentScene);
+    //this->stateList->setCurrentScene(currentScene);
     stateList->update();
 }
 

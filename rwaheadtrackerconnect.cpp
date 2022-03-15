@@ -13,6 +13,11 @@ RwaHeadtrackerConnect *RwaHeadtrackerConnect::getInstance()
     return RwaHeadtrackerConnect::instance;
 }
 
+float RwaHeadtrackerConnect::getAzimuth()
+{
+    return headTrackerOrientation[0];
+}
+
 RwaHeadtrackerConnect::RwaHeadtrackerConnect(QObject *parent) : QObject(parent)
 {   
     rwaBluetooth = new Device();
@@ -142,6 +147,8 @@ void RwaHeadtrackerConnect::receiveHeadtrackerData(const QString &data)
 
     if(list.length() >= 1)
         receivedOrientation[0] = list.at(0).toFloat();
+
+    qDebug() << receivedOrientation[0];
 
     if(list.length() >= 2)
        receivedOrientation[1] = list.at(1).toFloat();

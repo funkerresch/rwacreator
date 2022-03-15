@@ -57,9 +57,11 @@ void RwaGameView::setCurrentScene(RwaScene *currentScene)
     if(this->currentScene != currentScene)
     {
         this->currentScene = currentScene;
-        this->sceneList->setCurrentScene(currentScene);
+        //this->sceneList->setCurrentScene(currentScene);
         sceneList->update();
-        qDebug();
+
+        if(backend->logOther)
+            qDebug();
     }
 }
 

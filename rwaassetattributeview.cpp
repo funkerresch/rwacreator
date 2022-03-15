@@ -5,7 +5,6 @@ RwaAssetAttributeView::RwaAssetAttributeView(QWidget *parent, RwaScene *scene) :
 {
     setAlignment(Qt::AlignTop);
     QGridLayout *innerLayout = new QGridLayout(this);
-    scrollArea->setWidgetResizable(true);
 
     innerLayout->setVerticalSpacing(2);
     innerLayout->setContentsMargins(0,4,0,4);
@@ -79,13 +78,9 @@ RwaAssetAttributeView::RwaAssetAttributeView(QWidget *parent, RwaScene *scene) :
     connect(backend, SIGNAL(sendSelectedAssets(QStringList)),
               this, SLOT(receiveSelectedAssets(QStringList)));
 
-    connect(assetAttributeGroup, SIGNAL(buttonClicked(int)), this, SLOT(receiveCheckBoxAttributeValue(int)));
-
-    this->setMinimumHeight((assetAttrCounter)*16);
-    //this->setMaximumHeight((assetAttrCounter+16)*16);
+    this->setMinimumHeight((assetAttrCounter)*17);
     this->setMinimumWidth(20);
-    //this->setMaximumWidth(240);
-
+    this->setMaximumWidth(260);
 }
 
 void RwaAssetAttributeView::adaptSize(qint32 width, qint32 height)
@@ -103,6 +98,7 @@ void RwaAssetAttributeView::setCurrentAsset(RwaAsset1 *asset)
     if(!asset)
         return;
 
+    lastAsset = currentAsset;
     currentAsset = asset;
 
     QCheckBox *attrCheckBox = nullptr;
@@ -276,22 +272,31 @@ void RwaAssetAttributeView::receiveEditingFinished()
         {
             if(senderName != lastSenderName)
                 emit sendWriteUndo("Asset edited: "+ senderName);
+            if(senderName == lastSenderName)
+            {
+                if(currentAsset != lastAsset)
+                    emit sendWriteUndo("Asset edited: "+ senderName);
+            }
         }
 
-        emit sendCurrentState(currentState);
         lastSenderValue = senderValue;
         lastSenderName = senderName;
+        emit sendCurrentState(currentState);
         setFocus();
     }
 }
 
-void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id)
+void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
 {
-    bool value = assetAttributeGroup->button(id)->isChecked();
     if(!currentState)
         return;
     if(selectedAssets.empty())
         return;
+
+    QButtonGroup *group = static_cast<QButtonGroup *>(QObject::sender());
+    senderName = group->button(id)->text();
+    QString boolString = value ? "true" : "false";
+    senderValue = boolString;
 
     RwaAsset1 *asset = nullptr;
 
@@ -303,7 +308,9 @@ void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id)
            {
                 asset = currentState->getAsset(assetName.toStdString());
                 if(asset)
+                {
                     asset->setIsExclusive(value);
+                }
            }
            break;
         }
@@ -373,7 +380,179 @@ void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id)
                     asset->setMoveFromStartPosition(value);
                     if(QObject::sender() != this->backend)
                     {
-                        qDebug() << " SEND AUTOMOVE " << QObject::sender();
+                        emit sendCurrentState(currentState);
+                    }
+                 }
+            }
+            break;
+        }
+
+        case RWAASSETATTRIBUTE_LOOPUNTILENDPOSITION:
+        {
+            foreach(QString assetName, selectedAssets)
+            {
+                 asset = currentState->getAsset(assetName.toStdString());
+                 if(asset)
+                    asset->setLoopUntilEndPosition(value);
+             }
+            break;
+        }
+
+        case RWAASSETATTRIBUTE_MUTE:
+        {
+            foreach(QString assetName, selectedAssets)
+            {
+                 asset = currentState->getAsset(assetName.toStdString());
+                 if(asset)
+                    asset->setMute(value);
+             }
+            break;
+        }
+
+        case RWAASSETATTRIBUTE_HEADTRACKERRELATIVE2SOURCE:
+        {
+            foreach(QString assetName, selectedAssets)
+            {
+                 asset = currentState->getAsset(assetName.toStdString());
+                 if(asset)
+                    asset->setHeadtrackerRelative2Source(value);
+             }
+            break;
+        }
+
+        case RWAASSETATTRIBUTE_LOCKPOSITION:
+        {
+            foreach(QString assetName, selectedAssets)
+            {
+                 asset = currentState->getAsset(assetName.toStdString());
+                 if(asset)
+                    asset->setLockPosition(value);
+             }
+            break;
+        }
+
+        case RWAASSETATTRIBUTE_ALLOWINDIVIDUELLCHANNELPOSITIONS:
+        {
+            foreach(QString assetName, selectedAssets)
+            {
+                 asset = currentState->getAsset(assetName.toStdString());
+                 if(asset)
+                    asset->setAllowIndividuellChannelPositions(value);
+            }
+            break;
+        }
+
+    case RWAASSETATTRIBUTE_ALWAYSPLAYFROMBEGINNING:
+    {
+        foreach(QString assetName, selectedAssets)
+        {
+             asset = currentState->getAsset(assetName.toStdString());
+             if(asset)
+                asset->setAlwaysPlayFromBeginning(value);
+        }
+        break;
+    }
+
+
+    default:break;
+    }
+}
+
+void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id)
+{
+
+    bool value = assetAttributeGroup->button(id)->isChecked();
+    if(!currentState)
+        return;
+    if(selectedAssets.empty())
+        return;
+
+    senderName = QObject::sender()->objectName();
+    QString boolString = value ? "true" : "false";
+    senderValue = boolString;
+
+    RwaAsset1 *asset = nullptr;
+
+    switch(id)
+    {
+        case RWAASSETATTRIBUTE_ISEXCLUSIVE:
+        {
+           foreach(QString assetName, selectedAssets)
+           {
+                asset = currentState->getAsset(assetName.toStdString());
+                if(asset)
+                {
+                    asset->setIsExclusive(value);
+                }
+           }
+           break;
+        }
+
+        case RWAASSETATTRIBUTE_RAWSENSORS2PD:
+        {
+            foreach(QString assetName, selectedAssets)
+            {
+                 asset = currentState->getAsset(assetName.toStdString());
+                 if(asset)
+                    asset->setRawSensors2pd(value);
+
+            }
+            break;
+        }
+        case RWAASSETATTRIBUTE_GPS2PD:
+        {
+            foreach(QString assetName, selectedAssets)
+            {
+                 asset = currentState->getAsset(assetName.toStdString());
+                 if(asset)
+                    asset->setGps2pd(value);
+            }
+            break;
+        }
+
+        case RWAASSETATTRIBUTE_LOOP:
+        {
+            foreach(QString assetName, selectedAssets)
+            {
+                 asset = currentState->getAsset(assetName.toStdString());
+                 if(asset)
+                    asset->setLoop(value);
+            }
+            break;
+        }
+
+        case RWAASSETATTRIBUTE_PLAYONCE:
+        {
+            foreach(QString assetName, selectedAssets)
+            {
+                 asset = currentState->getAsset(assetName.toStdString());
+                 if(asset)
+                    asset->setPlayOnlyOnce(value);
+            }
+            break;
+        }
+
+        case RWAASSETATTRIBUTE_AUTOROTATE:
+        {
+            foreach(QString assetName, selectedAssets)
+            {
+                 asset = currentState->getAsset(assetName.toStdString());
+                 if(asset)
+                    asset->setAutoRotate(value);
+            }
+            break;
+        }
+
+        case RWAASSETATTRIBUTE_AUTOMOVE:
+        {
+            foreach(QString assetName, selectedAssets)
+            {
+                 asset = currentState->getAsset(assetName.toStdString());
+                 if(asset)
+                 {
+                    asset->setMoveFromStartPosition(value);
+                    if(QObject::sender() != this->backend)
+                    {
                         emit sendCurrentState(currentState);
                     }
                  }
@@ -451,15 +630,10 @@ void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id)
     default:break;
     }
 
-    if(QObject::sender() != this->backend)
-    {
-        emit sendCurrentState(currentState);
-    }
-}
-
-void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
-{
-
+//    if(QObject::sender() != this->backend)
+//    {
+//        emit sendCurrentState(currentState);
+//    }
 }
 
 void RwaAssetAttributeView::receiveLineEditAttributeValue(const QString &text)
@@ -648,19 +822,21 @@ void RwaAssetAttributeView::receiveLineEditAttributeValue(const QString &text)
                 ;//asset->setReceiverPatcher(value.toStdString());
        }
     }
-
-    /*if(QObject::sender() != this->backend)
-    {
-        emit sendCurrentState(currentState);
-    }*/
 }
 
-void RwaAssetAttributeView::receiveComboBoxAttributeValue(QString value)
+void RwaAssetAttributeView::receiveComboBoxAttributeValue(int index)
 {
+    qDebug();
+    QComboBox *box = static_cast<QComboBox *>(QObject::sender());
+    QString value = box->itemText(index);
+
     if(!currentState)
         return;
     if(selectedAssets.empty())
         return;
+
+    senderName = QObject::sender()->objectName();
+    senderValue = value;
 
     RwaAsset1 *asset = nullptr;
 
@@ -725,7 +901,9 @@ void RwaAssetAttributeView::receiveComboBoxAttributeValue(QString value)
            {
                 asset = currentState->getAsset(assetName.toStdString());
                 if(asset)
+                 {
                     asset->setPlaybackType(RWAPLAYBACKTYPE_BINAURALMONO_FABIAN);
+                 }
            }
         }
 
@@ -767,7 +945,7 @@ void RwaAssetAttributeView::receiveComboBoxAttributeValue(QString value)
                 if(asset)
                     asset->setPlaybackType(RWAPLAYBACKTYPE_BINAURAL7CHANNEL_FABIAN);
            }
-        }      
+        }
 
         if(!value.compare("Binaural-Space"))
         {
@@ -854,11 +1032,6 @@ void RwaAssetAttributeView::receiveComboBoxAttributeValue(QString value)
                     asset->setDampingFunction(2);
            }
         }
-    }
-
-    if(QObject::sender() != this->backend)
-    {
-        emit sendCurrentState(currentState);
     }
 }
 

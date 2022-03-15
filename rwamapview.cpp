@@ -98,6 +98,10 @@ RwaMapView::RwaMapView(QWidget* parent, RwaScene *scene)
     connect(backend, SIGNAL(sendMoveCurrentAssetChannel(double, double, int)),
               this, SLOT(movePixmapsOfCurrentAssetChannel(double,double, int)));
 
+    connect(backend, SIGNAL(sendMoveCurrentAssetReflection(double, double, int)),
+              this, SLOT(movePixmapsOfCurrentAssetReflection(double,double, int)));
+
+
     connect(backend, SIGNAL(sendRedrawAssets()),
               this, SLOT(redrawAssets()));
 
@@ -332,10 +336,7 @@ void RwaMapView::receiveMouseMoveEvent(const QMouseEvent*, const QPointF myPoint
         geo->setCoordinate(myPoint);
         currentEntity = (RwaEntity *)geo->data;
         std::vector<double> tmp {myPoint.x(), myPoint.y()};
-        //tmp[0] = myPoint.x();
-        //tmp[1] = myPoint.y();
         currentEntity->setCoordinates(tmp);
-       // qDebug() << currentEntity->getCoordinates();
         emit sendEntityPosition(myPoint);
         return;
     }
@@ -483,6 +484,7 @@ void RwaMapView::mouseDownArrow(const QMouseEvent *event, const QPointF myPoint)
     {
         if(mouseDoubleClickArea(myPoint, currentScene))
         {
+            setUndoAction("Edit Scene area.");
             sceneRadiusLayer->setVisible(true);
             return;
         }
@@ -703,12 +705,6 @@ void RwaMapView::setCurrentScene(RwaScene *scene)
         redrawSceneRadii();
         redrawScenes();
 
-        if(!(QObject::sender() == this->backend))
-        {
-            //qDebug() << "MapView:" << "emit current Scene";
-            emit sendCurrentScene(scene);
-        }
-
         if(currentScene->currentState)
         {
             setCurrentState(currentScene->currentState);
@@ -726,6 +722,12 @@ void RwaMapView::setCurrentScene(RwaScene *scene)
             redrawEntities();
             entityInitialized = true;
             setMapCoordinates(QPointF(scene->getCoordinates()[0], scene->getCoordinates()[1]));
+        }
+
+        if(!(QObject::sender() == this->backend))
+        {
+            //qDebug() << "MapView:" << "emit current Scene";
+            emit sendCurrentScene(scene);
         }
     }
 }

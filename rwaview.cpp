@@ -69,9 +69,7 @@ void RwaView::updateSceneMenus()
 {
     toolbar->updateSelectSceneMenu();
     toolbar->updateSelectStateMenu();
-   // qDebug() << "VIEW RECEIVED UPDATE SCENE MENUS";
 }
-
 
 void RwaView::receiveClearAll()
 {

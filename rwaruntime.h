@@ -13,11 +13,11 @@
 #include "m_pd.h"
 #include "util/z_queued.h"
 #include "rwa_binauralsimple~.h"
-#include "freeverb~.h"
-
+#include "rwapdextra~.h"
 
 #ifdef QT_VERSION
 #include <QDebug>
+class RwaBackend;
 #endif
 
 #define RWARUNTIME_MAXNUMBEROFPATCHERS 20
@@ -46,11 +46,14 @@ class RwaRuntime
 public:
 
 #ifdef QT_VERSION
-RwaRuntime(QObject *parent, const char *pdpath, const char *assetPath, float sampleRate, float schedulerRate, std::mutex *pdMutex = nullptr);
+RwaRuntime(QObject *parent, const char *pdpath, const char *assetPath, float sampleRate, float schedulerRate, std::mutex *pdMutex = nullptr, RwaBackend *backend = nullptr);
 #else
     RwaRuntime(const char *pdpath, const char *assetPath, float sampleRate, float schedulerRate, std::mutex *pdMutex = nullptr);
 #endif
     ~RwaRuntime();
+#ifdef QT_VERSION
+    static RwaBackend *backend;
+#endif
 
     std::string pdPath = "";
     std::string assetPath = "";

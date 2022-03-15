@@ -20,8 +20,8 @@ RwaSimulator::RwaSimulator(QObject *parent, RwaBackend *backend) :
 
     gameLoopTimer = new QTimer(this);
     devicesRegistered = false;
-    ap = new audioProcessor(512);
-    runtime = new RwaRuntime(this, path.toStdString().c_str(), assetPath.toStdString().c_str(), ap->getSampleRate(), 25, &ap->pdMutex);
+    ap = new audioProcessor(1024);
+    runtime = new RwaRuntime(this, path.toStdString().c_str(), assetPath.toStdString().c_str(), ap->getSampleRate(), 25, &ap->pdMutex, backend);
     runtime->entities = entities.toStdList();
     simulationIsRunning = 0;
     gameLoopTimer->setInterval(getSchedulerRate());
@@ -62,6 +62,9 @@ RwaSimulator::RwaSimulator(QObject *parent, RwaBackend *backend) :
     connect (backend, SIGNAL(newGameLoaded()),
              this, SLOT(receiveNewGameSignal()));
 
+    connect (backend, SIGNAL(undoGameLoaded()),
+             this, SLOT(receiveUndoGameLoaded()));
+
     connect (backend, SIGNAL(sendLastTouchedScene(RwaScene*)),
              this, SLOT(receiveLastTouchedScene(RwaScene*)));
 
@@ -86,6 +89,8 @@ RwaSimulator::~RwaSimulator()
 {
     oscServer->deleteLater();
     delete ap;
+    foreach(oscDevice *device, devices)
+        delete (device);
 }
 
 void RwaSimulator::receiveRedrawAssetsFromRuntime()
@@ -129,8 +134,8 @@ void RwaSimulator::receiveRegisterMessage(QVariant data)
     oscDevice *newDevice = new oscDevice;
     newDevice->name = data.toList().at(0).toString();
     newDevice->ip = data.toList().at(1).toString();
-    newDevice->oscClient =  new QOscClient( QHostAddress(newDevice->ip), 8000, this ); //FOR MAX CHANGE THIS TO 8001
-    qDebug("Registered iOS Client");
+    newDevice->oscClient =  new QOscClient( QHostAddress(newDevice->ip), 8000, nullptr ); //FOR MAX CHANGE THIS TO 8001
+    qDebug() << "Registered iOS Client " << newDevice->ip;
     devices.append(newDevice);
     devicesRegistered = true;
 }
@@ -140,6 +145,12 @@ void RwaSimulator::initGandalf()
     newEntity("Gandalf", RWAENTITYTYPE_HERO);
     appendEntityAttribute("Gandalf", "Sex", "male");
     appendEntityAttribute("Gandalf", "Intelligence", "15");
+}
+
+void RwaSimulator::receiveUndoGameLoaded()
+{
+    qDebug() << "SIMULATOR: received undo signal";
+    runtime->entities.front()->scenes = backend->getScenes().toStdList();
 }
 
 void RwaSimulator::receiveNewGameSignal()
@@ -229,14 +240,12 @@ void RwaSimulator::receiveNewAsset(RwaState *state, RwaAsset1 *item)
     //qDebug() << "Simulator new Asset";
 }
 
-
-
 void RwaSimulator::clearGame()
 {
     RwaEntity *entity;
     foreach(entity, entities)
     {
-        entity->scenes.clear();
+        //entity->scenes.clear();
         entity->setCurrentScene(nullptr);
         entity->setCurrentState(nullptr);
     }
@@ -246,7 +255,11 @@ void RwaSimulator::startRwaSimulation()
 {
     RwaEntity *entity = entities.front();
     runtime->unblockStates(entity);
-    entity->setCurrentScene(backend->getLastTouchedScene());
+
+    if(backend->getLastTouchedScene())
+        entity->setCurrentScene(backend->getLastTouchedScene());
+    else
+        entity->setCurrentScene(backend->getScenes().front());
 
     runtime->initDynamicPdPatchers(entity);
     libpd_init_audio(ap->inputChannelCount() , ap->outputChannelCount(), 44100); // 2 inputs, 2 output
@@ -264,7 +277,7 @@ void RwaSimulator::stopRwaSimulation()
 {
     RwaEntity *entity = entities.front();
     runtime->freeAllPatchers();
-    ap->stopAudio();
+
     libpd_start_message(1);
     libpd_add_float(0.0f);
     libpd_finish_message("pd", "dsp");
@@ -272,6 +285,8 @@ void RwaSimulator::stopRwaSimulation()
     simulationIsRunning = false;
     runtime->freeDynamicPdPatchers1();
     clearGame();
+    ap->stopAudio();
+
     emit updateScene();
 }
 
@@ -279,6 +294,7 @@ void RwaSimulator::setMainVolume(float volume)
 {
     ap->pdMutex.lock();
     libpd_float("rwamainvolume", volume);
+    qDebug("%f", volume);
     ap->pdMutex.unlock();
 }
 
@@ -375,6 +391,7 @@ void RwaSimulator::sendData2Devices()
             {
                device->oscClient->sendData("/lon", entity->getCoordinates()[0]);
                device->oscClient->sendData("/lat", entity->getCoordinates()[1]);
+               //qDebug() << "Send Entity Position";
             }
         }
     }

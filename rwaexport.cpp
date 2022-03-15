@@ -119,6 +119,7 @@ void RwaExport::writeAssetItem(RwaAsset1 *item)
    xml.writeAttribute("loop", QString::number(item->getLoop()));
    xml.writeAttribute("mute", QString::number(item->getMute()));
    xml.writeAttribute("headtrackerrelative2source", QString::number(item->getHeadtrackerRelative2Source()));
+   xml.writeAttribute("hascoordinates", QString::number(item->getHasCoordinates()));
    xml.writeAttribute("loopuntilendposition", QString::number(item->getLoopUntilEndPosition()));
    //xml.writeAttribute("elevation2pd", QString::number(item->getElevation2pd()));
    xml.writeAttribute("gps2pd", QString::number(item->getGps2pd()));

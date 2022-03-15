@@ -13,3 +13,9 @@
 [submodule "pd-extra/pd"]
 	path = pd-extra/pd
 	url = https://github.com/pd-l2ork/pd.git
+[submodule "libogg"]
+	path = libogg
+	url = https://github.com/gcp/libogg.git
+[submodule "vorbis"]
+	path = vorbis
+	url = https://gitlab.xiph.org/xiph/vorbis.git

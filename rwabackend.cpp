@@ -5,11 +5,35 @@ RwaBackend *RwaBackend::instance = nullptr;
 RwaBackend *RwaBackend::getInstance()
 {
     if(RwaBackend::instance == nullptr)
-    {
         RwaBackend::instance = new RwaBackend();
-    }
 
     return RwaBackend::instance;
+}
+
+int getNumberFromQString(const QString &xString)
+{
+      QRegExp xRegExp("(-?\\d+(?:[\\.,]\\d+(?:e\\d+)?)?)");
+      xRegExp.indexIn(xString);
+      QStringList xList = xRegExp.capturedTexts();
+      if (true == xList.empty())
+      {
+        return 0;
+      }
+      return xList.begin()->toInt();
+}
+
+void RwaBackend::StartHttpServer(qint32 port)
+{
+    char buffer[20];
+    QString httpServerStart = QString("python3 -m http.server %1 --directory /Users/harveykeitel/RWACreator/Games & echo $!").arg(port);
+    FILE* pipe = popen(httpServerStart.toStdString().c_str(), "r");
+    if (!pipe)
+       qDebug() << "Could not create http server";
+
+    if (fgets(buffer, 128, pipe) != nullptr)
+        httpProcessId = getNumberFromQString(QString(buffer));
+
+    pclose(pipe);
 }
 
 RwaBackend::RwaBackend(QWidget *parent) :
@@ -17,6 +41,8 @@ RwaBackend::RwaBackend(QWidget *parent) :
 {
     CFURLRef url = (CFURLRef)CFAutorelease((CFURLRef)CFBundleCopyBundleURL(CFBundleGetMainBundle()));
     QString path = QUrl::fromCFURL(url).path();
+    httpProcessId = -1;
+    StartHttpServer(8088);
 
     completeBundlePath = path + "Contents/MacOS/";
     completeProjectPath = QString();
@@ -30,6 +56,12 @@ RwaBackend::RwaBackend(QWidget *parent) :
     headtracker = RwaHeadtrackerConnect::getInstance();
     clipboardStates = new RwaScene(std::string("ClipboardScene"), std::vector<double>(2, 0.0), 0);
     appendScene();
+}
+
+RwaBackend::~RwaBackend()
+{
+    QString killHttp = QString("kill %1").arg(httpProcessId);
+    system(killHttp.toStdString().c_str());
 }
 
 QList<RwaScene *>& RwaBackend::getScenes()
@@ -118,7 +150,8 @@ void RwaBackend::clearScene(RwaScene *scene)
 
 void RwaBackend::duplicateScene(RwaScene *scene)
 {
-    qDebug("BACKEND: duplicateScene");
+    if(logOther)
+        qDebug("BACKEND: duplicateScene");
 }
 
 void RwaBackend::receiveSceneName(RwaScene *scene, QString name)
@@ -128,6 +161,8 @@ void RwaBackend::receiveSceneName(RwaScene *scene, QString name)
 
 void RwaBackend::receiveLastTouchedScene(RwaScene *scene)
 {
+    if(logOther)
+        qDebug();
 
     this->lastTouchedScene = scene;
     emit sendLastTouchedScene(scene);
@@ -228,7 +263,9 @@ void RwaBackend::receiveSelectedAssets(QStringList assets)
 
 void RwaBackend::receiveSelectedStates(QStringList states) // not connected to anything yet
 {
-    qDebug() << states;
+    if(logOther)
+        qDebug() << states;
+
     currentlySelectedStates = states;
     emit sendSelectedStates(currentlySelectedStates);
 }
@@ -324,6 +361,11 @@ void RwaBackend::setLastTouchedScene(RwaScene *scene)
 void RwaBackend::receiveStateName(RwaState *state, QString name)
 {
     state->setObjectName(name.toStdString());
+}
+
+void RwaBackend::clearForHistory()
+{
+    scenes.clear();
 }
 
 void RwaBackend::clear()

@@ -216,6 +216,7 @@ void RwaGraphicsView::movePixmapsOfCurrentAssetChannel(double dx, double dy, int
     }
 }
 
+
 void RwaGraphicsView::moveReflectionPixmapsOfCurrentAsset(double dx, double dy)
 {
     for (int j=0; j<assetReflectionLayer->geometries.count(); j++)
@@ -696,8 +697,6 @@ void RwaGraphicsView::updateCurrentState()
 
     if(!(QObject::sender() == this->backend))
         emit sendCurrentScene(currentScene );
-
-
 }
 
 void RwaGraphicsView::workAroundLineEditBug()
@@ -744,6 +743,7 @@ void RwaGraphicsView::drawArea(RwaArea *area, GeometryLayer *layer, bool isActiv
 
     if(area->getAreaType() == RWAAREATYPE_POLYGON)
     {
+
         if(area->corners.empty())
         {
 
@@ -1007,7 +1007,9 @@ void RwaGraphicsView::redrawScenes()
 
 void RwaGraphicsView::redrawStates()
 {
-    qDebug() << "Redraw";
+    if(backend->logOther)
+        qDebug();
+
     statesLayer->clearGeometries();
     RwaState *state;
     foreach (state, currentScene->getStates())
@@ -1053,7 +1055,9 @@ void RwaGraphicsView::redrawSceneRadii()
 
 void RwaGraphicsView::redrawStateRadii()
 {
-    //qDebug() << "DRAWWWW STATE RADII";
+    if(backend->logOther)
+        qDebug();
+
     stateRadiusLayer->clearGeometries();
     RwaState *state;
     RwaScene *scene;

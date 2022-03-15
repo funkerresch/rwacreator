@@ -38,10 +38,13 @@ RwaSceneAttributeView::RwaSceneAttributeView(QWidget *parent, RwaScene *scene) :
     addAttrCheckbox(innerLayout, "Lock Position", RWASTATEATTRIBUTE_LOCKPOSITION);
     addAttrCheckbox(innerLayout, "Disable Fallback", RWASCENEATTRIBUTE_DISABLEFALLBACK);
 
-    connect(this, SIGNAL(sendCurrentSceneRadiusEdited()), backend, SLOT(receiveCurrentSceneRadiusEdited()));
+    //connect(this, SIGNAL(sendCurrentSceneRadiusEdited()), backend, SLOT(receiveCurrentSceneRadiusEdited()));
 
-    this->setMinimumHeight((assetAttrCounter)*16);
-    this->setMaximumHeight((assetAttrCounter)*16);
+    connect(this, SIGNAL(sendCurrentScene(RwaScene*)),
+              backend, SLOT(receiveLastTouchedScene(RwaScene*)));
+
+    this->setMinimumHeight((assetAttrCounter)*17);
+    this->setMaximumHeight((assetAttrCounter)*17);
     this->setMinimumWidth(20);
     this->setMaximumWidth(240);
 }
@@ -146,9 +149,13 @@ void RwaSceneAttributeView::updateSceneComboBox(QComboBox *attrComboBox)
     connect(attrComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(receiveComboBoxAttributeValue(QString)));
 }
 
-
 void RwaSceneAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
 {
+    QButtonGroup *group = static_cast<QButtonGroup *>(QObject::sender());
+    senderName = group->button(id)->text();
+    QString boolString = value ? "true" : "false";
+    senderValue = boolString;
+
     if(!currentState)
         return;
 
@@ -166,14 +173,14 @@ void RwaSceneAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
             break;
         }
 
-    case RWASCENEATTRIBUTE_DISABLEFALLBACK:
-    {
-        currentScene->setDisableFallback(value);
-        break;
-    }
-
-            default:break;
+        case RWASCENEATTRIBUTE_DISABLEFALLBACK:
+        {
+            currentScene->setDisableFallback(value);
+            break;
         }
+
+        default:break;
+    }
 }
 
 void RwaSceneAttributeView::receiveLineEditAttributeValue()
@@ -203,14 +210,30 @@ void RwaSceneAttributeView::receiveLineEditAttributeValue()
 void RwaSceneAttributeView::receiveEditingFinished()
 {
     if(QObject::sender() != this->backend)
-        emit sendCurrentState(currentState);
-    qDebug() << "Editing Finished";
+    {
+        if(senderValue != lastSenderValue)
+            emit sendWriteUndo("Scene edited: "+ senderName);
+        if(senderValue == lastSenderValue)
+        {
+            if(senderName != lastSenderName)
+                emit sendWriteUndo("Scene edited: "+ senderName);
+        }
+
+        lastSenderValue = senderValue;
+        lastSenderName = senderName;
+        setFocus();
+        emit sendCurrentScene(currentScene);
+        qDebug();
+    }
 }
 
 void RwaSceneAttributeView::receiveLineEditAttributeValue(const QString &value)
 {
     if(!currentScene)
         return;
+
+    senderName = QObject::sender()->objectName();
+    senderValue = value;
 
     if(!QObject::sender()->objectName().compare("Time Out"))
     {
@@ -252,15 +275,61 @@ void RwaSceneAttributeView::receiveLineEditAttributeValue(const QString &value)
     }
 }
 
-void RwaSceneAttributeView::receiveComboBoxAttributeValue(QString value)
+void RwaSceneAttributeView::receiveComboBoxAttributeValue(int index)
 {
-    QString nextState = NULL;
-    QString nextScene = NULL;
+    QComboBox *attrComboBox = static_cast<QComboBox *>(QObject::sender());
+    QString value = attrComboBox->itemText(index);
+
+    QString nextState = nullptr;
+    QString nextScene = nullptr;
 
     if(!currentScene)
         return;
 
-    QComboBox *attrComboBox = NULL;
+    senderName = QObject::sender()->objectName();
+    senderValue = value;
+
+    if(!QObject::sender()->objectName().compare("Area Type"))
+    {
+        if(!value.compare("Undetermined"))
+            currentScene->setAreaType(RWA_UNDETERMINED);
+
+        if(!value.compare("Circle"))
+            currentScene->setAreaType(RWAAREATYPE_CIRCLE);
+
+        if(!value.compare("Rectangle"))
+            currentScene->setAreaType(RWAAREATYPE_RECTANGLE);
+
+        if(!value.compare("Square"))
+            currentScene->setAreaType(RWAAREATYPE_SQUARE);
+
+        if(!value.compare("Polygon"))
+            currentScene->setAreaType(RWAAREATYPE_POLYGON);
+
+        //sendCurrentSceneRadiusEdited();
+    }
+
+    if(!QObject::sender()->objectName().compare("Next Scene"))
+    {
+        attrComboBox = this->findChild<QComboBox *>("Next Scene");
+
+        if(attrComboBox->currentIndex() <= 0)
+            currentScene->setNextScene("");
+        else
+            currentScene->setNextScene(attrComboBox->currentText().toStdString());
+    }
+
+}
+
+void RwaSceneAttributeView::receiveComboBoxAttributeValue(QString value)
+{
+    QString nextState = nullptr;
+    QString nextScene = nullptr;
+
+    if(!currentScene)
+        return;
+
+    QComboBox *attrComboBox = nullptr;
 
 
     if(!QObject::sender()->objectName().compare("Area Type"))

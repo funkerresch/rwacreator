@@ -183,7 +183,7 @@ void RwaArea::moveCorners(double dx, double dy)
         for(uint_fast32_t i = 0; i< corners.size(); i++)
         {
            corners[i][0] = (corners[i][0] + dx);
-           corners[i][1] = (corners[i][0] + dy);
+           corners[i][1] = (corners[i][1] + dy);
         }
     }
 }

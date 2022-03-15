@@ -269,6 +269,7 @@ public:
     int32_t getReflectionCount() const;
     void setReflectionCount(const int32_t &value);
 
+    bool getHasCoordinates() const;
 private:
     friend class RwaRuntime;
 
@@ -305,7 +306,7 @@ private:
     float waitTimeBeforeMovement = 0;
 
     int32_t type;
-    int32_t playbackType = RWAPLAYBACKTYPE_BINAURAL; // binaural, stereo, mono, etc..
+    int32_t playbackType = -1; // binaural, stereo, mono, etc..
     int32_t dampingFunction = 1;
     int32_t fadeOutTime = 50;
     int32_t fadeInTime = 50;

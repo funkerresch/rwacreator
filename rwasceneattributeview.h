@@ -20,6 +20,7 @@ private slots:
     void receiveLineEditAttributeValue(const QString &value);
     void receiveLineEditAttributeValue();
     void receiveComboBoxAttributeValue(QString value);
+    void receiveComboBoxAttributeValue(int index);
     void receiveFaderAttributeValue(int id);
 
 signals:

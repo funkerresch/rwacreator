@@ -54,9 +54,12 @@ RwaLogWindow::~RwaLogWindow()
 void RwaLogWindow::outputMessage(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
     QByteArray localMsg = msg.toLocal8Bit();
+    if(localMsg.size() > 512)
+        return;
+
     const char *file = context.file ? context.file : "";
     const char *function = context.function ? context.function : "";
-    char output[512];
+    char output[1024];
 
     switch (type)
     {

@@ -21,6 +21,7 @@ class RwaBackend : public QTextEdit
 public:
 
     explicit RwaBackend(QWidget *parent = nullptr);
+    ~RwaBackend();
     static RwaBackend *instance;
     static RwaBackend *getInstance();
 
@@ -35,6 +36,7 @@ public:
     QString completeClientExportPath;
     QStringList currentlySelectedAssets;
     QStringList currentlySelectedStates;
+    qint32 httpProcessId;
 
     RwaScene *getLastTouchedScene();
     QList<RwaScene *> &getScenes();
@@ -57,6 +59,7 @@ public:
 
     int getStateNameCounter(std::list<RwaState *> &states);  
 
+    void clearForHistory();
 public slots:
 
     void generateUuidsForClipboardState(RwaState *state);
@@ -112,6 +115,7 @@ public slots:
     void receiveWriteUndo(QString undoAction);
     void receiveMoveCurrentAssetReflection(double dx, double dy, int channel);
 
+    void StartHttpServer(qint32 port);
 signals:
     void readUndoFile(QString name);
     void sendWriteUndo(QString undoAction);
@@ -136,6 +140,7 @@ signals:
     void updateAssets();  // update simulator if assets are updated while simulation runs..
     void sendSave();
     void newGameLoaded();
+    void undoGameLoaded();
     void sendRedrawAssets();
     void sendEntityPosition(QPointF position);
     void sendStatePosition(QPointF position);
@@ -152,6 +157,7 @@ private:
     RwaHeadtrackerConnect *headtracker;
 
     int undoCounter = -1;
+
 };
 
 #endif

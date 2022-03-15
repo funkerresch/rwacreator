@@ -1,7 +1,5 @@
 #include "rwastateattributeview.h"
 
-
-
 RwaStateAttributeView::RwaStateAttributeView(QWidget *parent, RwaScene *scene) :
     RwaAttributeView(parent, scene)
 {
@@ -15,15 +13,21 @@ RwaStateAttributeView::RwaStateAttributeView(QWidget *parent, RwaScene *scene) :
     innerLayout->setContentsMargins(0,4,0,4);
     innerLayout->setAlignment(this, Qt::AlignLeft);
 
-    visitedStateConditionCount = 0;
-
     QStringList stateTypes;
     stateTypes << "Undetermined" << "Fallback" << "Background" << "GPS" << "Bluetooth" << "Combined" << "Random GPS" << "Hint" << "Other";
     addComboBoxAndLabel(innerLayout, "State Type", stateTypes);
 
     QStringList defaultPlaybackTypes;
-    defaultPlaybackTypes << "Undetermined" << "Mono" << "Stereo" << "Auto" << "Binaural-Mono" << "Binaural-Stereo" << "Binaural-Auto" << "Binaural-5Channel";
-    addComboBoxAndLabel(innerLayout, "Default Playback Mode", defaultPlaybackTypes);
+
+    defaultPlaybackTypes << "Undetermined" << "Mono" << "Stereo" << "Auto" << "Binaural-Mono (Legacy)" << "Binaural-Stereo (Legacy)" \
+                  << "Binaural-5Channel (Legacy)" << "Binaural-7Channel (Legacy)"<< "Binaural-Mono" << "Binaural-Stereo" << "Binaural-Auto" \
+                  << "Binaural-5Channel" << "Binaural-7Channel"  << "Binaural-Space" << "Custom IR-Set 1" << "Custom IR-Set 2" << "Custom IR-Set 3";
+
+    QComboBox *playbackTypesCombo = addComboBoxAndLabel(innerLayout, "Default Playback Mode", defaultPlaybackTypes);
+    qobject_cast<QListView *>(playbackTypesCombo->view())->setRowHidden(4, true);
+    qobject_cast<QListView *>(playbackTypesCombo->view())->setRowHidden(5, true);
+    qobject_cast<QListView *>(playbackTypesCombo->view())->setRowHidden(6, true);
+    qobject_cast<QListView *>(playbackTypesCombo->view())->setRowHidden(7, true);
 
     QStringList areaTypes;
     areaTypes << "Undetermined" << "Circle" << "Rectangle" << "Square" << "Polygon";
@@ -56,15 +60,10 @@ RwaStateAttributeView::RwaStateAttributeView(QWidget *parent, RwaScene *scene) :
     setLineEditSignal2editingFinished(requiredStates);
 
     editingFinishedLineEdit = addLineEditAndLabel(innerLayout, "Longitude");
-    connect(editingFinishedLineEdit, SIGNAL(editingFinished()), this, SLOT(receiveEditingFinished()));
     editingFinishedLineEdit = addLineEditAndLabel(innerLayout, "Latitude");
-    connect(editingFinishedLineEdit, SIGNAL(editingFinished()), this, SLOT(receiveEditingFinished()));
     editingFinishedLineEdit =addLineEditAndLabel(innerLayout, "State Radius");
-    connect(editingFinishedLineEdit, SIGNAL(editingFinished()), this, SLOT(receiveEditingFinished()));
     editingFinishedLineEdit =addLineEditAndLabel(innerLayout, "State Width");
-    connect(editingFinishedLineEdit, SIGNAL(editingFinished()), this, SLOT(receiveEditingFinished()));
     editingFinishedLineEdit =addLineEditAndLabel(innerLayout, "State Height");
-    connect(editingFinishedLineEdit, SIGNAL(editingFinished()), this, SLOT(receiveEditingFinished()));
     addLineEditAndLabel(innerLayout, "Enter Offset");
     addLineEditAndLabel(innerLayout, "Exit Offset");
 
@@ -77,8 +76,6 @@ RwaStateAttributeView::RwaStateAttributeView(QWidget *parent, RwaScene *scene) :
     addAttrCheckbox(innerLayout, "State within state", RWASTATEATTRIBUTE_STATEWITHINSTATE);
 
     connect(this, SIGNAL(sendCurrentStateRadiusEdited()), backend, SLOT(receiveCurrentStateRadiusEdited()));
-   // connect(backend, SIGNAL(sendCurrentStateRadiusEdited()),
-     //        this, SLOT(updateStateArea()));
 
     connect(this, SIGNAL(sendCurrentState(RwaState*)),
               backend, SLOT(receiveLastTouchedState(RwaState*)));
@@ -86,8 +83,10 @@ RwaStateAttributeView::RwaStateAttributeView(QWidget *parent, RwaScene *scene) :
     connect(this, SIGNAL(sendCurrentScene(RwaScene*)),
               backend, SLOT(receiveLastTouchedScene(RwaScene*)));
 
-    this->setMinimumHeight((assetAttrCounter)*16);
-   // this->setMaximumHeight((assetAttrCounter)*16);
+    connect(backend, SIGNAL(sendSelectedStates(QStringList)),
+              this, SLOT(receiveSelectedStates(QStringList)));
+
+    this->setMinimumHeight((assetAttrCounter)*17);
     this->setMinimumWidth(20);
     this->setMaximumWidth(240);
 }
@@ -95,12 +94,31 @@ RwaStateAttributeView::RwaStateAttributeView(QWidget *parent, RwaScene *scene) :
 void RwaStateAttributeView::receiveEditingFinished()
 {
     if(QObject::sender() != this->backend)
+    {
+        if(senderValue != lastSenderValue)
+            emit sendWriteUndo("State edited: "+ senderName);
+        if(senderValue == lastSenderValue)
+        {
+            if(senderName != lastSenderName)
+                emit sendWriteUndo("State edited: "+ senderName);
+        }
+
+        lastSenderValue = senderValue;
+        lastSenderName = senderName;
+        setFocus();
+
         emit sendCurrentScene(currentScene);
+    }
 }
 
-void RwaStateAttributeView::setCurrentScene(RwaScene *currentScene)
+void RwaStateAttributeView::receiveSelectedStates(QStringList states)
 {
-    this->currentScene = currentScene;
+    selectedStates = states;
+}
+
+void RwaStateAttributeView::setCurrentScene(RwaScene *scene)
+{
+    this->currentScene = scene;
 }
 
 void RwaStateAttributeView::updateStateArea()
@@ -129,17 +147,16 @@ void RwaStateAttributeView::updateStateArea()
         attrLineEdit->setText(QString::number(currentState->getHeight()));
 }
 
-void RwaStateAttributeView::setCurrentState(RwaState *currentState)
+void RwaStateAttributeView::setCurrentState(RwaState *state)
 {
-    //qDebug() << ":StateAttributeView: SET CURRENT STATE";
-    this->currentState = currentState;
-
-    if(!currentState)
+    if(!state)
         return;
 
-    QCheckBox *attrCheckBox = NULL;
-    QComboBox *attrComboBox = NULL;
-    QLineEdit *attrLineEdit = NULL;
+    this->currentState = state;
+
+    QCheckBox *attrCheckBox = nullptr;
+    QComboBox *attrComboBox = nullptr;
+    QLineEdit *attrLineEdit = nullptr;
 
     updateStateArea();
 
@@ -221,13 +238,6 @@ void RwaStateAttributeView::setCurrentState(RwaState *currentState)
     attrComboBox = this->findChild<QComboBox *>("Default Playback Mode");
     if(attrComboBox)
         attrComboBox->setCurrentIndex(currentState->getDefaultPlaybackType());
-
-
-
-    /*if(!(QObject::sender() == this->backend))
-    {
-        emit sendCurrentState(currentState);
-    }*/
 }
 
 void RwaStateAttributeView::updateStateAttr(QComboBox *attrComboBox, QString state2compare)
@@ -271,66 +281,38 @@ void RwaStateAttributeView::updateSceneComboBox(QComboBox *attrComboBox)
 {
     RwaScene *scene;
 
-    disconnect(attrComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(receiveComboBoxAttributeValue(QString)));
+    //disconnect(attrComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(receiveComboBoxAttributeValue(QString)));
     attrComboBox->clear();
     attrComboBox->addItem("None");
 
     foreach(scene, backend->getScenes())
         attrComboBox->addItem(QString::fromStdString(scene->objectName()));
 
-    connect(attrComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(receiveComboBoxAttributeValue(QString)));
+   // connect(attrComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(receiveComboBoxAttributeValue(QString)));
 }
 
 void RwaStateAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
 {
-    if(!currentState)
+    if(!currentScene)
         return;
 
-    switch(id)
+    if(selectedStates.empty())
+        return;
+
+    QButtonGroup *group = static_cast<QButtonGroup *>(QObject::sender());
+    senderName = group->button(id)->text();
+    QString boolString = value ? "true" : "false";
+    senderValue = boolString;
+
+    RwaState *state = nullptr;
+
+    foreach(QString stateName, selectedStates)
     {
-        case RWASTATEATTRIBUTE_FOLLOWINGASSETS:
-        {
-            currentState->letChildrenFollowMe(value);
-            break;
-        }
-
-        case RWASTATEATTRIBUTE_ENTERONLYONCE:
-        {
-            currentState->setEnterOnlyOnce(value);
-            break;
-        }
-
-        case RWASTATEATTRIBUTE_EXCLUSIVE:
-        {
-            currentState->setIsExclusive(value);
-            break;
-        }
-
-        case RWASTATEATTRIBUTE_LEAVEAFTERASSETSFINISH:
-        {
-            currentState->setLeaveAfterAssetsFinish(value);
-            break;
-        }
-        case RWASTATEATTRIBUTE_LEAVEONLYAFTERASSETSFINISH:
-        {
-            currentState->setLeaveOnlyAfterAssetsFinish(value);
-            break;
-        }
-
-        case RWASTATEATTRIBUTE_LOCKPOSITION:
-        {
-            currentState->lockPosition(value);
-            break;
-        }
-
-        case RWASTATEATTRIBUTE_STATEWITHINSTATE:
-        {
-            currentState->stateWithinState = value;
-            break;
-        }
-
-        default:break;
+        state = currentScene->getState(stateName.toStdString());
+        state->setAttribute(id, value);
     }
+
+    return;
 }
 
 void RwaStateAttributeView::receiveLineEditAttributeValue()
@@ -340,19 +322,30 @@ void RwaStateAttributeView::receiveLineEditAttributeValue()
 
     if(!QObject::sender()->objectName().compare("Required States"))
     {
+        lastSenderValue = "";
+        lastSenderName = senderName;
+
         QLineEdit *attrLineEdit = (QLineEdit *)QObject::sender();
         QStringList requiredStates = attrLineEdit->text().split(",",QString::SkipEmptyParts);
 
         currentState->requiredStates.clear();
         QString requiredState;
+
         foreach(requiredState, requiredStates)
         {
             foreach(RwaState *state, currentScene->getStates() )
             {
                 if(!requiredState.trimmed().compare(QString::fromStdString(state->objectName())))
+                {
                     currentState->requiredStates.push_back(state->objectName());
+                }
             }
         }
+
+        emit sendWriteUndo("State edited: "+ senderName);
+        disconnect(attrLineEdit, SIGNAL(editingFinished()) , this, SLOT(receiveLineEditAttributeValue()));
+        setFocus();
+        connect(attrLineEdit, SIGNAL(editingFinished()) , this, SLOT(receiveLineEditAttributeValue()));
     }
 }
 
@@ -361,24 +354,22 @@ void RwaStateAttributeView::receiveLineEditAttributeValue(const QString &value)
     if(!currentState)
         return;
 
+    senderName = QObject::sender()->objectName();
+    senderValue = value;
+
     if(!QObject::sender()->objectName().compare("Time Out"))
     {
         currentState->setTimeOut(value.toFloat());
-        //setCurrentState(currentState);
-        //does not need any redraw
     }
 
     if(!QObject::sender()->objectName().compare("Min stay time"))
     {
         currentState->setMinimumStayTime(value.toFloat());
-        //setCurrentState(currentState);
-        //does not need any redraw
     }
 
     if(!QObject::sender()->objectName().compare("State Radius"))
     {
         currentState->setRadius(value.toFloat());
-        //setCurrentState(currentState);
     }
 
     if(!QObject::sender()->objectName().compare("Longitude"))
@@ -386,7 +377,6 @@ void RwaStateAttributeView::receiveLineEditAttributeValue(const QString &value)
         std::vector<double> coordinates = currentState->getCoordinates();
         coordinates[0] = (value.toDouble());
         currentState->setCoordinates(coordinates);
-        //setCurrentState(currentState);
     }
 
     if(!QObject::sender()->objectName().compare("Latitude"))
@@ -394,7 +384,6 @@ void RwaStateAttributeView::receiveLineEditAttributeValue(const QString &value)
         std::vector<double> coordinates = currentState->getCoordinates();
         coordinates[1] = (value.toDouble());
         currentState->setCoordinates(coordinates);
-        //setCurrentState(currentState);
     }
 
     if(!QObject::sender()->objectName().compare("State Width"))
@@ -402,7 +391,6 @@ void RwaStateAttributeView::receiveLineEditAttributeValue(const QString &value)
         currentState->setWidth(value.toFloat());
         if(currentState->getAreaType() == RWAAREATYPE_SQUARE)
             currentState->setHeight(value.toFloat());
-        //setCurrentState(currentState);
     }
 
     if(!QObject::sender()->objectName().compare("State Height"))
@@ -410,7 +398,6 @@ void RwaStateAttributeView::receiveLineEditAttributeValue(const QString &value)
         currentState->setHeight(value.toFloat());
         if(currentState->getAreaType() == RWAAREATYPE_SQUARE)
             currentState->setWidth(value.toFloat());
-        //setCurrentState(currentState);
     }
 
     if(!QObject::sender()->objectName().compare("Enter Offset"))
@@ -424,15 +411,13 @@ void RwaStateAttributeView::receiveLineEditAttributeValue(const QString &value)
     }
 }
 
-void RwaStateAttributeView::receiveComboBoxAttributeValue(QString value)
+void RwaStateAttributeView::receiveComboBoxAttributeValue(int index)
 {
-    QString nextState = NULL;
-    QString nextScene = NULL;
+    QComboBox *attrComboBox = static_cast<QComboBox *>(QObject::sender());
+    QString value = attrComboBox->itemText(index);
 
-    if(!currentState)
-        return;
-
-    QComboBox *attrComboBox = NULL;
+    senderName = QObject::sender()->objectName();
+    senderValue = value;
 
     if(!QObject::sender()->objectName().compare("State Type"))
     {
@@ -514,7 +499,7 @@ void RwaStateAttributeView::receiveComboBoxAttributeValue(QString value)
             currentState->setNextScene(attrComboBox->currentText().toStdString());
     }
 
-    if(!QObject::sender()->objectName().compare("Playback Mode"))
+    if(!QObject::sender()->objectName().compare("Default Playback Mode"))
     {
         if(!value.compare("Undetermined"))
             currentState->setDefaultPlaybackType(RWA_UNDETERMINED);
@@ -529,16 +514,16 @@ void RwaStateAttributeView::receiveComboBoxAttributeValue(QString value)
             currentState->setDefaultPlaybackType(RWAPLAYBACKTYPE_NATIVE);
 
         if(!value.compare("Binaural-Mono"))
-            currentState->setDefaultPlaybackType(RWAPLAYBACKTYPE_BINAURALMONO);
+            currentState->setDefaultPlaybackType(RWAPLAYBACKTYPE_BINAURALMONO_FABIAN);
 
         if(!value.compare("Binaural-Stereo"))
-            currentState->setDefaultPlaybackType(RWAPLAYBACKTYPE_BINAURALSTEREO);
+            currentState->setDefaultPlaybackType(RWAPLAYBACKTYPE_BINAURALSTEREO_FABIAN);
 
         if(!value.compare("Binaural-Auto"))
-            currentState->setDefaultPlaybackType(RWAPLAYBACKTYPE_BINAURALAUTO);
+            currentState->setDefaultPlaybackType(RWAPLAYBACKTYPE_BINAURALAUTO_FABIAN);
 
         if(!value.compare("Binaural-5Channel"))
-            currentState->setDefaultPlaybackType(RWAPLAYBACKTYPE_BINAURAL5CHANNEL);
+            currentState->setDefaultPlaybackType(RWAPLAYBACKTYPE_BINAURAL5CHANNEL_FABIAN);
     }
 }
 

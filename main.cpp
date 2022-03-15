@@ -42,10 +42,12 @@
 #include "rwacreator.h"
 #include <QApplication>
 #include <qdebug.h>
+#include "rwabackend.h"
 
 int main(int argc, char **argv)
 {
     QApplication app(argc, argv);
+    RwaBackend::getInstance();
     RwaCreator mainWin;
     qInstallMessageHandler(mainWin.logMessages);
     //mainWin.resize(1000, 800);

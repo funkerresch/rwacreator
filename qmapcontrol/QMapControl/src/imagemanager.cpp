@@ -127,9 +127,6 @@ namespace qmapcontrol
 
         else
         {
-           // qDebug() << "ImageManager::getImage" << "load from net";
-            //load from net, add empty image
-            qDebug() << urlCopy;
             if(!net->imageIsLoading(urlCopy))
             {
                 net->loadImage(host, urlCopy);

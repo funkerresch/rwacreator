@@ -99,6 +99,7 @@ public slots:
     void receiveEntityPosition(QPointF position);
     void receiveStep();
 
+    void receiveUndoGameLoaded();
 private:
     qint32 schedulerFrequency;
 

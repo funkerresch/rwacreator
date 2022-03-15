@@ -42,10 +42,10 @@ include($$PWD/qmapcontrol/QMapControl/QMapControl.pri)
 HEADERS += \
     lo/lo.h \
     rwaasset1.h \
-    rwaaudiometadata.h \
     rwaheadtrackerconnect.h \
     rwahistory.h \
     rwalocation1.h \
+    rwapdextra~.h \
     rwaruntime.h \
     rwasearchdialog.h \
     rwatoolbar.h \
@@ -64,7 +64,6 @@ HEADERS += \
     pawrapper.h \
     rwaattribute.h \
     rwaentity.h \
-    rwasimulatorview.h \
     rwasimulator.h \
     rwacreator.h \
     rwastyles.h \
@@ -108,7 +107,6 @@ HEADERS += \
 SOURCES += main.cpp \
     pd-extra/pd/externals/freeverb~/freeverb~.c \
     rwaasset1.cpp \
-    rwaaudiometadata.cpp \
     rwaheadtrackerconnect.cpp \
     rwahistory.cpp \
     rwalocation1.cpp \
@@ -130,7 +128,6 @@ SOURCES += main.cpp \
     pawrapper.cpp \
     rwaattribute.cpp \
     rwaentity.cpp \
-    rwasimulatorview.cpp \
     rwasimulator.cpp \
     rwacreator.cpp \
     rwagraphicsview.cpp \
@@ -193,7 +190,7 @@ copydata.commands = $(COPY_DIR) $$PWD/images $$OUT_PWD/rwacreator.app/Contents/M
 && $(COPY_FILE) $$PWD/puredata/stereoout.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/rwagetmetadata.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/portaudio/lib/.libs/libportaudio.2.dylib /usr/local/lib/ \
-#&& $(COPY_FILE) $$PWD/libpd/libs/libpd.dylib /libs/ \
+&& $(COPY_FILE) $$PWD/libpd/libs/libpd.dylib /Users/harveykeitel/libs \
 
 first.depends = $(first) copydata
 export(first.depends)

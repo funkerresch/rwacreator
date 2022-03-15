@@ -102,6 +102,7 @@ class RwaCreator : public QMainWindow
 
 public:
     RwaCreator(QWidget *parent = nullptr, Qt::WindowFlags flags = nullptr);
+    //~RwaCreator();
 
 public slots:
     static void logMessages(QtMsgType type, const QMessageLogContext &context, const QString &msg);
@@ -131,9 +132,9 @@ public slots:
     void selectInputDevice(qint32 index);
     void openInit();
     void writeInit();
-    void openDefaultProject();
 
     void readUndoFile(QString name);
+
 private:
     static RwaLogWindow *logWindow;
     RwaBackend *backend = nullptr;
@@ -159,7 +160,9 @@ private:
     void initEditMenu(QMenu *fileMenu);
     void setWindowPositionOccupied(int position, char occupied);
     void initAudioPreferencesMenu(QMenu *audioDeviceMenu);
-    void initHeadtrackerMenu(QMenu *headtrackerMenu);   
+    void initHeadtrackerMenu(QMenu *headtrackerMenu);
+    void createInitFolder();
+
 };
 
 #endif

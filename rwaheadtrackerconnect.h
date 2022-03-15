@@ -11,6 +11,7 @@ public:
     explicit RwaHeadtrackerConnect(QObject *parent = nullptr);
     static RwaHeadtrackerConnect *instance;
     static RwaHeadtrackerConnect *getInstance();
+    float getAzimuth();
     QString getName();
 
 public slots:

@@ -153,6 +153,7 @@ public:
     void setLastTouchedAsset(RwaAsset1 *value);
 
     void copyAttributes(RwaState *dest);
+    void setAttribute(uint32_t attribute, bool value);
 };
 #endif
 

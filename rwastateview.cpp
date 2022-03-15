@@ -17,6 +17,7 @@ RwaStateView::RwaStateView(QWidget* parent, RwaScene *scene)
 
     assetAttributes->scrollArea->setMaximumWidth(250);
 
+
     currentPoint = nullptr;
     editStateRadius = false;
     editStateHeight = false;
@@ -92,17 +93,17 @@ void RwaStateView::keyPressEvent(QKeyEvent *event)
     {
         case Qt::Key_Return:
         case Qt::Key_Enter:
-          qDebug() << "Enter";
+          //qDebug() << "Enter";
           break;
         case Qt::Key_Escape:
-          qDebug() << "Escape";
+          //qDebug() << "Escape";
           break;
         case Qt::Key_Insert:
-          qDebug() << "Insert";
+          //qDebug() << "Insert";
           break;
 
           default:
-          qDebug() << "RwaStateView::keyPressEvent" << event->key();
+        //qDebug() << "RwaStateView::keyPressEvent" << event->key();
           break;
      }
 }
@@ -403,7 +404,8 @@ void RwaStateView::receiveMouseReleaseEvent()
 
 void RwaStateView::dropEvent(QDropEvent *event)
 {
-    qDebug("drop");
+    if(backend->logOther)
+        qDebug();
 }
 
 void RwaStateView::moveCurrentState()
@@ -467,7 +469,8 @@ void RwaStateView::addAssetItem(const QString &path, qint32 type)
         newItem->setNumberOfChannels(RwaRuntime::assetChannelCount);
         currentState->addAsset(newItem);
         currentState->setLastTouchedAsset(newItem);
-        setCurrentState(currentState);
+        emit sendCurrentState(currentState);
+        //setCurrentState(currentState);
     }
 }
 

@@ -23,7 +23,6 @@ class LineEditAndLabel  : public QObject
     explicit LineEditAndLabel(QWidget* parent);
 };
 
-
 class RwaAttributeView  : public RwaView
 {
     Q_OBJECT
@@ -55,13 +54,11 @@ protected:
     QComboBox *addComboBoxAndLabel(QGridLayout *layout, QString name, QStringList values);
 
 protected slots:
-    virtual void receiveCheckBoxAttributeValue(int id, bool value) = 0;
+    virtual void receiveCheckBoxAttributeValue(int id, bool) = 0;
     virtual void receiveLineEditAttributeValue(const QString &text) = 0;
-    virtual void receiveComboBoxAttributeValue(QString value) = 0;
+    virtual void receiveComboBoxAttributeValue(int index) = 0;
     virtual void receiveFaderAttributeValue(int id) = 0;
     virtual void receiveEditingFinished() = 0;
-   // virtual void updateAttributes() = 0;
-
 };
 
 #endif // RWAATTRIBUTEVIEW_H

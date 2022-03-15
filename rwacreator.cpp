@@ -85,19 +85,56 @@ RwaCreator::RwaCreator(QWidget *parent, Qt::WindowFlags flags)
     QObject::connect(QApplication::instance(), SIGNAL(aboutToQuit()),this, SLOT(cleanUpBeforeQuit()));
 
     setCentralWidget(backend);   
+    createInitFolder();
     loadDefaultViews();
     openInit();
-    setupMenuBar();
-    writeUndo("Init Game");
+    setupMenuBar();   
+    //StartHttpServer(8088);
+
+//    int blubs = system("python3 -m http.server 8088 --directory /Users/harveykeitel/Desktop & echo $!");
+//    qDebug() << "Started python server " << blubs;
+}
+
+//RwaCreator::~RwaCreator()
+//{
+//    backend->deleteLater();
+//}
+
+
+void RwaCreator::createInitFolder()
+{
+    QString path = QString("%1%2").arg(QDir::homePath()).arg("/RWACreator/");
+    if(!QDir(path).exists())
+        QDir().mkdir(path);
+
+    QString filename = path +"createfilelist.sh";
+    {
+        QFile file(filename);
+        if (file.open(QIODevice::ReadWrite))
+        {
+            QTextStream stream(&file);
+            stream << "#!/bin/sh" << endl;
+            stream << "cd $PWD/Games/" << endl;
+            stream << "ls *.zip > allfiles.txt" << endl;
+        }
+        file.setPermissions(QFileDevice::ReadUser | QFileDevice::WriteUser | QFileDevice::ExeUser | QFileDevice::ReadOther);
+        file.close();
+   }
+
+    path = QString("%1%2").arg(QDir::homePath()).arg("/RWACreator/Games");
+    if(!QDir(path).exists())
+        QDir().mkdir(path);
 }
 
 void RwaCreator::cleanUpBeforeQuit()
 {
     qDebug() << "Clean up and quit!";
     writeInit();
+    saveLayout();
     //save();
     backend->emptyTmpDirectories();
     backend->getScenes().clear();
+    //system("kill -9");
 }
 
 bool RwaCreator::eventFilter(QObject *obj, QEvent *event)
@@ -222,11 +259,11 @@ void RwaCreator::initAudioPreferencesMenu(QMenu *audioDeviceMenu)
 
 void RwaCreator::initEditMenu(QMenu *fileMenu)
 {
-    QAction *action = fileMenu->addAction(tr("Undo"));
-    connect(action, SIGNAL(triggered()), this, SLOT(undo()));
+//    QAction *action = fileMenu->addAction(tr("Undo"));
+//    connect(action, SIGNAL(triggered()), this, SLOT(undo()));
 
-    action = fileMenu->addAction(tr("Redo"));
-    connect(action, SIGNAL(triggered()), this, SLOT(redo()));
+//    action = fileMenu->addAction(tr("Redo"));
+//    connect(action, SIGNAL(triggered()), this, SLOT(redo()));
 }
 
 void RwaCreator::initFileMenu(QMenu *fileMenu)
@@ -400,8 +437,7 @@ void RwaCreator::openInit()
 
     if(!file.open(QIODevice::ReadOnly))
     {
-        openDefaultProject();
-        qDebug() << "Open default project";
+        clear();
         return;
     }
 
@@ -553,6 +589,8 @@ void RwaCreator::exportProject()
     prepareWrite(fullpath, flags);
     write("File saved", flags, oldAssetPath);
     setWindowTitle(backend->projectName);
+    backend->newGameLoaded();
+    writeUndo("Init Game");
 }
 
 void RwaCreator::saveAs()
@@ -596,7 +634,7 @@ void RwaCreator::open(QString fileName)
         fullpath = QFileDialog::getOpenFileName(this, tr("Open Bookmark File"), QDir::currentPath(),tr("RWA Files (*.rwa *.xml)"));
 
     if (fullpath.isEmpty())
-        return;
+        clear();
 
     QFile file(fullpath);
 
@@ -631,8 +669,10 @@ void RwaCreator::open(QString fileName)
 
     else
     {
-        statusBar()->showMessage(tr("File loaded"), 2000);       
+        statusBar()->showMessage(tr("File loaded"), 2000);
+        undoCounter = 0;
         emit backend->newGameLoaded();
+        writeUndo("Init Game");
     }
 
     QString layoutsFullPath = QString("%1/layouts.ini").arg(backend->completeProjectPath);
@@ -649,20 +689,16 @@ void RwaCreator::open(QString fileName)
     }
 }
 
-void RwaCreator::openDefaultProject()
-{
-      open(QString("defaultproject/default.rwa"));
-      return;
-}
-
 void RwaCreator::clear()
 {
     qDebug() << "Clear";
+    undoCounter = 0;
     backend->projectName = QString();
     backend->completeFilePath = QString();
     backend->completeProjectPath = QString();
     backend->clearData();
     setWindowTitle("Not saved");
+    exportProject();
 }
 
 void RwaCreator::newProject()
@@ -681,7 +717,10 @@ void RwaCreator::newProject()
 void RwaCreator::writeUndo(QString undoAction)
 {
     if(backend->completeUndoPath.isEmpty())
+    {
+        qDebug();
         return;
+    }
 
     QString fullUndoFilepath;
     fullUndoFilepath = QString("%1/%3_%2.rwa").arg(backend->completeUndoPath).arg(undoAction).arg(undoCounter++);
@@ -719,7 +758,10 @@ void RwaCreator::readUndoFile(QString name)
     }
 
     else
+    {
         statusBar()->showMessage(tr("File loaded"), 2000);
+        emit backend->undoGameLoaded();
+    }
 }
 
 QAction *addAction(QMenu *menu, const QString &text, QActionGroup *group, QSignalMapper *mapper,

@@ -284,8 +284,6 @@ void RwaScene::setBackgroundState(RwaState *backgroundState)
         this->backgroundState = backgroundState;
 }
 
-
-
 int32_t RwaScene::getLevel() const
 {
     return level;

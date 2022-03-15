@@ -17,7 +17,7 @@ RwaState::RwaState(std::string stateName) :
     requiredStates = std::list<std::string>();
     assets = std::list<RwaAsset1 *>();
     setObjectName(stateName);
-    defaultPlaybackType = RWAPLAYBACKTYPE_BINAURAL;
+    defaultPlaybackType = RWAPLAYBACKTYPE_BINAURAL_FABIAN;
     zoom = 18;
     setType(0);
     childrenFollowMe = 1;
@@ -113,17 +113,16 @@ void RwaState::resetAssets()
 
 void RwaState::addAsset(RwaAsset1 *item)
 {
-    if(defaultPlaybackType && !item->getPlaybackType())
+    if(defaultPlaybackType && item->getPlaybackType() == -1)
     {
         item->setPlaybackType(defaultPlaybackType);
     }
-    item->calculateChannelPositions();
-    item->calculateReflectionPositions();
+
     assets.push_back(item);
     item->myState = this;
 }
 
-void RwaState::deleteAsset(const std::__1::string &path)
+void RwaState::deleteAsset(const std::string &path)
 {
     foreach (RwaAsset1 *item, assets)
     {
@@ -137,7 +136,7 @@ void RwaState::deleteAsset(const std::__1::string &path)
     }
 }
 
-RwaAsset1 *RwaState::getAsset(const std::__1::string &path)
+RwaAsset1 *RwaState::getAsset(const std::string &path)
 {
     foreach (RwaAsset1 *item, assets)
     {
@@ -169,6 +168,56 @@ void RwaState::moveMyChildren(double dx, double dy)
            corners[i][1] = (corners[i][1] + dy);
         }
     }
+}
+
+void RwaState::setAttribute(uint32_t attribute, bool value)
+{
+    switch(attribute)
+    {
+        case RWASTATEATTRIBUTE_FOLLOWINGASSETS:
+        {
+            letChildrenFollowMe(value);
+            break;
+        }
+
+        case RWASTATEATTRIBUTE_ENTERONLYONCE:
+        {
+            setEnterOnlyOnce(value);
+            break;
+        }
+
+        case RWASTATEATTRIBUTE_EXCLUSIVE:
+        {
+            setIsExclusive(value);
+            break;
+        }
+
+        case RWASTATEATTRIBUTE_LEAVEAFTERASSETSFINISH:
+        {
+            setLeaveAfterAssetsFinish(value);
+            break;
+        }
+        case RWASTATEATTRIBUTE_LEAVEONLYAFTERASSETSFINISH:
+        {
+            setLeaveOnlyAfterAssetsFinish(value);
+            break;
+        }
+
+        case RWASTATEATTRIBUTE_LOCKPOSITION:
+        {
+            lockPosition(value);
+            break;
+        }
+
+        case RWASTATEATTRIBUTE_STATEWITHINSTATE:
+        {
+            stateWithinState = value;
+            break;
+        }
+
+        default:break;
+    }
+
 }
 
 bool RwaState::getEnterOnlyAfterAssetsFinish() const
@@ -298,6 +347,7 @@ int32_t RwaState::getDefaultPlaybackType() const
 
 void RwaState::setDefaultPlaybackType(const int32_t &value)
 {
+    qDebug() << "Set Default Playback Type";
     defaultPlaybackType = value;
 }
 
