@@ -1,0 +1,438 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		844237761FB4A887005ACA50 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 844237741FB4A6E2005ACA50 /* Accelerate.framework */; };
+		E45AB4CF27E1D53B00D65E93 /* oggread~.c in Sources */ = {isa = PBXBuildFile; fileRef = E45AB4CE27E1D53B00D65E93 /* oggread~.c */; };
+		E45AB4D227E1D59000D65E93 /* bitwise.c in Sources */ = {isa = PBXBuildFile; fileRef = E45AB4D027E1D59000D65E93 /* bitwise.c */; };
+		E45AB4D327E1D59000D65E93 /* framing.c in Sources */ = {isa = PBXBuildFile; fileRef = E45AB4D127E1D59000D65E93 /* framing.c */; };
+		E45AB4EE27E1D64000D65E93 /* bitrate.c in Sources */ = {isa = PBXBuildFile; fileRef = E45AB4D727E1D64000D65E93 /* bitrate.c */; };
+		E45AB4EF27E1D64000D65E93 /* synthesis.c in Sources */ = {isa = PBXBuildFile; fileRef = E45AB4D827E1D64000D65E93 /* synthesis.c */; };
+		E45AB4F027E1D64000D65E93 /* vorbisfile.c in Sources */ = {isa = PBXBuildFile; fileRef = E45AB4D927E1D64000D65E93 /* vorbisfile.c */; };
+		E45AB4F127E1D64000D65E93 /* block.c in Sources */ = {isa = PBXBuildFile; fileRef = E45AB4DA27E1D64000D65E93 /* block.c */; };
+		E45AB4F227E1D64000D65E93 /* mapping0.c in Sources */ = {isa = PBXBuildFile; fileRef = E45AB4DB27E1D64000D65E93 /* mapping0.c */; };
+		E45AB4F327E1D64000D65E93 /* mdct.c in Sources */ = {isa = PBXBuildFile; fileRef = E45AB4DC27E1D64000D65E93 /* mdct.c */; };
+		E45AB4F427E1D64000D65E93 /* misc.c in Sources */ = {isa = PBXBuildFile; fileRef = E45AB4DD27E1D64000D65E93 /* misc.c */; };
+		E45AB4F527E1D64000D65E93 /* psy.c in Sources */ = {isa = PBXBuildFile; fileRef = E45AB4DE27E1D64000D65E93 /* psy.c */; };
+		E45AB4F627E1D64000D65E93 /* registry.c in Sources */ = {isa = PBXBuildFile; fileRef = E45AB4DF27E1D64000D65E93 /* registry.c */; };
+		E45AB4F727E1D64000D65E93 /* codebook.c in Sources */ = {isa = PBXBuildFile; fileRef = E45AB4E027E1D64000D65E93 /* codebook.c */; };
+		E45AB4F827E1D64000D65E93 /* res0.c in Sources */ = {isa = PBXBuildFile; fileRef = E45AB4E127E1D64000D65E93 /* res0.c */; };
+		E45AB4F927E1D64100D65E93 /* floor0.c in Sources */ = {isa = PBXBuildFile; fileRef = E45AB4E227E1D64000D65E93 /* floor0.c */; };
+		E45AB4FA27E1D64100D65E93 /* info.c in Sources */ = {isa = PBXBuildFile; fileRef = E45AB4E327E1D64000D65E93 /* info.c */; };
+		E45AB4FB27E1D64100D65E93 /* floor1.c in Sources */ = {isa = PBXBuildFile; fileRef = E45AB4E427E1D64000D65E93 /* floor1.c */; };
+		E45AB4FC27E1D64100D65E93 /* lsp.c in Sources */ = {isa = PBXBuildFile; fileRef = E45AB4E527E1D64000D65E93 /* lsp.c */; };
+		E45AB4FD27E1D64100D65E93 /* lookup.c in Sources */ = {isa = PBXBuildFile; fileRef = E45AB4E627E1D64000D65E93 /* lookup.c */; };
+		E45AB4FE27E1D64100D65E93 /* lpc.c in Sources */ = {isa = PBXBuildFile; fileRef = E45AB4E727E1D64000D65E93 /* lpc.c */; };
+		E45AB4FF27E1D64100D65E93 /* analysis.c in Sources */ = {isa = PBXBuildFile; fileRef = E45AB4E827E1D64000D65E93 /* analysis.c */; };
+		E45AB50027E1D64100D65E93 /* sharedbook.c in Sources */ = {isa = PBXBuildFile; fileRef = E45AB4E927E1D64000D65E93 /* sharedbook.c */; };
+		E45AB50127E1D64100D65E93 /* vorbisenc.c in Sources */ = {isa = PBXBuildFile; fileRef = E45AB4EA27E1D64000D65E93 /* vorbisenc.c */; };
+		E45AB50227E1D64100D65E93 /* window.c in Sources */ = {isa = PBXBuildFile; fileRef = E45AB4EB27E1D64000D65E93 /* window.c */; };
+		E45AB50327E1D64100D65E93 /* envelope.c in Sources */ = {isa = PBXBuildFile; fileRef = E45AB4EC27E1D64000D65E93 /* envelope.c */; };
+		E45AB50427E1D64100D65E93 /* smallft.c in Sources */ = {isa = PBXBuildFile; fileRef = E45AB4ED27E1D64000D65E93 /* smallft.c */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		84FFFFA72124580800294898 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		844237741FB4A6E2005ACA50 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
+		E45AB4CE27E1D53B00D65E93 /* oggread~.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "oggread~.c"; path = "../pd-extra/pd/externals/pdogg/oggread~.c"; sourceTree = "<group>"; };
+		E45AB4D027E1D59000D65E93 /* bitwise.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = bitwise.c; path = ../libogg/src/bitwise.c; sourceTree = "<group>"; };
+		E45AB4D127E1D59000D65E93 /* framing.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = framing.c; path = ../libogg/src/framing.c; sourceTree = "<group>"; };
+		E45AB4D727E1D64000D65E93 /* bitrate.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = bitrate.c; path = ../vorbis/lib/bitrate.c; sourceTree = "<group>"; };
+		E45AB4D827E1D64000D65E93 /* synthesis.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = synthesis.c; path = ../vorbis/lib/synthesis.c; sourceTree = "<group>"; };
+		E45AB4D927E1D64000D65E93 /* vorbisfile.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = vorbisfile.c; path = ../vorbis/lib/vorbisfile.c; sourceTree = "<group>"; };
+		E45AB4DA27E1D64000D65E93 /* block.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = block.c; path = ../vorbis/lib/block.c; sourceTree = "<group>"; };
+		E45AB4DB27E1D64000D65E93 /* mapping0.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mapping0.c; path = ../vorbis/lib/mapping0.c; sourceTree = "<group>"; };
+		E45AB4DC27E1D64000D65E93 /* mdct.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mdct.c; path = ../vorbis/lib/mdct.c; sourceTree = "<group>"; };
+		E45AB4DD27E1D64000D65E93 /* misc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = misc.c; path = ../vorbis/lib/misc.c; sourceTree = "<group>"; };
+		E45AB4DE27E1D64000D65E93 /* psy.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = psy.c; path = ../vorbis/lib/psy.c; sourceTree = "<group>"; };
+		E45AB4DF27E1D64000D65E93 /* registry.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = registry.c; path = ../vorbis/lib/registry.c; sourceTree = "<group>"; };
+		E45AB4E027E1D64000D65E93 /* codebook.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = codebook.c; path = ../vorbis/lib/codebook.c; sourceTree = "<group>"; };
+		E45AB4E127E1D64000D65E93 /* res0.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = res0.c; path = ../vorbis/lib/res0.c; sourceTree = "<group>"; };
+		E45AB4E227E1D64000D65E93 /* floor0.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = floor0.c; path = ../vorbis/lib/floor0.c; sourceTree = "<group>"; };
+		E45AB4E327E1D64000D65E93 /* info.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = info.c; path = ../vorbis/lib/info.c; sourceTree = "<group>"; };
+		E45AB4E427E1D64000D65E93 /* floor1.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = floor1.c; path = ../vorbis/lib/floor1.c; sourceTree = "<group>"; };
+		E45AB4E527E1D64000D65E93 /* lsp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lsp.c; path = ../vorbis/lib/lsp.c; sourceTree = "<group>"; };
+		E45AB4E627E1D64000D65E93 /* lookup.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lookup.c; path = ../vorbis/lib/lookup.c; sourceTree = "<group>"; };
+		E45AB4E727E1D64000D65E93 /* lpc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lpc.c; path = ../vorbis/lib/lpc.c; sourceTree = "<group>"; };
+		E45AB4E827E1D64000D65E93 /* analysis.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = analysis.c; path = ../vorbis/lib/analysis.c; sourceTree = "<group>"; };
+		E45AB4E927E1D64000D65E93 /* sharedbook.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sharedbook.c; path = ../vorbis/lib/sharedbook.c; sourceTree = "<group>"; };
+		E45AB4EA27E1D64000D65E93 /* vorbisenc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = vorbisenc.c; path = ../vorbis/lib/vorbisenc.c; sourceTree = "<group>"; };
+		E45AB4EB27E1D64000D65E93 /* window.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = window.c; path = ../vorbis/lib/window.c; sourceTree = "<group>"; };
+		E45AB4EC27E1D64000D65E93 /* envelope.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = envelope.c; path = ../vorbis/lib/envelope.c; sourceTree = "<group>"; };
+		E45AB4ED27E1D64000D65E93 /* smallft.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = smallft.c; path = ../vorbis/lib/smallft.c; sourceTree = "<group>"; };
+		FA2927EC1A899B4C005A2BA9 /* oggread~.pd_darwin */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = "oggread~.pd_darwin"; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		FA2927E91A899B4C005A2BA9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				844237761FB4A887005ACA50 /* Accelerate.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		844237731FB4A6E1005ACA50 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				844237741FB4A6E2005ACA50 /* Accelerate.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		FA2927E31A899B4C005A2BA9 = {
+			isa = PBXGroup;
+			children = (
+				E45AB4CE27E1D53B00D65E93 /* oggread~.c */,
+				E45AB4E827E1D64000D65E93 /* analysis.c */,
+				E45AB4D727E1D64000D65E93 /* bitrate.c */,
+				E45AB4DA27E1D64000D65E93 /* block.c */,
+				E45AB4E027E1D64000D65E93 /* codebook.c */,
+				E45AB4EC27E1D64000D65E93 /* envelope.c */,
+				E45AB4E227E1D64000D65E93 /* floor0.c */,
+				E45AB4E427E1D64000D65E93 /* floor1.c */,
+				E45AB4E327E1D64000D65E93 /* info.c */,
+				E45AB4E627E1D64000D65E93 /* lookup.c */,
+				E45AB4E727E1D64000D65E93 /* lpc.c */,
+				E45AB4E527E1D64000D65E93 /* lsp.c */,
+				E45AB4DB27E1D64000D65E93 /* mapping0.c */,
+				E45AB4DC27E1D64000D65E93 /* mdct.c */,
+				E45AB4DD27E1D64000D65E93 /* misc.c */,
+				E45AB4DE27E1D64000D65E93 /* psy.c */,
+				E45AB4DF27E1D64000D65E93 /* registry.c */,
+				E45AB4E127E1D64000D65E93 /* res0.c */,
+				E45AB4E927E1D64000D65E93 /* sharedbook.c */,
+				E45AB4ED27E1D64000D65E93 /* smallft.c */,
+				E45AB4D827E1D64000D65E93 /* synthesis.c */,
+				E45AB4EA27E1D64000D65E93 /* vorbisenc.c */,
+				E45AB4D927E1D64000D65E93 /* vorbisfile.c */,
+				E45AB4EB27E1D64000D65E93 /* window.c */,
+				E45AB4D027E1D59000D65E93 /* bitwise.c */,
+				E45AB4D127E1D59000D65E93 /* framing.c */,
+				FA2927ED1A899B4C005A2BA9 /* Products */,
+				844237731FB4A6E1005ACA50 /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		FA2927ED1A899B4C005A2BA9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				FA2927EC1A899B4C005A2BA9 /* oggread~.pd_darwin */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		FA2927EA1A899B4C005A2BA9 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		FA2927EB1A899B4C005A2BA9 /* oggread~ */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FA2927F01A899B4C005A2BA9 /* Build configuration list for PBXNativeTarget "oggread~" */;
+			buildPhases = (
+				FA2927E81A899B4C005A2BA9 /* Sources */,
+				FA2927E91A899B4C005A2BA9 /* Frameworks */,
+				FA2927EA1A899B4C005A2BA9 /* Headers */,
+				84FFFFA72124580800294898 /* CopyFiles */,
+				84FFFFA92124589200294898 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "oggread~";
+			productName = "HelloWorld-pd-external";
+			productReference = FA2927EC1A899B4C005A2BA9 /* oggread~.pd_darwin */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		FA2927E41A899B4C005A2BA9 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0610;
+				ORGANIZATIONNAME = "Intrinsic Audio";
+				TargetAttributes = {
+					FA2927EB1A899B4C005A2BA9 = {
+						CreatedOnToolsVersion = 6.1.1;
+					};
+				};
+			};
+			buildConfigurationList = FA2927E71A899B4C005A2BA9 /* Build configuration list for PBXProject "oggread" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				English,
+				en,
+			);
+			mainGroup = FA2927E31A899B4C005A2BA9;
+			productRefGroup = FA2927ED1A899B4C005A2BA9 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				FA2927EB1A899B4C005A2BA9 /* oggread~ */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		84FFFFA92124589200294898 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		FA2927E81A899B4C005A2BA9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E45AB4F527E1D64000D65E93 /* psy.c in Sources */,
+				E45AB4F727E1D64000D65E93 /* codebook.c in Sources */,
+				E45AB4FD27E1D64100D65E93 /* lookup.c in Sources */,
+				E45AB50027E1D64100D65E93 /* sharedbook.c in Sources */,
+				E45AB4FF27E1D64100D65E93 /* analysis.c in Sources */,
+				E45AB50327E1D64100D65E93 /* envelope.c in Sources */,
+				E45AB4F127E1D64000D65E93 /* block.c in Sources */,
+				E45AB4FC27E1D64100D65E93 /* lsp.c in Sources */,
+				E45AB4FA27E1D64100D65E93 /* info.c in Sources */,
+				E45AB4CF27E1D53B00D65E93 /* oggread~.c in Sources */,
+				E45AB50227E1D64100D65E93 /* window.c in Sources */,
+				E45AB4EE27E1D64000D65E93 /* bitrate.c in Sources */,
+				E45AB50127E1D64100D65E93 /* vorbisenc.c in Sources */,
+				E45AB4F827E1D64000D65E93 /* res0.c in Sources */,
+				E45AB4D227E1D59000D65E93 /* bitwise.c in Sources */,
+				E45AB50427E1D64100D65E93 /* smallft.c in Sources */,
+				E45AB4FB27E1D64100D65E93 /* floor1.c in Sources */,
+				E45AB4D327E1D59000D65E93 /* framing.c in Sources */,
+				E45AB4F927E1D64100D65E93 /* floor0.c in Sources */,
+				E45AB4FE27E1D64100D65E93 /* lpc.c in Sources */,
+				E45AB4F427E1D64000D65E93 /* misc.c in Sources */,
+				E45AB4F027E1D64000D65E93 /* vorbisfile.c in Sources */,
+				E45AB4F627E1D64000D65E93 /* registry.c in Sources */,
+				E45AB4EF27E1D64000D65E93 /* synthesis.c in Sources */,
+				E45AB4F227E1D64000D65E93 /* mapping0.c in Sources */,
+				E45AB4F327E1D64000D65E93 /* mdct.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		FA2927EE1A899B4C005A2BA9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEPLOYMENT_LOCATION = YES;
+				DSTROOT = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INSTALL_PATH = "akbinaural~";
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		FA2927EF1A899B4C005A2BA9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEPLOYMENT_LOCATION = YES;
+				DSTROOT = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INSTALL_PATH = "akbinaural~";
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		FA2927F11A899B4C005A2BA9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_X86_VECTOR_INSTRUCTIONS = avx2;
+				DSTROOT = "$(PROJECT_DIR)/..";
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "";
+				EXECUTABLE_EXTENSION = pd_darwin;
+				EXECUTABLE_PREFIX = "";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					PUREDATA,
+					VAS_OUTPUTVECTOR_USE_FLOAT,
+					VAS_INPUTVECTOR_USE_FLOAT,
+					VAS_USE_LIBMYSOFA,
+				);
+				HEADER_SEARCH_PATHS = (
+					"\"$(SRCROOT)/../libogg/include\"/**",
+					"\"$(SRCROOT)/../vorbis/lib\"/**",
+					"\"$(SRCROOT)/../vorbis/include/vorbis\"/**",
+					"\"$(SRCROOT)/../libpd/pure-data/src\"/**",
+					"\"$(SRCROOT)/../vorbis/include\"/**",
+				);
+				INSTALL_PATH = /build;
+				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/../../../libmysofa/build/src";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = "-mfma";
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PRODUCT_NAME = "oggread~";
+				SDKROOT = macosx;
+				USER_HEADER_SEARCH_PATHS = "";
+				VALID_ARCHS = "i386 x86_64";
+			};
+			name = Debug;
+		};
+		FA2927F21A899B4C005A2BA9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_X86_VECTOR_INSTRUCTIONS = avx2;
+				DSTROOT = "$(PROJECT_DIR)/..";
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "";
+				EXECUTABLE_EXTENSION = pd_darwin;
+				EXECUTABLE_PREFIX = "";
+				GCC_OPTIMIZATION_LEVEL = fast;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					PUREDATA,
+					VAS_OUTPUTVECTOR_USE_FLOAT,
+					VAS_INPUTVECTOR_USE_FLOAT,
+					VAS_USE_LIBMYSOFA,
+				);
+				HEADER_SEARCH_PATHS = (
+					"\"$(SRCROOT)/../libogg/include\"/**",
+					"\"$(SRCROOT)/../vorbis/lib\"/**",
+					"\"$(SRCROOT)/../vorbis/include/vorbis\"/**",
+					"\"$(SRCROOT)/../libpd/pure-data/src\"/**",
+					"\"$(SRCROOT)/../vorbis/include\"/**",
+				);
+				INSTALL_PATH = /build;
+				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/../../../libmysofa/build/src";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = "-mfma";
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PRODUCT_NAME = "oggread~";
+				SDKROOT = macosx;
+				USER_HEADER_SEARCH_PATHS = "";
+				VALID_ARCHS = "i386 x86_64";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		FA2927E71A899B4C005A2BA9 /* Build configuration list for PBXProject "oggread" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FA2927EE1A899B4C005A2BA9 /* Debug */,
+				FA2927EF1A899B4C005A2BA9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FA2927F01A899B4C005A2BA9 /* Build configuration list for PBXNativeTarget "oggread~" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FA2927F11A899B4C005A2BA9 /* Debug */,
+				FA2927F21A899B4C005A2BA9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = FA2927E41A899B4C005A2BA9 /* Project object */;
+}

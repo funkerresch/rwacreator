@@ -52,6 +52,8 @@ public:
     void setHeadtrackerName(QString name);
 
     bool trashAsset = false;
+    bool showStateRadii = false;
+    bool showAssets = false;
     bool logCoordinates = false;
     bool logPd = false;
     bool logSim = false;
@@ -60,6 +62,7 @@ public:
     int getStateNameCounter(std::list<RwaState *> &states);  
 
     void clearForHistory();
+
 public slots:
 
     void generateUuidsForClipboardState(RwaState *state);
@@ -71,6 +74,7 @@ public slots:
     void receiveMoveCurrentState1(double dx, double dy);
     void receiveMoveCurrentAsset1(double dx, double dy);
     void receiveMoveCurrentAssetChannel(double dx, double dy, int channel);
+    void receiveMoveCurrentAssetReflection(double dx, double dy, int channel);
     void receiveCurrentStateRadiusEdited();
     void receiveCurrentSceneRadiusEdited();
     void receiveUpdatedAssets();
@@ -91,6 +95,8 @@ public slots:
     void receiveLogOther(int onOff);
 
     void receiveTrashAssets(bool onOff);
+    void receiveShowStateRadii(bool onOff);
+    void receiveShowAssets(bool onOff);
     void startStopSimulator(bool startStop);  
     void setMainVolume(int volume);
     void calibrateHeadtracker();
@@ -113,9 +119,9 @@ public slots:
 
     void receiveReadUndoFile(QString name);
     void receiveWriteUndo(QString undoAction);
-    void receiveMoveCurrentAssetReflection(double dx, double dy, int channel);
 
     void StartHttpServer(qint32 port);
+
 signals:
     void readUndoFile(QString name);
     void sendWriteUndo(QString undoAction);

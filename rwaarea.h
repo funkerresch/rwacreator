@@ -1,3 +1,12 @@
+/*
+ * rwaarea.h
+ * by Thomas Resch
+ * Base Class for Rwa Scenes, States and Assets
+ * Represents either a polygon, a circle or rectangle
+ * in addition to several attributes shared by the mentioned derived classes
+*/
+
+
 #ifndef RWAAREA_H
 #define RWAAREA_H
 
@@ -8,6 +17,10 @@
 #define RWAAREATYPE_RECTANGLE 2
 #define RWAAREATYPE_SQUARE 3
 #define RWAAREATYPE_POLYGON 4
+
+#define RWAPARENTTYPE_STATE 1
+#define RWAPARENTTYPE_SCENE 2
+#define RWAPARENTTYPE_ASSET 3
 
 #define RWAAREAOFFSETTYPE_ENTER 1
 #define RWAAREAOFFSETTYPE_EXIT 2
@@ -38,9 +51,6 @@ public:
     int32_t getHeight() const;
     void setHeight(int32_t value);
 
-    float getEnterOffset() const;
-    void setEnterOffset(float value);
-
     float getExitOffset() const;
     void setExitOffset(float value);
 
@@ -56,7 +66,6 @@ public:
     float getMinimumStayTime() const;
     void setMinimumStayTime(float value);
 
-    void calculateEnterOffsetCorners();
     void calculateExitOffsetCorners();
     void moveCorners(double dx, double dy);
 
@@ -70,7 +79,6 @@ protected:
     bool positionLocked = false;
     bool childrenFollowMe = false;
 
-    float enterOffset = 0;
     float exitOffset = 0;
     float timeOut = -1;
     float minimumStayTime = 4;

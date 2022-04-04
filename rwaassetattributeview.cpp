@@ -4,19 +4,12 @@ RwaAssetAttributeView::RwaAssetAttributeView(QWidget *parent, RwaScene *scene) :
     RwaAttributeView(parent, scene)
 {
     setAlignment(Qt::AlignTop);
-    QGridLayout *innerLayout = new QGridLayout(this);
-
-    innerLayout->setVerticalSpacing(2);
-    innerLayout->setContentsMargins(0,4,0,4);
-    innerLayout->setAlignment(this, Qt::AlignLeft);
-    innerLayout->setSpacing(2);
-
     QStringList playbackTypes;
     playbackTypes << "Undetermined" << "Mono" << "Stereo" << "Auto" << "Binaural-Mono (Legacy)" << "Binaural-Stereo (Legacy)" \
                   << "Binaural-5Channel (Legacy)" << "Binaural-7Channel (Legacy)"<< "Binaural-Mono" << "Binaural-Stereo" << "Binaural-Auto" \
                   << "Binaural-5Channel" << "Binaural-7Channel"  << "Binaural-Space" << "Custom IR-Set 1" << "Custom IR-Set 2" << "Custom IR-Set 3";
 
-    QComboBox *playbackTypesCombo = addComboBoxAndLabel(innerLayout, "Playback Mode", playbackTypes);
+    QComboBox *playbackTypesCombo = addComboBoxAndLabel(attributeGridLayout, "Playback Mode", playbackTypes);
     qobject_cast<QListView *>(playbackTypesCombo->view())->setRowHidden(4, true);
     qobject_cast<QListView *>(playbackTypesCombo->view())->setRowHidden(5, true);
     qobject_cast<QListView *>(playbackTypesCombo->view())->setRowHidden(6, true);
@@ -26,48 +19,48 @@ RwaAssetAttributeView::RwaAssetAttributeView(QWidget *parent, RwaScene *scene) :
     numberOfReflections << "0" << "1" << "2" << "3" << "4" << "5" << "6" << "7" << "8" << \
                      "9" << "10" << "11" << "12" << "13" << "14" << "15" << "16";
 
-    addComboBoxAndLabel(innerLayout, "Reflection Count", numberOfReflections, &reflectionCount, &reflectionCountLabel);
+    addComboBoxAndLabel(attributeGridLayout, "Reflection Count", numberOfReflections, &reflectionCount, &reflectionCountLabel);
     reflectionCount->hide();
     reflectionCountLabel->hide();
 
     QStringList dampingFunction;
     dampingFunction << "None" << "Exponential" << "Linear";
-    addComboBoxAndLabel(innerLayout, "Damping", dampingFunction);
+    addComboBoxAndLabel(attributeGridLayout, "Damping", dampingFunction);
 
     QLineEdit *editingFinishedLineEdit;
 
-    editingFinishedLineEdit = addLineEditAndLabel(innerLayout, "Damping Factor");
-    editingFinishedLineEdit = addLineEditAndLabel(innerLayout, "Damping Trim");
-    editingFinishedLineEdit = addLineEditAndLabel(innerLayout, "Damping Min");
-    editingFinishedLineEdit = addLineEditAndLabel(innerLayout, "Damping Max");
-    editingFinishedLineEdit = addLineEditAndLabel(innerLayout, "Fade-In Time");
-    editingFinishedLineEdit = addLineEditAndLabel(innerLayout, "Fade-Out Time");
-    editingFinishedLineEdit = addLineEditAndLabel(innerLayout, "Crossfade Time");
-    editingFinishedLineEdit = addLineEditAndLabel(innerLayout, "Offset Time");
-    editingFinishedLineEdit = addLineEditAndLabel(innerLayout, "Gain");
-    editingFinishedLineEdit = addLineEditAndLabel(innerLayout, "Channel Radius");
-    editingFinishedLineEdit = addLineEditAndLabel(innerLayout, "Rotate Offset");
-    editingFinishedLineEdit = addLineEditAndLabel(innerLayout, "Rotate Frequency");
-    editingFinishedLineEdit = addLineEditAndLabel(innerLayout, "Moving Speed");
-    editingFinishedLineEdit = addLineEditAndLabel(innerLayout, "Fixed Orientation");
-    editingFinishedLineEdit = addLineEditAndLabel(innerLayout, "Fixed Elevation");
-    editingFinishedLineEdit = addLineEditAndLabel(innerLayout, "Fixed Distance");
-    editingFinishedLineEdit = addLineEditAndLabel(innerLayout, "Min Distance");
-    editingFinishedLineEdit = addLineEditAndLabel(innerLayout, "libPd Receiver");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Damping Factor");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Damping Trim");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Damping Min");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Damping Max");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Fade-In Time");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Fade-Out Time");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Crossfade Time");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Offset Time");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Gain");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Channel Radius");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Rotate Offset");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Rotate Frequency");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Moving Speed");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Fixed Orientation");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Fixed Elevation");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Fixed Distance");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Min Distance");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "libPd Receiver");
 
-    addAttrCheckbox(innerLayout, "Exclusive", RWAASSETATTRIBUTE_ISEXCLUSIVE);
-    addAttrCheckbox(innerLayout,"Loop", RWAASSETATTRIBUTE_LOOP);
-    addAttrCheckbox(innerLayout, "Stop Loop at End-Position", RWAASSETATTRIBUTE_LOOPUNTILENDPOSITION);
-    addAttrCheckbox(innerLayout, "Raw Sensors 2 Pd", RWAASSETATTRIBUTE_RAWSENSORS2PD);
-    addAttrCheckbox(innerLayout, "GPS 2 Pd", RWAASSETATTRIBUTE_GPS2PD);
-    addAttrCheckbox(innerLayout, "Play only once", RWAASSETATTRIBUTE_PLAYONCE);
-    addAttrCheckbox(innerLayout, "Rotate", RWAASSETATTRIBUTE_AUTOROTATE);
-    addAttrCheckbox(innerLayout, "Move", RWAASSETATTRIBUTE_AUTOMOVE);
-    addAttrCheckbox(innerLayout, "Mute", RWAASSETATTRIBUTE_MUTE);
-    addAttrCheckbox(innerLayout, "Headtracker relative 2 source", RWAASSETATTRIBUTE_HEADTRACKERRELATIVE2SOURCE);
-    addAttrCheckbox(innerLayout, "Lock Position", RWAASSETATTRIBUTE_LOCKPOSITION);
-    addAttrCheckbox(innerLayout, "Allow Channel-Positioning", RWAASSETATTRIBUTE_ALLOWINDIVIDUELLCHANNELPOSITIONS);
-    addAttrCheckbox(innerLayout, "Always play from beginning", RWAASSETATTRIBUTE_ALWAYSPLAYFROMBEGINNING);
+    addAttrCheckbox(attributeGridLayout, "Exclusive", RWAASSETATTRIBUTE_ISEXCLUSIVE);
+    addAttrCheckbox(attributeGridLayout,"Loop", RWAASSETATTRIBUTE_LOOP);
+    addAttrCheckbox(attributeGridLayout, "Stop Loop at End-Position", RWAASSETATTRIBUTE_LOOPUNTILENDPOSITION);
+    addAttrCheckbox(attributeGridLayout, "Raw Sensors 2 Pd", RWAASSETATTRIBUTE_RAWSENSORS2PD);
+    addAttrCheckbox(attributeGridLayout, "GPS 2 Pd", RWAASSETATTRIBUTE_GPS2PD);
+    addAttrCheckbox(attributeGridLayout, "Play only once", RWAASSETATTRIBUTE_PLAYONCE);
+    addAttrCheckbox(attributeGridLayout, "Rotate", RWAASSETATTRIBUTE_AUTOROTATE);
+    addAttrCheckbox(attributeGridLayout, "Move", RWAASSETATTRIBUTE_AUTOMOVE);
+    addAttrCheckbox(attributeGridLayout, "Mute", RWAASSETATTRIBUTE_MUTE);
+    addAttrCheckbox(attributeGridLayout, "Headtracker relative 2 source", RWAASSETATTRIBUTE_HEADTRACKERRELATIVE2SOURCE);
+    addAttrCheckbox(attributeGridLayout, "Lock Position", RWAASSETATTRIBUTE_LOCKPOSITION);
+    addAttrCheckbox(attributeGridLayout, "Allow Channel-Positioning", RWAASSETATTRIBUTE_ALLOWINDIVIDUELLCHANNELPOSITIONS);
+    addAttrCheckbox(attributeGridLayout, "Always play from beginning", RWAASSETATTRIBUTE_ALWAYSPLAYFROMBEGINNING);
 
     connect(this, SIGNAL(sendCurrentState(RwaState*)),
               backend, SLOT(receiveLastTouchedState(RwaState*)));
@@ -78,7 +71,7 @@ RwaAssetAttributeView::RwaAssetAttributeView(QWidget *parent, RwaScene *scene) :
     connect(backend, SIGNAL(sendSelectedAssets(QStringList)),
               this, SLOT(receiveSelectedAssets(QStringList)));
 
-    this->setMinimumHeight((assetAttrCounter)*17);
+    this->setMinimumHeight((assetAttrCounter)*18);
     this->setMinimumWidth(20);
     this->setMaximumWidth(260);
 }

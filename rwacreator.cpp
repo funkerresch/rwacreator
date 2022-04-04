@@ -1,43 +1,12 @@
-/****************************************************************************
-**
-** Copyright (C) 2013 Digia Plc and/or its subsidiary(-ies).
-** Contact: http://www.qt-project.org/legal
-**
-** This file is part of the demonstration applications of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and Digia.  For licensing terms and
-** conditions see http://qt.digia.com/licensing.  For further information
-** use the contact form at http://qt.digia.com/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 2.1 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL included in the
-** packaging of this file.  Please review the following information to
-** ensure the GNU Lesser General Public License version 2.1 requirements
-** will be met: http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html.
-**
-** In addition, as a special exception, Digia gives you certain additional
-** rights.  These rights are described in the Digia Qt LGPL Exception
-** version 1.1, included in the file LGPL_EXCEPTION.txt in this package.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 3.0 as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL included in the
-** packaging of this file.  Please review the following information to
-** ensure the GNU General Public License version 3.0 requirements will be
-** met: http://www.gnu.org/copyleft/gpl.html.
-**
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+/*
+ *
+ * Created by Thomas Resch
+ * © 2022
+ *
+ *
+ *
+ *
+ */
 
 #include "rwacreator.h"
 
@@ -85,21 +54,25 @@ RwaCreator::RwaCreator(QWidget *parent, Qt::WindowFlags flags)
     QObject::connect(QApplication::instance(), SIGNAL(aboutToQuit()),this, SLOT(cleanUpBeforeQuit()));
 
     setCentralWidget(backend);   
-    createInitFolder();
+    createInitFolder();      
     loadDefaultViews();
     openInit();
-    setupMenuBar();   
-    //StartHttpServer(8088);
-
-//    int blubs = system("python3 -m http.server 8088 --directory /Users/harveykeitel/Desktop & echo $!");
-//    qDebug() << "Started python server " << blubs;
+    setupMenuBar();
 }
 
-//RwaCreator::~RwaCreator()
-//{
-//    backend->deleteLater();
-//}
 
+void RwaCreator::closeDockWidget(RwaDockWidget *dock)
+{
+    (void) dock;
+    qDebug() << "Close Dockwidget";
+    //removeDockWidget(dock);
+}
+
+void RwaCreator::closeEvent(QCloseEvent *event)
+{
+    (void) event;
+    qDebug() << "Closing Creator";
+}
 
 void RwaCreator::createInitFolder()
 {
@@ -126,15 +99,33 @@ void RwaCreator::createInitFolder()
         QDir().mkdir(path);
 }
 
+bool RwaCreator::maybeSave()
+{
+    const QMessageBox::StandardButton ret
+        = QMessageBox::warning(this, tr("Application"),
+                               tr("The document has been modified.\n"
+                                  "Do you want to save your changes?"),
+                               QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+    switch (ret) {
+    case QMessageBox::Save:
+        save();
+        return true;
+    case QMessageBox::Cancel:
+        return false;
+    default:
+        break;
+    }
+    return true;
+}
+
 void RwaCreator::cleanUpBeforeQuit()
 {
     qDebug() << "Clean up and quit!";
-    writeInit();
+    writeInit();    
+    maybeSave();
     saveLayout();
-    //save();
     backend->emptyTmpDirectories();
     backend->getScenes().clear();
-    //system("kill -9");
 }
 
 bool RwaCreator::eventFilter(QObject *obj, QEvent *event)
@@ -145,19 +136,9 @@ bool RwaCreator::eventFilter(QObject *obj, QEvent *event)
     if (event->type() == QEvent::Resize)
     {
         QResizeEvent *resizeEvent = static_cast<QResizeEvent*>(event);
-        myWidget = ((QDockWidget *)obj);
-        myView = (RwaView *)myWidget->widget();
+        myWidget = static_cast<QDockWidget *>(obj);
+        myView =  static_cast<RwaView *>(myWidget->widget());
         myView->adaptSize(resizeEvent->size().width(),resizeEvent->size().height());
-    }
-    else if (event->type() == QEvent::Close)
-    {
-        qDebug("Mainwindow: yet to implement: destroyDockWidget()");
-      //yet to do
-    }
-    else if(event->type() == QEvent::Close)
-    {
-        qDebug("Mainwindow: Quit");
-       // backend->clear();
     }
 
     return QWidget::eventFilter(obj, event);
@@ -182,17 +163,6 @@ void RwaCreator::selectInputDevice(qint32 index)
         backend->simulator->stopRwaSimulation();
 
     backend->simulator->ap->setInputDevice(index);
-}
-
-void RwaCreator::initViewMenu(QMenu *viewMenu)
-{
-    createDockWidgetAction = new QAction(tr("Add View"), this);
-    connect(createDockWidgetAction, SIGNAL(triggered()), this, SLOT(createDockWidget()));
-    viewMenu->addAction(createDockWidgetAction);
-
-    defaultViewWidgetAction = new QAction(tr("Default Views"), this);
-    connect(defaultViewWidgetAction, SIGNAL(triggered()), this, SLOT(loadDefaultViews()));
-    viewMenu->addAction(defaultViewWidgetAction);
 }
 
 void RwaCreator::initAudioPreferencesMenu(QMenu *audioDeviceMenu)
@@ -257,13 +227,28 @@ void RwaCreator::initAudioPreferencesMenu(QMenu *audioDeviceMenu)
     connect (inputDeviceSignalMapper, SIGNAL(mapped(int)), this, SLOT(selectInputDevice(qint32))) ;
 }
 
-void RwaCreator::initEditMenu(QMenu *fileMenu)
+void RwaCreator::initViewMenu1(QMenu *fileMenu)
 {
-//    QAction *action = fileMenu->addAction(tr("Undo"));
-//    connect(action, SIGNAL(triggered()), this, SLOT(undo()));
+    QAction *action = fileMenu->addAction(tr("Default Views"));
+    connect(action, SIGNAL(triggered()), this, SLOT(loadDefaultViews()));
 
-//    action = fileMenu->addAction(tr("Redo"));
-//    connect(action, SIGNAL(triggered()), this, SLOT(redo()));
+    action = fileMenu->addAction(tr("Map View"));
+    connect(action, SIGNAL(triggered()), this, SLOT(addMapView()));
+
+    action = fileMenu->addAction(tr("Game View"));
+    connect(action, SIGNAL(triggered()), this, SLOT(addGameView()));
+
+    action = fileMenu->addAction(tr("Scene View"));
+    connect(action, SIGNAL(triggered()), this, SLOT(addSceneView()));
+
+    action = fileMenu->addAction(tr("State View"));
+    connect(action, SIGNAL(triggered()), this, SLOT(addStateView()));
+
+    action = fileMenu->addAction(tr("History View"));
+    connect(action, SIGNAL(triggered()), this, SLOT(addHistoryView()));
+
+    action = fileMenu->addAction(tr("Log Window"));
+    connect(action, SIGNAL(triggered()), this, SLOT(addLogView()));
 }
 
 void RwaCreator::initFileMenu(QMenu *fileMenu)
@@ -333,13 +318,10 @@ void RwaCreator::setupMenuBar()
     initAudioPreferencesMenu(selectAudioDevice);
 
     QMenu *viewMenu = menuBar()->addMenu(tr("&View"));
-    initViewMenu(viewMenu);
+    initViewMenu1(viewMenu);
 
     QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
     initFileMenu(fileMenu);
-
-    QMenu *editMenu = menuBar()->addMenu(tr("&Edit"));
-    initEditMenu(editMenu);
 
     headtrackerMenu = menuBar()->addMenu(tr("&Headtracker"));
     initHeadtrackerMenu(headtrackerMenu);
@@ -422,7 +404,15 @@ void RwaCreator::writeInit()
     {
         QTextStream stream(&file);
         stream << backend->completeFilePath << endl;
-        stream << headtracker->getName();
+        stream << headtracker->getName() << endl;
+        if(backend->showStateRadii)
+            stream << "1" << endl;
+        else
+            stream << "0" << endl;
+        if(backend->showAssets)
+            stream << "1" << endl;
+        else
+            stream << "0";
         file.close();
     }
     else
@@ -448,7 +438,7 @@ void RwaCreator::openInit()
         QString line = in.readLine();
 
         if(lineNumber == 0)
-            open (line);
+            open(line);
 
         if(lineNumber == 1)
             headtracker->setName(line);
@@ -681,9 +671,9 @@ void RwaCreator::open(QString fileName)
     if(layouts.exists())
     {
          loadLayout();
-         foreach(QDockWidget *widget, rwaDockWidgets)
+         foreach(RwaDockWidget *widget, rwaDockWidgets)
          {
-             if(widget->isFloating())
+             if(widget->isVisible())
                  widget->show();
          }
     }
@@ -764,192 +754,81 @@ void RwaCreator::readUndoFile(QString name)
     }
 }
 
-QAction *addAction(QMenu *menu, const QString &text, QActionGroup *group, QSignalMapper *mapper,
-                    int id)
-{
-    bool first = group->actions().isEmpty();
-    QAction *result = menu->addAction(text);
-    result->setCheckable(true);
-    result->setChecked(first);
-    group->addAction(result);
-    QObject::connect(result, SIGNAL(triggered()), mapper, SLOT(map()));
-    mapper->setMapping(result, id);
-    return result;
-}
-
-void RwaCreator::setCorner(int id)
-{
-    switch (id) {
-        case 0:
-            QMainWindow::setCorner(Qt::TopLeftCorner, Qt::TopDockWidgetArea);
-            break;
-        case 1:
-            QMainWindow::setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
-            break;
-        case 2:
-            QMainWindow::setCorner(Qt::TopRightCorner, Qt::TopDockWidgetArea);
-            break;
-        case 3:
-            QMainWindow::setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
-            break;
-        case 4:
-            QMainWindow::setCorner(Qt::BottomLeftCorner, Qt::BottomDockWidgetArea);
-            break;
-        case 5:
-            QMainWindow::setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
-            break;
-        case 6:
-            QMainWindow::setCorner(Qt::BottomRightCorner, Qt::BottomDockWidgetArea);
-            break;
-        case 7:
-            QMainWindow::setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
-            break;
-    }
-}
-
 void RwaCreator::showEvent(QShowEvent *event)
 {
     QMainWindow::showEvent(event);
 }
 
-class CreateDockWidgetDialog : public QDialog
+void RwaCreator::addMapView()
 {
-public:
-    CreateDockWidgetDialog(QWidget *parent = 0);
-
-    //QString objectName() const;
-    Qt::DockWidgetArea location() const;
-    int type() const;
-
-private:
-    //QLineEdit *m_objectName;
-
-    QComboBox *m_type;
-    QComboBox *m_location;
-};
-
-CreateDockWidgetDialog::CreateDockWidgetDialog(QWidget *parent)
-    : QDialog(parent)
-{
-    QGridLayout *layout = new QGridLayout(this);
-
-    layout->addWidget(new QLabel(tr("View:")), 0, 0);
-    m_type = new QComboBox;
-    m_type->setEditable(false);
-    m_type->addItem(tr("Script Text View"));
-    m_type->addItem(tr("Script GUI View"));
-    m_type->addItem(tr("Asset View"));
-    m_type->addItem(tr("Map View"));
-    layout->addWidget(m_type, 0, 1);
-
-    layout->addWidget(new QLabel(tr("Location:")), 1, 0);
-    m_location = new QComboBox;
-    m_location->setEditable(false);
-    m_location->addItem(tr("Top"));
-    m_location->addItem(tr("Left"));
-    m_location->addItem(tr("Right"));
-    m_location->addItem(tr("Bottom"));
-    layout->addWidget(m_location, 1, 1);
-
-    QHBoxLayout *buttonLayout = new QHBoxLayout;
-    layout->addLayout(buttonLayout, 2, 0, 1, 2);
-    buttonLayout->addStretch();
-
-    QPushButton *cancelButton = new QPushButton(tr("Cancel"));
-    connect(cancelButton, SIGNAL(clicked()), this, SLOT(reject()));
-    buttonLayout->addWidget(cancelButton);
-    QPushButton *okButton = new QPushButton(tr("Ok"));
-    connect(okButton, SIGNAL(clicked()), this, SLOT(accept()));
-    buttonLayout->addWidget(okButton);
-
-    okButton->setDefault(true);
+    RwaDockWidget *dw = new RwaDockWidget(this);
+    dw->setObjectName(tr("Map View"));
+    dw->setWindowTitle(tr("Map View"));
+    dw->setGeometry(0,0,1000,300);
+    dw->setWidget(new RwaMapView(this, backend->getFirstScene()));
+    dw->installEventFilter(this);
+    dw->setWindowFlags(Qt::WindowStaysOnTopHint );
+    addDockWidget(Qt::TopDockWidgetArea, dw);
+    rwaDockWidgets.append(dw);
 }
 
-Qt::DockWidgetArea CreateDockWidgetDialog::location() const
+void RwaCreator::addLogView()
 {
-    switch (m_location->currentIndex()) {
-        case 0: return Qt::TopDockWidgetArea;
-        case 1: return Qt::LeftDockWidgetArea;
-        case 2: return Qt::RightDockWidgetArea;
-        case 3: return Qt::BottomDockWidgetArea;
-        default:
-            break;
-    }
-    return Qt::NoDockWidgetArea;
+    logWindow = new RwaLogWindow(this);
+    RwaDockWidget *dw = new RwaDockWidget(this);
+    dw->setObjectName(tr("Log View"));
+    dw->setWindowTitle(tr("Log View"));
+    dw->setGeometry(0,0,600,300);
+    dw->setWidget(logWindow);
+    dw->setWindowFlags(Qt::WindowStaysOnTopHint );
+    addDockWidget(Qt::TopDockWidgetArea, dw);
+    rwaDockWidgets.append(dw);
 }
 
-int CreateDockWidgetDialog::type() const
+void RwaCreator::addGameView()
 {
-    switch (m_type->currentIndex()) {
-        case 0: return AFX_WINDOWTYPE_SCRIPTTEXT;
-        case 1: return AFX_WINDOWTYPE_SCRIPTGUI;
-        case 2: return AFX_WINDOWTYPE_ASSET;
-        case 3: return AFX_WINDOWTYPE_MAPVIEW;
-        default:
-            break;
-    }
-    return 0;
+    RwaDockWidget *dw = new RwaDockWidget(this);
+    dw->setObjectName(tr("Game View"));
+    dw->setWindowTitle(tr("Game View"));
+    dw->setGeometry(0,0,600,300);
+    dw->setWidget(new RwaGameView(this, backend->getFirstScene()));
+    dw->installEventFilter(this);
+    addDockWidget(Qt::LeftDockWidgetArea, dw);
+    rwaDockWidgets.append(dw);
 }
 
-void RwaCreator::createDockWidget()
+void RwaCreator::addSceneView()
 {
-    CreateDockWidgetDialog dialog(this);
-    int ret = dialog.exec();
-    if (ret == QDialog::Rejected)
-        return;
+    RwaDockWidget *dw = new RwaDockWidget(this);
+    dw->setObjectName(tr("Scene View"));
+    dw->setWindowTitle(tr("Scene View"));
+    dw->setGeometry(0,0,600,300);
+    dw->setWidget(new RwaSceneView(this, backend->getFirstScene()));
+    dw->installEventFilter(this);
+    addDockWidget(Qt::LeftDockWidgetArea, dw);
+    rwaDockWidgets.append(dw);
+}
 
-    Qt::DockWidgetArea area = dialog.location();
-    int viewType = dialog.type();
-    RwaStateView *listWidget;
+void RwaCreator::addStateView()
+{
+    RwaDockWidget *dw = new RwaDockWidget(this);
+    dw->setObjectName(tr("State View"));
+    dw->setWindowTitle(tr("State View"));
+    dw->setGeometry(0,0,600,300);
+    dw->setWidget(new RwaStateView(this, backend->getFirstScene()));
+    dw->installEventFilter(this);
+    addDockWidget(Qt::BottomDockWidgetArea, dw);
+    rwaDockWidgets.append(dw);
+}
 
-
-    QDockWidget *dw = new QDockWidget;
-
-    switch (viewType)
-    {
-        case AFX_WINDOWTYPE_SCRIPTTEXT:
-        dw->setObjectName(tr("State Text Editor"));
-        dw->setWindowTitle(tr("State Text Editor"));
-        dw->setWidget(new QTextEdit);
-        break;
-
-        case AFX_WINDOWTYPE_ASSET:
-        dw->setObjectName(tr("Asset View"));
-        dw->setWindowTitle(tr("Asset View"));
-        listWidget = new RwaStateView(this);
-
-        dw->setWidget(listWidget);
-        break;
-
-        case AFX_WINDOWTYPE_MAPVIEW:
-        dw->setObjectName(tr("State Map View"));
-        dw->setWindowTitle(tr("State Map View"));
-        dw->setGeometry(0,0,100,100);
-        dw->setWidget(new RwaMapView(this, backend->getFirstScene()));
-        dw->installEventFilter(this);
-        break;
-
-        default:
-        return;
-    }
-
-    switch (area) {
-        case Qt::LeftDockWidgetArea:
-        case Qt::RightDockWidgetArea:
-        case Qt::TopDockWidgetArea:
-        case Qt::BottomDockWidgetArea:
-            addDockWidget(area, dw);
-
-            break;
-        default:
-            if (!restoreDockWidget(dw)) {
-                QMessageBox::warning(this, QString(), tr("Failed to restore dock widget"));
-                delete dw;
-                return;
-            }
-            break;
-    }
-
+void RwaCreator::addHistoryView()
+{
+    RwaDockWidget *dw = new RwaDockWidget();
+    dw->setObjectName(tr("History View"));
+    dw->setWindowTitle(tr("History View"));
+    dw->setGeometry(0,0,600,300);
+    dw->setWidget(new RwaHistory(this));
+    addDockWidget(Qt::RightDockWidgetArea, dw);
     rwaDockWidgets.append(dw);
 }
 
@@ -961,74 +840,11 @@ void RwaCreator::logMessages(QtMsgType type, const QMessageLogContext &context, 
 
 void RwaCreator::loadDefaultViews()
 {
-    QDockWidget *dw = new QDockWidget;
-    RwaMapView *newMapView;
-    newMapView = new RwaMapView(this, backend->getFirstScene());
-
-    dw->setObjectName(tr("Map View"));
-    dw->setWindowTitle(tr("Map View"));
-    dw->setGeometry(0,0,1000,300);
-    dw->setWidget(newMapView);
-    dw->installEventFilter(this);
-    dw->setWindowFlags(Qt::WindowStaysOnTopHint );
-
-    addDockWidget(Qt::TopDockWidgetArea, dw);
-    rwaDockWidgets.append(dw);
-
-    QDockWidget *dw1 = new QDockWidget;
-    dw1->setObjectName(tr("State View"));
-    dw1->setWindowTitle(tr("State View"));
-    dw1->setGeometry(0,0,1000,300);
-    dw1->setWidget(new RwaStateView(this, backend->getFirstScene()));
-    dw1->installEventFilter(this);
-    addDockWidget(Qt::BottomDockWidgetArea, dw1);
-    rwaDockWidgets.append(dw1);
-
-    QDockWidget *dw2 = new QDockWidget;
-    dw2->setObjectName(tr("Scene View"));
-    dw2->setWindowTitle(tr("Scene View"));
-    dw2->setGeometry(0,0,1000,300);
-    dw2->setWidget(new RwaSceneView(this, backend->getFirstScene()));
-    dw2->installEventFilter(this);
-    addDockWidget(Qt::LeftDockWidgetArea, dw2);
-    rwaDockWidgets.append(dw2);
-
-    logWindow = new RwaLogWindow(this);
-    QDockWidget *dw3 = new QDockWidget;
-    dw3->setObjectName(tr("Log Window"));
-    dw3->setWindowTitle(tr("Log Window"));
-    dw3->setGeometry(0,0,1000,300);
-    dw3->setWidget(logWindow);
-    addDockWidget(Qt::RightDockWidgetArea, dw3);
-    rwaDockWidgets.append(dw3);
-
-    QDockWidget *dw4 = new QDockWidget;
-    dw4->setObjectName(tr("Game View"));
-    dw4->setWindowTitle(tr("Game View"));
-    dw4->setGeometry(0,0,1000,300);
-    dw4->setWidget(new RwaGameView(this, backend->getFirstScene()));
-    dw4->installEventFilter(this);
-    addDockWidget(Qt::LeftDockWidgetArea, dw4);
-    rwaDockWidgets.append(dw4);
-
-    QDockWidget *dw5 = new QDockWidget;
-    dw5->setObjectName(tr("History"));
-    dw5->setWindowTitle(tr("History"));
-    dw5->setGeometry(0,0,1000,300);
-    dw5->setWidget(new RwaHistory(this));
-    addDockWidget(Qt::BottomDockWidgetArea, dw5);
-    rwaDockWidgets.append(dw5);
+    addMapView();
+    addStateView();
+    addSceneView();
+    addLogView();
+    addGameView();
+    addHistoryView();
     allViewsLoaded = true;
-}
-
-void RwaCreator::destroyDockWidget(QAction *action)
-{
-    int index = destroyDockWidgetMenu->actions().indexOf(action);
-    delete rwaDockWidgets.takeAt(index);
-    destroyDockWidgetMenu->removeAction(action);
-    action->deleteLater();
-    qDebug("deleteDockWidget");
-
-    if (destroyDockWidgetMenu->isEmpty())
-        destroyDockWidgetMenu->setEnabled(false);
 }

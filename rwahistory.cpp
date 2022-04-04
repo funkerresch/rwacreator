@@ -5,8 +5,6 @@ RwaHistory::RwaHistory(QWidget *parent):
     QListView(parent)
 {
     backend = RwaBackend::getInstance();
-    connect(backend, SIGNAL(sendWriteUndo()),
-              this, SLOT(update()));
 
     connect (backend, SIGNAL(newGameLoaded()),
              this, SLOT(receiveNewGameSignal()));

@@ -10,14 +10,14 @@ RwaGameView::RwaGameView(QWidget *parent, RwaScene *scene) :
     windowSplitter = new QSplitter(this);
     layout = new QBoxLayout(QBoxLayout::LeftToRight,this);
     layout->setContentsMargins(0,0,0,0);
-    setMinimumSize(450,100);
+    //setMinimumSize(450,100);
 
     sceneList = new RwaSceneList(this, scene);
     sceneAttributes = new RwaSceneAttributeView(this, scene);
     sceneAttributes->scrollArea->setMaximumWidth(250);
 
     currentScene = scene;
-    currentState = NULL;
+    currentState = nullptr;
 
     windowSplitter->addWidget(sceneAttributes->scrollArea);
     windowSplitter->addWidget(sceneList);
@@ -48,15 +48,15 @@ void RwaGameView::deleteScene(const QString &sceneName)
 
 void RwaGameView::adaptSize(qint32 width, qint32 height)
 {
-    //stateAttributes->setFixedWidth(width*0.55);
-    //stateList->setFixedWidth(width*0.35);
+    (void) width; // silence warnings
+    (void) height;
 }
 
-void RwaGameView::setCurrentScene(RwaScene *currentScene)
+void RwaGameView::setCurrentScene(RwaScene *scene)
 {
-    if(this->currentScene != currentScene)
+    if(this->currentScene != scene)
     {
-        this->currentScene = currentScene;
+        this->currentScene = scene;
         //this->sceneList->setCurrentScene(currentScene);
         sceneList->update();
 

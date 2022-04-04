@@ -3,16 +3,21 @@
 RwaAttributeView::RwaAttributeView(QWidget* parent, RwaScene *scene)
   : RwaView(parent, scene)
 {
+    attributeGridLayout = new QGridLayout(this);
+    attributeGridLayout->setVerticalSpacing(2);
+    attributeGridLayout->setContentsMargins(0,4,0,4);
+    attributeGridLayout->setAlignment(this, Qt::AlignLeft);
+    attributeGridLayout->setHorizontalSpacing(25);
     assetAttrCounter = 0;
     assetAttributeGroup = new QButtonGroup(this);
-    attributeFont = QFont("Courier", 10, QFont::StyleNormal,false);
+    attributeFont = QFont("Arial", 10, QFont::StyleNormal,false);
     dynamicAddButtonFont = QFont("Courier", 10, QFont::StyleOblique,true);
     connect(assetAttributeGroup, SIGNAL(buttonToggled(int, bool)), this, SLOT(receiveCheckBoxAttributeValue(int, bool)));
     connect(assetAttributeGroup, SIGNAL(buttonReleased(int)), this, SLOT(receiveEditingFinished()));
     assetAttributeGroup->setExclusive(false);   
     scrollArea = new QScrollArea(parent);
     scrollArea->setWidget(this);
-    this->setFrameStyle(QFrame::NoFrame);
+    setFrameStyle(QFrame::NoFrame);
     senderName = "name";
     lastSenderName = "";
     senderValue = "value";
@@ -52,7 +57,6 @@ QLineEdit *RwaAttributeView::addLineEditAndLabel(QGridLayout *layout, QString na
     layout->addWidget(attrLabel, assetAttrCounter, 1);
     connect(attrLineEdit, SIGNAL(textChanged(const QString &)), this, SLOT(receiveLineEditAttributeValue(const QString &)));
     connect(attrLineEdit, SIGNAL(editingFinished()), this, SLOT(receiveEditingFinished()));
-
     assetAttrCounter++;
     return attrLineEdit;
 }
@@ -73,7 +77,6 @@ void RwaAttributeView::addLineEditAndLabel(QGridLayout *layout, QString name, QL
     layout->addWidget(*attrLabel, assetAttrCounter, 1);
     connect(*attrLineEdit, SIGNAL(&QLineEdit::textEdited), this, SLOT(&RwaAttributeView::receiveLineEditAttributeValue));
     connect(*attrLineEdit, SIGNAL(editingFinished()), this, SLOT(receiveEditingFinished()));
-
     assetAttrCounter++;
 }
 
@@ -86,12 +89,13 @@ void RwaAttributeView::setLineEditSignal2editingFinished(QLineEdit *attrLineEdit
 
 QComboBox *RwaAttributeView::addComboBoxAndLabel(QGridLayout *layout, QString name, QStringList values)
 {
-    //RwaMemoryComboBox *attrComboBox = new RwaMemoryComboBox(this);
+
     QComboBox *attrComboBox = new QComboBox(this);
     attrComboBox->setObjectName(name);
     QLabel *attrLabel = new QLabel(name, this);
     attrComboBox->setMinimumSize(QSize(16,16));
     attrComboBox->setMaximumSize(QSize(16,16));
+    attrComboBox->setFixedHeight(24);
     attrLabel->setMinimumSize(QSize(14,14));
     attrLabel->setMaximumSize(QSize(14,14));
 
@@ -108,8 +112,14 @@ QComboBox *RwaAttributeView::addComboBoxAndLabel(QGridLayout *layout, QString na
     attrLabel->setMinimumHeight(14);
     attrLabel->setMinimumWidth(120);
 
+//    QFrame* line = new QFrame(this);
+//    line->setFrameShape(QFrame::HLine);
+//    line->setFrameShadow(QFrame::Sunken);
+//    layout->addWidget(line);
+
     layout->addWidget(attrComboBox, assetAttrCounter, 0);
     layout->addWidget(attrLabel, assetAttrCounter, 1);
+//    layout->addWidget(line, assetAttrCounter, 0);
 
     foreach (QString string, values)
         attrComboBox->addItem(string);
@@ -118,6 +128,7 @@ QComboBox *RwaAttributeView::addComboBoxAndLabel(QGridLayout *layout, QString na
     connect(attrComboBox, SIGNAL(activated(QString)), this, SLOT(receiveEditingFinished()));
 
     assetAttrCounter++;
+//    assetAttrCounter++;
     return attrComboBox;
 }
 

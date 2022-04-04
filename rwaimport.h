@@ -83,7 +83,6 @@ private:
 
 
     QXmlStreamReader xml;
-//! [2]
 
     QIcon folderIcon;
     QIcon bookmarkIcon;
@@ -93,6 +92,5 @@ private:
     void readSceneCornerLonAndLat();
     void readReflectionPositions(RwaAsset1 *asset);
 };
-//! [0]
 
 #endif

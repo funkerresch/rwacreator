@@ -26,6 +26,9 @@ INCLUDEPATH += $$PWD/libpd/pure-data/src
 INCLUDEPATH += portaudio/include
 INCLUDEPATH += $$PWD/speech_tools/include
 INCLUDEPATH += $$PWD/ofq/libofqf
+INCLUDEPATH += $$PWD/libogg/include/
+INCLUDEPATH += $$PWD/vorbis/include/
+INCLUDEPATH += $$PWD/vorbis/lib/
 
 macx
 {
@@ -40,6 +43,9 @@ macx
 include($$PWD/qmapcontrol/QMapControl/QMapControl.pri)
 
 HEADERS += \
+    libogg/include/ogg/config_types.h.in \
+    libogg/include/ogg/ogg.h \
+    libogg/include/ogg/os_types.h \
     lo/lo.h \
     rwaasset1.h \
     rwaheadtrackerconnect.h \
@@ -100,12 +106,61 @@ HEADERS += \
     vas_library/source/vas_gps_util.h \
     vas_library/source/vas_mem.h \
     vas_library/source/vas_pdmaxobject.h \
-    vas_library/source/vas_util.h
+    vas_library/source/vas_util.h \
+    vorbis/include/vorbis/codec.h \
+    vorbis/include/vorbis/vorbisenc.h \
+    vorbis/include/vorbis/vorbisfile.h \
+    vorbis/lib/backends.h \
+    vorbis/lib/bitrate.h \
+    vorbis/lib/books/coupled/res_books_51.h \
+    vorbis/lib/books/coupled/res_books_stereo.h \
+    vorbis/lib/books/floor/floor_books.h \
+    vorbis/lib/books/uncoupled/res_books_uncoupled.h \
+    vorbis/lib/codebook.h \
+    vorbis/lib/codec_internal.h \
+    vorbis/lib/envelope.h \
+    vorbis/lib/highlevel.h \
+    vorbis/lib/lookup.h \
+    vorbis/lib/lookup_data.h \
+    vorbis/lib/lpc.h \
+    vorbis/lib/lsp.h \
+    vorbis/lib/masking.h \
+    vorbis/lib/mdct.h \
+    vorbis/lib/misc.h \
+    vorbis/lib/modes/floor_all.h \
+    vorbis/lib/modes/psych_11.h \
+    vorbis/lib/modes/psych_16.h \
+    vorbis/lib/modes/psych_44.h \
+    vorbis/lib/modes/psych_8.h \
+    vorbis/lib/modes/residue_16.h \
+    vorbis/lib/modes/residue_44.h \
+    vorbis/lib/modes/residue_44p51.h \
+    vorbis/lib/modes/residue_44u.h \
+    vorbis/lib/modes/residue_8.h \
+    vorbis/lib/modes/setup_11.h \
+    vorbis/lib/modes/setup_16.h \
+    vorbis/lib/modes/setup_22.h \
+    vorbis/lib/modes/setup_32.h \
+    vorbis/lib/modes/setup_44.h \
+    vorbis/lib/modes/setup_44p51.h \
+    vorbis/lib/modes/setup_44u.h \
+    vorbis/lib/modes/setup_8.h \
+    vorbis/lib/modes/setup_X.h \
+    vorbis/lib/os.h \
+    vorbis/lib/psy.h \
+    vorbis/lib/registry.h \
+    vorbis/lib/scales.h \
+    vorbis/lib/smallft.h \
+    vorbis/lib/window.h
 
 
 
 SOURCES += main.cpp \
+    libogg/src/bitwise.c \
+    libogg/src/framing.c \
     pd-extra/pd/externals/freeverb~/freeverb~.c \
+    pd-extra/pd/externals/pdogg/oggread~.c \
+    pd-extra/pd/externals/pdogg/oggwrite~.c \
     rwaasset1.cpp \
     rwaheadtrackerconnect.cpp \
     rwahistory.cpp \
@@ -161,7 +216,30 @@ SOURCES += main.cpp \
     vas_library/source/vas_gps_util.c \
     vas_library/source/vas_mem.c \
     vas_library/source/vas_pdmaxobject.c \
-    vas_library/source/vas_util.c
+    vas_library/source/vas_util.c \
+    vorbis/lib/analysis.c \
+    vorbis/lib/bitrate.c \
+    vorbis/lib/block.c \
+    vorbis/lib/codebook.c \
+    vorbis/lib/envelope.c \
+    vorbis/lib/floor0.c \
+    vorbis/lib/floor1.c \
+    vorbis/lib/info.c \
+    vorbis/lib/lookup.c \
+    vorbis/lib/lpc.c \
+    vorbis/lib/lsp.c \
+    vorbis/lib/mapping0.c \
+    vorbis/lib/mdct.c \
+    vorbis/lib/misc.c \
+    vorbis/lib/psy.c \
+    vorbis/lib/registry.c \
+    vorbis/lib/res0.c \
+    vorbis/lib/sharedbook.c \
+    vorbis/lib/smallft.c \
+    vorbis/lib/synthesis.c \
+    vorbis/lib/vorbisenc.c \
+    vorbis/lib/vorbisfile.c \
+    vorbis/lib/window.c
 
 
 LIBS += -ltermcap

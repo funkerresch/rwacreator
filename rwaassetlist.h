@@ -32,7 +32,7 @@ protected:
         void dragEnterEvent(QDragEnterEvent *event) override;
         void dragMoveEvent(QDragMoveEvent *event) override;
         void dropEvent(QDropEvent *event) override;
-        void setCurrentAsset(RwaAsset1 *currentAsset) override;
+        void setCurrentAsset(RwaAsset1 *asset) override;
         void setCurrentState(RwaState *currentState) override;
         void add2ListAndCopy(QString fullpath);
 

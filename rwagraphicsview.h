@@ -119,14 +119,21 @@ protected:
     bool editAreaHeight = false;
     bool editAreaRadius = false;
     bool editAreaCorner = false;
+
+    bool editStateArea = false;
+    bool editSceneArea = false;
+
     int areaCornerIndex2Edit = false;
 
-    qint32 tool;
+   // qint32 tool;
     QString tmpObjectName;
+    RwaState *tmpState = nullptr;
 
     void updateReflectionPixmaps();
 signals:
     void sendCurrentStateEdited();
+    void sendCurrentStateRadiusEdited();
+    void sendCurrentSceneRadiusEdited();
     void sendMoveCurrentScene();
     void sendMoveCurrentState();
     void sendMoveCurrentState1(double dx, double dy);

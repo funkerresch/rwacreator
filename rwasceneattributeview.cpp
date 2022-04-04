@@ -5,46 +5,40 @@ RwaSceneAttributeView::RwaSceneAttributeView(QWidget *parent, RwaScene *scene) :
 {
     RwaScene *nextScene;
 
-    mother = (RwaView *)parent;
-    innerLayout = new QGridLayout(this);
-    innerLayout->setVerticalSpacing(2);
-    innerLayout->setContentsMargins(0,4,0,4);
-    innerLayout->setAlignment(this, Qt::AlignLeft);
-
+    setAlignment(Qt::AlignTop);
     visitedSceneConditionCount = 0;
 
     QStringList areaTypes;
     areaTypes << "Undetermined" << "Circle" << "Rectangle" << "Square" << "Polygon";
-    addComboBoxAndLabel(innerLayout, "Area Type", areaTypes);
+    addComboBoxAndLabel(attributeGridLayout, "Area Type", areaTypes);
 
     QStringList nextScenes;
     nextScenes << "None";
     foreach(nextScene, backend->getScenes())
         nextScenes << QString::fromStdString(nextScene->objectName());
 
-    addComboBoxAndLabel(innerLayout, "Next Scene", nextScenes);
-    addLineEditAndLabel(innerLayout, "Time Out");
-    QLineEdit *requiredScenes = addLineEditAndLabel(innerLayout, "Required Scenes");
+    addComboBoxAndLabel(attributeGridLayout, "Next Scene", nextScenes);
+    addLineEditAndLabel(attributeGridLayout, "Time Out");
+    QLineEdit *requiredScenes = addLineEditAndLabel(attributeGridLayout, "Required Scenes");
     setLineEditSignal2editingFinished(requiredScenes);
 
-    addLineEditAndLabel(innerLayout, "Level");
-    addLineEditAndLabel(innerLayout, "Scene Radius");
-    addLineEditAndLabel(innerLayout, "Scene Width");
-    addLineEditAndLabel(innerLayout, "Scene Height");
-    addLineEditAndLabel(innerLayout, "Enter Offset");
-    addLineEditAndLabel(innerLayout, "Exit Offset");
+    addLineEditAndLabel(attributeGridLayout, "Level");
+    addLineEditAndLabel(attributeGridLayout, "Scene Radius");
+    addLineEditAndLabel(attributeGridLayout, "Scene Width");
+    addLineEditAndLabel(attributeGridLayout, "Scene Height");
+    addLineEditAndLabel(attributeGridLayout, "Enter Offset");
+    addLineEditAndLabel(attributeGridLayout, "Exit Offset");
 
-    addAttrCheckbox(innerLayout, "States follow scene", RWASTATEATTRIBUTE_FOLLOWINGASSETS);
-    addAttrCheckbox(innerLayout, "Lock Position", RWASTATEATTRIBUTE_LOCKPOSITION);
-    addAttrCheckbox(innerLayout, "Disable Fallback", RWASCENEATTRIBUTE_DISABLEFALLBACK);
+    addAttrCheckbox(attributeGridLayout, "States follow scene", RWASTATEATTRIBUTE_FOLLOWINGASSETS);
+    addAttrCheckbox(attributeGridLayout, "Lock Position", RWASTATEATTRIBUTE_LOCKPOSITION);
+    addAttrCheckbox(attributeGridLayout, "Disable Fallback", RWASCENEATTRIBUTE_DISABLEFALLBACK);
 
     //connect(this, SIGNAL(sendCurrentSceneRadiusEdited()), backend, SLOT(receiveCurrentSceneRadiusEdited()));
 
     connect(this, SIGNAL(sendCurrentScene(RwaScene*)),
               backend, SLOT(receiveLastTouchedScene(RwaScene*)));
 
-    this->setMinimumHeight((assetAttrCounter)*17);
-    this->setMaximumHeight((assetAttrCounter)*17);
+    this->setMinimumHeight((assetAttrCounter)*18);
     this->setMinimumWidth(20);
     this->setMaximumWidth(240);
 }
@@ -77,9 +71,9 @@ void RwaSceneAttributeView::setCurrentScene(RwaScene *currentScene)
     if(attrLineEdit)
         attrLineEdit->setText(QString::number(currentScene->getLevel()));
 
-    attrLineEdit = this->findChild<QLineEdit *>("Enter Offset");
-    if(attrLineEdit)
-        attrLineEdit->setText(QString::number(currentScene->getEnterOffset()));
+//    attrLineEdit = this->findChild<QLineEdit *>("Enter Offset");
+//    if(attrLineEdit)
+//        attrLineEdit->setText(QString::number(currentScene->getEnterOffset()));
 
     attrLineEdit = this->findChild<QLineEdit *>("Exit Offset");
     if(attrLineEdit)
@@ -259,10 +253,10 @@ void RwaSceneAttributeView::receiveLineEditAttributeValue(const QString &value)
             currentScene->setWidth(value.toFloat());
     }
 
-    if(!QObject::sender()->objectName().compare("Enter Offset"))
-    {
-        currentScene->setEnterOffset(value.toFloat());
-    }
+//    if(!QObject::sender()->objectName().compare("Enter Offset"))
+//    {
+//        currentScene->setEnterOffset(value.toFloat());
+//    }
 
     if(!QObject::sender()->objectName().compare("Exit Offset"))
     {
@@ -318,7 +312,6 @@ void RwaSceneAttributeView::receiveComboBoxAttributeValue(int index)
         else
             currentScene->setNextScene(attrComboBox->currentText().toStdString());
     }
-
 }
 
 void RwaSceneAttributeView::receiveComboBoxAttributeValue(QString value)

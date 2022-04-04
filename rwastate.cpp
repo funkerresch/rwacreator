@@ -30,7 +30,7 @@ RwaState::RwaState(std::string stateName) :
     setEnterOnlyAfterAssetsFinish(false);
     setEnterOnlyOnce(false);
     isExclusive = false;
-    enterOffset = -6;
+    //enterOffset = -6;
     exitOffset = 0;
     positionLocked = false;
     childrenFollowMe = true;
@@ -40,6 +40,7 @@ RwaState::~RwaState() // Delete Audio Files from Disk??
 {
     foreach(RwaAsset1 *asset, assets)
         delete asset;
+    qDebug() << "delete State";
 }
 
 void RwaState::copyAttributes(RwaState *dest)
@@ -84,7 +85,7 @@ void RwaState::copyAttributes(RwaState *dest)
     dest->enterOnlyAfterAssetsFinish = this->getEnterOnlyAfterAssetsFinish();
     dest->enterOnlyOnce =  this->getEnterOnlyOnce();
     dest->isExclusive = this->isExclusive;
-    dest->enterOffset = this->enterOffset;
+    //dest->enterOffset = this->enterOffset;
     dest->exitOffset = this->exitOffset;
     dest->positionLocked = this->positionLocked;
 }

@@ -14,7 +14,7 @@ RwaStateList::RwaStateList(QWidget* parent, RwaScene *scene) :
 }
 
 void RwaStateList::ListWidgetEditEnd(QWidget *editor, QAbstractItemDelegate::EndEditHint hint)
-{
+{   
     QString newName = reinterpret_cast<QLineEdit*>(editor)->text();
     if(currentState->objectName() != newName.toStdString())
     {
@@ -70,12 +70,8 @@ void RwaStateList::setCurrentState(RwaState *state)
              emit sendSelectedStates(getSelectedStates());
          }
      }
-
-     if(!(QObject::sender() == this->backend))
-     {
-         qDebug();
+     else
          emit sendCurrentState(currentState);
-     }
 }
 
 void RwaStateList::setCurrentStateFromCurrentListItem()
@@ -83,6 +79,7 @@ void RwaStateList::setCurrentStateFromCurrentListItem()
     RwaState *state = nullptr;
     if(currentScene)
     {
+        lastSelectedState = currentState;
         if(currentItem())
             state = currentScene->getState(currentItem()->text().toStdString());
 
@@ -122,11 +119,13 @@ void RwaStateList::keyPressEvent(QKeyEvent *event)
     QListWidget::keyPressEvent(event);
     switch (event->key())
     {
-        case Qt::Key_Delete:
+        case 16777219: // Qt::Key_Delete not working on OSX
             if(currentState->objectName() != "FALLBACK" && currentState->objectName() != "BACKGROUND")
             {
-                emit deleteState(QString::fromStdString(currentState->objectName()));
+                RwaState *toDelete = currentState;
                 takeItem(getSelectedIndex());
+                setCurrentState(currentScene->states.front());
+                emit deleteState(QString::fromStdString(toDelete->objectName()));
             }
             else
                 qDebug() << "Fallback/Background States can not be deleted.";

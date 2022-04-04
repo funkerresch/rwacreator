@@ -81,16 +81,10 @@ void RwaExport::writeAssetItem(RwaAsset1 *item)
 
    if(this->copyAssets)
    {
-       //QString absoluteAssetPath = QString("%1/%2").arg(backend->getLastAssetPath()).arg(item->fileName);
        QString absoluteAssetPath = QString("%1/%2").arg(this->path).arg(QString::fromStdString(item->getFileName()));
        QString newAssetPath = data->completeAssetPath;
        qDebug() << "Copy Asset: " << absoluteAssetPath;
        qDebug() << "To: " << newAssetPath;
-       /*if (QFile::exists("/home/user/dst.txt"))
-{
-    QFile::remove("/home/user/dst.txt");
-}*/
-
        QFile::copy(absoluteAssetPath, QString("%1/%2").arg(newAssetPath).arg(QString::fromStdString(item->getFileName())));
        item->setFullPath((QString("%1/assets/%2").arg(path).arg(QString::fromStdString(item->getFileName()))).toStdString());
    }
@@ -171,6 +165,7 @@ void RwaExport::writeAssetItem(RwaAsset1 *item)
 void RwaExport::writeState(RwaState *state)
 {
     xml.writeStartElement("state");
+
     xml.writeAttribute("name", QString::fromStdString(state->objectName()));
     xml.writeAttribute("type", QString::number(state->getType()));
     xml.writeAttribute("areatype", QString::number(state->getAreaType()));
@@ -192,7 +187,6 @@ void RwaExport::writeState(RwaState *state)
     xml.writeAttribute("radius", QString::number(state->getRadius()));
     xml.writeAttribute("width", QString::number(state->getWidth()));
     xml.writeAttribute("height", QString::number(state->getHeight()));
-    xml.writeAttribute("enteroffset", QString::number(state->getEnterOffset()));
     xml.writeAttribute("exitoffset", QString::number(state->getExitOffset()));
 
     xml.writeEndElement(); // end section gps
@@ -284,12 +278,8 @@ void RwaExport::writeScene(RwaScene *scene)
     xml.writeStartElement("exitoffsetcorners");
     if(scene->getExitOffset())
     {
-
          for(int i= 0;i< scene->corners.size(); i++)
         {
-            //const QPointF corner = scene->exitOffsetCorners->at(i);
-            //xml.writeTextElement("lon", QString::number(corner.x(), 'f', 8));
-            //xml.writeTextElement("lat", QString::number(corner.y(), 'f', 8));
              xml.writeTextElement("lon", QString::number(scene->exitOffsetCorners[i][0], 'f', 8));
              xml.writeTextElement("lon", QString::number(scene->exitOffsetCorners[i][1], 'f', 8));
         }

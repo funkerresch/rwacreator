@@ -21,7 +21,7 @@ RwaScene::RwaScene(std::vector<double> gps) :
     radius = 200;
     width = 200;
     height = 200;
-    enterOffset = 0;
+    //enterOffset = 0;
     exitOffset = 0;
     timeOut = 0;
     positionLocked = true;
@@ -42,7 +42,7 @@ RwaScene::RwaScene(std::string sceneName, std::vector<double> gps, int32_t zoom)
     width = -1;
     height = -1;
     level = -1;
-    enterOffset = 0;
+    //enterOffset = 0;
     exitOffset = 0;
     timeOut = 0;
     positionLocked = true;
@@ -330,6 +330,7 @@ void RwaScene::resetAssets()
 void RwaScene::removeState(RwaState *state)
 {
     states.remove(state);
+    delete state;
 }
 
 void RwaScene::setName(string name)

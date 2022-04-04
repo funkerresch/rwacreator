@@ -31,7 +31,6 @@ class RwaListView : public QListWidget
         virtual void update();
         virtual void setCurrentAsset(RwaAsset1 *currentAsset);
         virtual void setCurrentState(RwaState *currentState);
-        virtual void setCurrentState(qint32 stateNumber);
         virtual void setCurrentScene(RwaScene *currentScene);
         virtual void setCurrentScene(qint32 sceneNumber);
 

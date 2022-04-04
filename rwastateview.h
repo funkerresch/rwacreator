@@ -11,7 +11,6 @@
 #include "rwaassetlist.h"
 #include "rwagraphicsview.h"
 #include "rwaassetattributeview.h"
-#include "rwaaudiometadata.h"
 
 class RwaStateView : public RwaGraphicsView
 {
@@ -21,7 +20,6 @@ public:
 
     void zoomIn();
     void zoomOut();
-    long countttt;
 
 private:
 
@@ -31,7 +29,6 @@ private:
     RectPoint *currentRect;
     RwaAssetList *assetList;
     RwaAssetAttributeView *assetAttributes;
-    RwaAudioMetaData *player;
 
 public slots:
     void receiveMouseMoveEvent(const QMouseEvent*, const QPointF);
@@ -57,7 +54,7 @@ protected:
     void keyPressEvent(QKeyEvent *event);
 
 signals:
-    void sendCurrentStateRadiusEdited();
+
     void sendNewAsset(RwaState *currentState, RwaAsset1 *item);
 
 private slots:

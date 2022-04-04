@@ -9,9 +9,6 @@ RwaAssetList::RwaAssetList(QWidget* parent, RwaScene *scene) :
     setDragDropMode(QAbstractItemView::DropOnly);
     setSelectionMode(QAbstractItemView::ExtendedSelection);
 
-    connect(backend, SIGNAL(sendAddTts2CurrentState(QString)),
-              this, SLOT(addTts2CurrentState(QString)));
-
     connect(this, SIGNAL(sendSelectedAssets(QStringList)),
               backend, SLOT(receiveSelectedAssets(QStringList)));
 
@@ -33,7 +30,6 @@ void RwaAssetList::ListWidgetEditEnd(QWidget *editor, QAbstractItemDelegate::End
 
         if(end != newEnd)
             currentItem()->setText(QString::fromStdString(currentAsset->getFileName()));
-
         else
         {
             QFile::rename(QString::fromStdString(currentAsset->getFullPath()), newFullPath);
@@ -70,29 +66,31 @@ QStringList RwaAssetList::getSelectedAssets()
     return assets;
 }
 
-void RwaAssetList::setCurrentAsset(RwaAsset1 *currentAsset)
+void RwaAssetList::setCurrentAsset(RwaAsset1 *asset)
 {
-   if(!currentState)
+   if(!currentState || !asset)
         return;
-
-    this->currentAsset = currentAsset;
 
     if(QObject::sender() == this->backend)
     {
-        QList<QListWidgetItem *> items = findItems(QString::fromStdString(currentAsset->getFileName()), Qt::MatchExactly);
+        QList<QListWidgetItem *> items = findItems(QString::fromStdString(asset->getFileName()), Qt::MatchExactly);
+
         if(!items.empty())
         {
-            setCurrentItem(items.at(0));
-            int row = QListWidget::row(currentItem());
-            setCurrentRow(row);
+            if(asset != currentAsset) // this keeps multiple selections after mouse up in attribute view, ugly but working
+            {
+                setCurrentItem(items.at(0));
+                int row = QListWidget::row(currentItem());
+                setCurrentRow(row);
+            }
             emit sendSelectedAssets( getSelectedAssets() );
         }
     }
 
+    this->currentAsset = asset;
+
     if(!(QObject::sender() == this->backend))
-    {
         emit sendCurrentAsset(this->currentAsset);
-    }
 }
 
 void RwaAssetList::setCurrentAssetFromCurrentItem()
@@ -107,6 +105,7 @@ void RwaAssetList::setCurrentAssetFromCurrentItem()
         if(asset)
             setCurrentAsset(asset);
     }
+
     emit sendSelectedAssets( getSelectedAssets() );
 }
 
@@ -180,7 +179,6 @@ void RwaAssetList::add2ListAndCopy(QString fullpath)
     strippedPath = list.last();
 
     QString fullAssetPath(QString("%1/%2").arg(assetPath).arg(RwaUtilities::getFileName(fullpath)));
-    //qDebug() << "THIS IS THE PATH " << fullAssetPath;
     QFileInfo assetInfo(fullAssetPath);
     fileExists = assetInfo.exists();
 
@@ -216,8 +214,7 @@ void RwaAssetList::add2ListAndCopy(QString fullpath)
     }
 
     else
-    {
-        ;
+    {      
 
     }
 }

@@ -27,14 +27,12 @@ signals:
     void sendCurrentSceneRadiusEdited();
 
 private:
-   RwaView *mother;
+   //RwaView *mother;
    QList <QComboBox *> visitedSceneComboBoxes;
    qint32 visitedSceneConditionCount;
 
    void updateSceneComboBox(QComboBox *attrComboBox);
    void updateSceneAttr(QComboBox *attrComboBox, QString scene2compare);
-protected:
-   QGridLayout *innerLayout;
 };
 
 #endif // RWASCENEATTRIBUTEVIEW_H

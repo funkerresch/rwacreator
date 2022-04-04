@@ -51,7 +51,7 @@ RwaRuntime::RwaRuntime(const char *pdpath, const char *assetPath, float sampleRa
 #endif
     rwa_binauralsimple_tilde_setup();
     freeverb_tilde_setup();
-    //oggread_tilde_setup();
+    oggread_tilde_setup();
 
     libpd_openfile("stereoout.pd", pdpath);
     libpd_openfile("rwagetmetadata.pd", pdpath);
@@ -392,7 +392,7 @@ void RwaRuntime::initDynamicPdPatchers(RwaEntity *entitiy)
         {
             foreach(asset, state->getAssets())
             {
-                if(asset->type == RWAASSETTYPE_PD)
+                if(asset->type == RWAASSETTYPE_PD && !asset->mute)
                 {   
                     void *d = libpd_openfile(asset->fileName.c_str(), assetPath.c_str());
                     if(d != nullptr)
@@ -1128,12 +1128,7 @@ bool RwaRuntime::entityIsWithinArea(RwaEntity *entity, RwaArea *area, int offset
     double areaOffsetInKm;
     double areaOffsetInMeters;
 
-    if(offsetType == RWAAREAOFFSETTYPE_ENTER)
-    {
-        areaOffsetInKm = area->getEnterOffset()/1000;
-        areaOffsetInMeters = area->getEnterOffset();
-    }
-    else if(offsetType == RWAAREAOFFSETTYPE_EXIT)
+    if(offsetType == RWAAREAOFFSETTYPE_EXIT)
     {
         areaOffsetInKm = area->getExitOffset()/1000;
         areaOffsetInMeters = area->getExitOffset();

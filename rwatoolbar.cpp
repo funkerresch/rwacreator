@@ -73,8 +73,6 @@ RwaViewToolbar::RwaViewToolbar(const QString &title, qint32 flags, RwaBackend *b
 
     connect(backend, SIGNAL(sendClearAll()), this, SLOT(updateAll()));
 
-    connect(this, SIGNAL(sendWriteUndo()), backend, SLOT(receiveWriteUndo()));
-
     if(flags & RWATOOLBAR_MAPEDITTOOLS)
     {
         initToolButtonGroup();
@@ -85,9 +83,12 @@ RwaViewToolbar::RwaViewToolbar(const QString &title, qint32 flags, RwaBackend *b
     {
         connect (this, SIGNAL(sendAssetsVisible(bool)), parent, SLOT(setAssetsVisible(bool)));
         connect (this, SIGNAL(sendRadiiVisible(bool)), parent, SLOT(setRadiiVisible(bool)));
+        connect (this, SIGNAL(sendAssetsVisible(bool)), backend, SLOT(receiveShowAssets(bool))); // This is temporary.. not nice connected to 2 slots
+        connect (this, SIGNAL(sendRadiiVisible(bool)), backend, SLOT(receiveShowStateRadii(bool)));
         connect (this, SIGNAL(sendStartStopSimulator(bool)), backend, SLOT(startStopSimulator(bool)));
         connect (this, SIGNAL(sendTrashAssets(bool)), backend, SLOT(receiveTrashAssets(bool)));
         connect (this, SIGNAL(sendCalibrateHeadtracker()), backend, SLOT(calibrateHeadtracker()));
+        connect (this, SIGNAL(sendSimulateHeadtrackerStep()), backend->simulator, SLOT(receiveStep()));
         initControls();
     }
 
@@ -368,6 +369,17 @@ void RwaViewToolbar::initControls()
     calibrateHeadtrackerButton->setToolTip("Calibrate head tracker.");
     addWidget(calibrateHeadtrackerButton);
 
+    simulateHeadtrackerStepButton = new QToolButton(this);
+    simulateHeadtrackerStepButton->setCheckable(false);
+    simulateHeadtrackerStepButton->setChecked(false);
+    connect (simulateHeadtrackerStepButton, SIGNAL(clicked(bool)), this, SLOT(receiveSendHeadtrackerStep(bool)));
+    simulateHeadtrackerStepButton->setObjectName("headtrackerStepButton");
+    simulateHeadtrackerStepButton->setIcon(QIcon(path+"images/headtrackerStepButton.png"));
+    simulateHeadtrackerStepButton->setIconSize(QSize(15,15));
+    simulateHeadtrackerStepButton->setFixedSize(QSize(20,20));
+    simulateHeadtrackerStepButton->setToolTip("Send Step");
+    addWidget(simulateHeadtrackerStepButton);
+
     trashAssetsButton = new QToolButton(this);
     trashAssetsButton->setCheckable(true);
     trashAssetsButton->setChecked(false);
@@ -436,6 +448,12 @@ void RwaViewToolbar::receiveCalibrateHeadtracker(bool onOff)
 {
     calibrateHeadtrackerButton->setChecked(false);
     emit sendCalibrateHeadtracker();
+}
+
+void RwaViewToolbar::receiveSendHeadtrackerStep(bool onOff)
+{
+    simulateHeadtrackerStepButton->setChecked(false);
+    emit sendSimulateHeadtrackerStep();
 }
 
 void RwaViewToolbar::updateSelectSceneMenu()

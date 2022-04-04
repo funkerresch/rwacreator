@@ -56,6 +56,7 @@ public slots:
     void updateState();
     void moveCurrentAsset();
 
+    void receiveUpdateCurrentSceneRadius();
 protected:
      void setCurrentScene(RwaScene *scene);
      void setCurrentState(RwaState *state);

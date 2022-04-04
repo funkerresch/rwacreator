@@ -42,7 +42,7 @@ RwaBackend::RwaBackend(QWidget *parent) :
     CFURLRef url = (CFURLRef)CFAutorelease((CFURLRef)CFBundleCopyBundleURL(CFBundleGetMainBundle()));
     QString path = QUrl::fromCFURL(url).path();
     httpProcessId = -1;
-    StartHttpServer(8088);
+    //StartHttpServer(8088);
 
     completeBundlePath = path + "Contents/MacOS/";
     completeProjectPath = QString();
@@ -60,8 +60,8 @@ RwaBackend::RwaBackend(QWidget *parent) :
 
 RwaBackend::~RwaBackend()
 {
-    QString killHttp = QString("kill %1").arg(httpProcessId);
-    system(killHttp.toStdString().c_str());
+   // QString killHttp = QString("kill %1").arg(httpProcessId);
+   // system(killHttp.toStdString().c_str());
 }
 
 QList<RwaScene *>& RwaBackend::getScenes()
@@ -223,6 +223,7 @@ void RwaBackend::clearScenes()
 void RwaBackend::receiveReadUndoFile(QString name)
 {
     emit readUndoFile(name);
+    emit sendLastTouchedScene(lastTouchedScene);
 }
 
 void RwaBackend::receiveWriteUndo(QString undoAction)
@@ -342,6 +343,16 @@ void RwaBackend::startStopSimulator(bool startStop)
 void RwaBackend::receiveTrashAssets(bool onOff)
 {
     trashAsset = onOff;
+}
+
+void RwaBackend::receiveShowStateRadii(bool onOff)
+{
+    showStateRadii = onOff;
+}
+
+void RwaBackend::receiveShowAssets(bool onOff)
+{
+    showAssets = onOff;
 }
 
 void RwaBackend::setMainVolume(int volume)

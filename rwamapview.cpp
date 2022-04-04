@@ -18,6 +18,7 @@ RwaMapView::RwaMapView(QWidget* parent, RwaScene *scene)
     assetsVisible = false;
     stateRadiusVisible = false;
     assetStartPointsVisible = false;
+    sceneRadiusVisible = true;
 
     tool = RWATOOL_ARROW;
 
@@ -101,12 +102,20 @@ RwaMapView::RwaMapView(QWidget* parent, RwaScene *scene)
     connect(backend, SIGNAL(sendMoveCurrentAssetReflection(double, double, int)),
               this, SLOT(movePixmapsOfCurrentAssetReflection(double,double, int)));
 
+    connect(this, SIGNAL(sendCurrentStateRadiusEdited()),
+            backend, SLOT(receiveCurrentStateRadiusEdited()));
+
+    connect(this, SIGNAL(sendCurrentSceneRadiusEdited()),
+            backend, SLOT(receiveCurrentSceneRadiusEdited()));
 
     connect(backend, SIGNAL(sendRedrawAssets()),
               this, SLOT(redrawAssets()));
 
     connect(backend, SIGNAL(sendCurrentStateRadiusEdited()),
               this, SLOT(receiveUpdateCurrentStateRadius()));
+
+    connect(backend, SIGNAL(sendCurrentSceneRadiusEdited()),
+              this, SLOT(receiveUpdateCurrentSceneRadius()));
 
     layout->addWidget(setupToolbar(toolbarFlags));
     layout->addWidget(mc);
@@ -323,9 +332,21 @@ void RwaMapView::receiveMouseMoveEvent(const QMouseEvent*, const QPointF myPoint
 
         if(editArea)
         {
-            resizeArea(myPoint, currentScene);
-            setUndoAction("Resize Scene Area");
-            sceneRadiusLayer->setVisible(true);
+            if(editSceneArea)
+            {
+                resizeArea(myPoint, currentScene);
+                setUndoAction("Resize Scene Area");
+                emit sendCurrentSceneRadiusEdited();
+
+                sceneRadiusLayer->setVisible(true);
+            }
+            if(editStateArea)
+            {
+                resizeArea(myPoint, currentState);
+                setUndoAction("Resize State Area");
+                emit sendCurrentStateRadiusEdited();
+                stateRadiusLayer->setVisible(true);
+            }
             return;
         }
     }
@@ -477,6 +498,9 @@ void RwaMapView::mouseDownArrow(const QMouseEvent *event, const QPointF myPoint)
 
             if(mouseDownArea(myPoint, currentScene))
                 return;
+
+            if(mouseDownArea(myPoint, currentState))
+                return;
         }
     }
 
@@ -486,6 +510,14 @@ void RwaMapView::mouseDownArrow(const QMouseEvent *event, const QPointF myPoint)
         {
             setUndoAction("Edit Scene area.");
             sceneRadiusLayer->setVisible(true);
+            return;
+        }
+
+        if(mouseDoubleClickArea(myPoint, currentState))
+        {
+            setUndoAction("Edit State area.");
+            sceneRadiusLayer->setVisible(true);
+            emit sendCurrentStateRadiusEdited();
             return;
         }
 
@@ -573,7 +605,6 @@ void RwaMapView::receiveMouseReleaseEvent()
 
             if(RwaUtilities::coordinateWithinRectangle1(position, topLeft, bottomRight))
             {
-
                 RwaState *state = (RwaState *)currentStatePoint->data;
                 states << QString::fromStdString(state->objectName());
             }
@@ -603,6 +634,8 @@ void RwaMapView::receiveMouseReleaseEvent()
     editAreaWidth = false;
     editAreaCorner = false;
     editArea = false;
+    editSceneArea = false;
+    editStateArea = false;
     areaCornerIndex2Edit = -1;   
     writeUndo();
 }
@@ -616,6 +649,12 @@ void RwaMapView::receiveUpdateCurrentStateRadius()
 {
     if(stateRadiusVisible)
         redrawStateRadii();
+}
+
+void RwaMapView::receiveUpdateCurrentSceneRadius()
+{
+    if(sceneRadiusVisible)
+        redrawSceneRadii();
 }
 
 void RwaMapView::setCurrentAsset(RwaAsset1 *asset)
@@ -706,15 +745,11 @@ void RwaMapView::setCurrentScene(RwaScene *scene)
         redrawScenes();
 
         if(currentScene->currentState)
-        {
             setCurrentState(currentScene->currentState);
-        }
         else
         {
             if(!currentScene->getStates().empty())
-            {
                 setCurrentState(currentScene->getStates().front());
-            }
         }
 
         if(!entityInitialized && currentScene->getCoordinates()[0] != 0)
@@ -725,10 +760,7 @@ void RwaMapView::setCurrentScene(RwaScene *scene)
         }
 
         if(!(QObject::sender() == this->backend))
-        {
-            //qDebug() << "MapView:" << "emit current Scene";
             emit sendCurrentScene(scene);
-        }
     }
 }
 

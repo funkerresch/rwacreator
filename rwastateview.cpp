@@ -4,8 +4,6 @@
 RwaStateView::RwaStateView(QWidget* parent, RwaScene *scene)
 : RwaGraphicsView(parent, scene)
 {
-    countttt = 0;
-
     setAcceptDrops(true);
     setAlignment(Qt::AlignTop);
     windowSplitter = new QSplitter(this);
@@ -14,10 +12,7 @@ RwaStateView::RwaStateView(QWidget* parent, RwaScene *scene)
     layout->setContentsMargins(0,0,0,0);
     assetList = new RwaAssetList(this, scene);
     assetAttributes = new RwaAssetAttributeView(this, scene);
-
     assetAttributes->scrollArea->setMaximumWidth(250);
-
-
     currentPoint = nullptr;
     editStateRadius = false;
     editStateHeight = false;
@@ -426,7 +421,17 @@ void RwaStateView::setCurrentState(RwaState *state)
     if(!state)
         return;
 
-    assetList->clear();
+    if(state != currentState)
+    {
+        assetList->clear();
+        foreach(asset , state->getAssets() )
+        {
+            QListWidgetItem *item = new QListWidgetItem(RwaUtilities::getFileName(QString::fromStdString(asset->getFullPath())), assetList);
+            item->setFlags( item->flags() | Qt::ItemIsEditable );
+            assetList->addItem(item);
+        }
+    }
+
     this->currentState = state;
 
     mc->setView(QPointF(currentState->getCoordinates()[0], currentState->getCoordinates()[1]));
@@ -435,13 +440,6 @@ void RwaStateView::setCurrentState(RwaState *state)
 
     distance = getDistanceInPxFromGps(QPointF(currentState->getCoordinates()[0], currentState->getCoordinates()[1]),
                     RwaUtilities::calculatePointOnCircle(QPointF(currentState->getCoordinates()[0], currentState->getCoordinates()[1]), currentState->getRadius()));
-
-    foreach(asset , currentState->getAssets() )
-    {
-        QListWidgetItem *item = new QListWidgetItem(RwaUtilities::getFileName(QString::fromStdString(asset->getFullPath())), assetList);
-        item->setFlags( item->flags() | Qt::ItemIsEditable );
-        assetList->addItem(item);
-    }
 
     asset = currentState->getLastTouchedAsset();
     if(asset)

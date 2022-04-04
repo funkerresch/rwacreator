@@ -17,9 +17,6 @@ RwaListView::RwaListView(QWidget *parent, RwaScene *scene) :
     connect(this, SIGNAL(sendCurrentScene(RwaScene*)),
             backend, SLOT(receiveLastTouchedScene(RwaScene*)));
 
-    connect(this, SIGNAL(sendCurrentAsset(RwaAsset*)),
-            backend, SLOT(receiveLastTouchedAsset(RwaAsset*)));
-
     connect(backend, SIGNAL(sendLastTouchedState(RwaState *)),
               this, SLOT(setCurrentState(RwaState*)));
 
@@ -92,21 +89,6 @@ void RwaListView::setCurrentState(RwaState *currentState)
     }
 
     setCurrentRow(index);
-}
-
-void RwaListView::setCurrentState(qint32 stateNumber)
-{
-    RwaState *state;
-    if(!currentScene)
-        return;
-    if(currentScene->getStates().empty())
-        return;
-
-    auto statesList = currentScene->getStates().begin();
-    std::advance(statesList, stateNumber);
-
-    state = *statesList;
-    emit sendCurrentState(state);
 }
 
 void RwaListView::setCurrentAsset(RwaAsset1 *currentAsset)

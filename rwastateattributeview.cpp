@@ -7,15 +7,11 @@ RwaStateAttributeView::RwaStateAttributeView(QWidget *parent, RwaScene *scene) :
     RwaState *hintState;
     RwaScene *nextScene;
 
-    mother = (RwaView *)parent;
-    innerLayout = new QGridLayout(this);
-    innerLayout->setVerticalSpacing(2);
-    innerLayout->setContentsMargins(0,4,0,4);
-    innerLayout->setAlignment(this, Qt::AlignLeft);
+    setAlignment(Qt::AlignTop);
 
     QStringList stateTypes;
     stateTypes << "Undetermined" << "Fallback" << "Background" << "GPS" << "Bluetooth" << "Combined" << "Random GPS" << "Hint" << "Other";
-    addComboBoxAndLabel(innerLayout, "State Type", stateTypes);
+    addComboBoxAndLabel(attributeGridLayout, "State Type", stateTypes);
 
     QStringList defaultPlaybackTypes;
 
@@ -23,7 +19,7 @@ RwaStateAttributeView::RwaStateAttributeView(QWidget *parent, RwaScene *scene) :
                   << "Binaural-5Channel (Legacy)" << "Binaural-7Channel (Legacy)"<< "Binaural-Mono" << "Binaural-Stereo" << "Binaural-Auto" \
                   << "Binaural-5Channel" << "Binaural-7Channel"  << "Binaural-Space" << "Custom IR-Set 1" << "Custom IR-Set 2" << "Custom IR-Set 3";
 
-    QComboBox *playbackTypesCombo = addComboBoxAndLabel(innerLayout, "Default Playback Mode", defaultPlaybackTypes);
+    QComboBox *playbackTypesCombo = addComboBoxAndLabel(attributeGridLayout, "Default Playback Mode", defaultPlaybackTypes);
     qobject_cast<QListView *>(playbackTypesCombo->view())->setRowHidden(4, true);
     qobject_cast<QListView *>(playbackTypesCombo->view())->setRowHidden(5, true);
     qobject_cast<QListView *>(playbackTypesCombo->view())->setRowHidden(6, true);
@@ -31,16 +27,16 @@ RwaStateAttributeView::RwaStateAttributeView(QWidget *parent, RwaScene *scene) :
 
     QStringList areaTypes;
     areaTypes << "Undetermined" << "Circle" << "Rectangle" << "Square" << "Polygon";
-    addComboBoxAndLabel(innerLayout, "Area Type", areaTypes);
+    addComboBoxAndLabel(attributeGridLayout, "Area Type", areaTypes);
 
     QStringList nextStates;
     nextStates << "None";
-    foreach(nextState, mother->getCurrentScene()->getStates())
+    foreach(nextState, getCurrentScene()->getStates())
         nextStates << QString::fromStdString(nextState->objectName());
 
     QStringList hintStates;
     hintStates << "None";
-    foreach(hintState, mother->getCurrentScene()->getStates())
+    foreach(hintState, getCurrentScene()->getStates())
             hintStates << QString::fromStdString(hintState->objectName());
 
     QStringList nextScenes;
@@ -50,30 +46,29 @@ RwaStateAttributeView::RwaStateAttributeView(QWidget *parent, RwaScene *scene) :
 
     QLineEdit *editingFinishedLineEdit;
 
-    addComboBoxAndLabel(innerLayout, "Next State", nextStates);
-    addComboBoxAndLabel(innerLayout, "Hint State", hintStates);
-    addComboBoxAndLabel(innerLayout, "Next Scene", nextScenes);
-    addLineEditAndLabel(innerLayout, "Time Out");
-    editingFinishedLineEdit = addLineEditAndLabel(innerLayout, "Min stay time");
+    addComboBoxAndLabel(attributeGridLayout, "Next State", nextStates);
+    addComboBoxAndLabel(attributeGridLayout, "Hint State", hintStates);
+    addComboBoxAndLabel(attributeGridLayout, "Next Scene", nextScenes);
+    addLineEditAndLabel(attributeGridLayout, "Time Out");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Min stay time");
 
-    QLineEdit *requiredStates = addLineEditAndLabel(innerLayout, "Required States");
+    QLineEdit *requiredStates = addLineEditAndLabel(attributeGridLayout, "Required States");
     setLineEditSignal2editingFinished(requiredStates);
 
-    editingFinishedLineEdit = addLineEditAndLabel(innerLayout, "Longitude");
-    editingFinishedLineEdit = addLineEditAndLabel(innerLayout, "Latitude");
-    editingFinishedLineEdit =addLineEditAndLabel(innerLayout, "State Radius");
-    editingFinishedLineEdit =addLineEditAndLabel(innerLayout, "State Width");
-    editingFinishedLineEdit =addLineEditAndLabel(innerLayout, "State Height");
-    addLineEditAndLabel(innerLayout, "Enter Offset");
-    addLineEditAndLabel(innerLayout, "Exit Offset");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Longitude");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Latitude");
+    editingFinishedLineEdit =addLineEditAndLabel(attributeGridLayout, "State Radius");
+    editingFinishedLineEdit =addLineEditAndLabel(attributeGridLayout, "State Width");
+    editingFinishedLineEdit =addLineEditAndLabel(attributeGridLayout, "State Height");
+    addLineEditAndLabel(attributeGridLayout, "Exit Offset");
 
-    addAttrCheckbox(innerLayout, "Assets follow state", RWASTATEATTRIBUTE_FOLLOWINGASSETS);
-    addAttrCheckbox(innerLayout, "Enter state only once", RWASTATEATTRIBUTE_ENTERONLYONCE);
-    addAttrCheckbox(innerLayout, "Exclusive for one entity", RWASTATEATTRIBUTE_EXCLUSIVE);
-    addAttrCheckbox(innerLayout, "Leave after assets finish", RWASTATEATTRIBUTE_LEAVEAFTERASSETSFINISH);
-    addAttrCheckbox(innerLayout, "Leave only after assets finish", RWASTATEATTRIBUTE_LEAVEONLYAFTERASSETSFINISH);
-    addAttrCheckbox(innerLayout, "Lock Position", RWASTATEATTRIBUTE_LOCKPOSITION);
-    addAttrCheckbox(innerLayout, "State within state", RWASTATEATTRIBUTE_STATEWITHINSTATE);
+    addAttrCheckbox(attributeGridLayout, "Assets follow state", RWASTATEATTRIBUTE_FOLLOWINGASSETS);
+    addAttrCheckbox(attributeGridLayout, "Enter state only once", RWASTATEATTRIBUTE_ENTERONLYONCE);
+    addAttrCheckbox(attributeGridLayout, "Exclusive for one entity", RWASTATEATTRIBUTE_EXCLUSIVE);
+    addAttrCheckbox(attributeGridLayout, "Leave after assets finish", RWASTATEATTRIBUTE_LEAVEAFTERASSETSFINISH);
+    addAttrCheckbox(attributeGridLayout, "Leave only after assets finish", RWASTATEATTRIBUTE_LEAVEONLYAFTERASSETSFINISH);
+    addAttrCheckbox(attributeGridLayout, "Lock Position", RWASTATEATTRIBUTE_LOCKPOSITION);
+    addAttrCheckbox(attributeGridLayout, "State within state", RWASTATEATTRIBUTE_STATEWITHINSTATE);
 
     connect(this, SIGNAL(sendCurrentStateRadiusEdited()), backend, SLOT(receiveCurrentStateRadiusEdited()));
 
@@ -86,7 +81,7 @@ RwaStateAttributeView::RwaStateAttributeView(QWidget *parent, RwaScene *scene) :
     connect(backend, SIGNAL(sendSelectedStates(QStringList)),
               this, SLOT(receiveSelectedStates(QStringList)));
 
-    this->setMinimumHeight((assetAttrCounter)*17);
+    this->setMinimumHeight((assetAttrCounter)*18);
     this->setMinimumWidth(20);
     this->setMaximumWidth(240);
 }
@@ -183,9 +178,9 @@ void RwaStateAttributeView::setCurrentState(RwaState *state)
         attrLineEdit->setText(requiredStatesText);
     }
 
-    attrLineEdit = this->findChild<QLineEdit *>("Enter Offset");
-    if(attrLineEdit)
-        attrLineEdit->setText(QString::number(currentState->getEnterOffset()));
+//    attrLineEdit = this->findChild<QLineEdit *>("Enter Offset");
+//    if(attrLineEdit)
+//        attrLineEdit->setText(QString::number(currentState->getEnterOffset()));
 
     attrLineEdit = this->findChild<QLineEdit *>("Exit Offset");
     if(attrLineEdit)
@@ -257,14 +252,14 @@ void RwaStateAttributeView::updateStateComboBox(QComboBox *attrComboBox)
 
     RwaState *state;
 
-    disconnect(attrComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(receiveComboBoxAttributeValue(QString)));
+    //disconnect(attrComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(receiveComboBoxAttributeValue(QString)));
     attrComboBox->clear();
     attrComboBox->addItem("None");
 
     foreach(state, currentScene->getStates())
         attrComboBox->addItem(QString::fromStdString(state->objectName()));
 
-    connect(attrComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(receiveComboBoxAttributeValue(QString)));
+    //connect(attrComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(receiveComboBoxAttributeValue(QString)));
 }
 
 void RwaStateAttributeView::updateSceneAttr(QComboBox *attrComboBox, QString scene2compare)
@@ -400,10 +395,10 @@ void RwaStateAttributeView::receiveLineEditAttributeValue(const QString &value)
             currentState->setWidth(value.toFloat());
     }
 
-    if(!QObject::sender()->objectName().compare("Enter Offset"))
-    {
-        currentState->setEnterOffset(value.toFloat());
-    }
+//    if(!QObject::sender()->objectName().compare("Enter Offset"))
+//    {
+//        currentState->setEnterOffset(value.toFloat());
+//    }
 
     if(!QObject::sender()->objectName().compare("Exit Offset"))
     {

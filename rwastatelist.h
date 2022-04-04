@@ -6,6 +6,8 @@
 class RwaStateList : public RwaListView
 {
     Q_OBJECT
+
+    RwaState *lastSelectedState = nullptr;
     void keyPressEvent(QKeyEvent *event) override;
     QStringList getSelectedStates();
     void setCurrentStateFromCurrentListItem();

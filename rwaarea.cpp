@@ -9,7 +9,17 @@ RwaArea::RwaArea() :
 
 RwaArea::~RwaArea()
 {
-    //delete corners;
+    foreach(std::vector<double> corner, corners)
+        std::vector<double>().swap(corner);
+
+    std::vector<std::vector<double>>().swap(corners);
+
+    foreach(std::vector<double> corner, exitOffsetCorners)
+        std::vector<double>().swap(corner);
+
+    std::vector<std::vector<double>>().swap(exitOffsetCorners);
+
+    qDebug() << "Deleted Corners";
 }
 
 int32_t RwaArea::getZoom() const
@@ -50,7 +60,6 @@ void RwaArea::setAreaType(int32_t value)
         tmpEast = RwaUtilities::calculateDestination1(getCoordinates(), getWidth()/2, 90);
 
         corner = RwaUtilities::calculateDestination1(tmpWest, getHeight()/2, 0);
-        //qDebug() << corner.x() << " " << corner.y();
         corners.push_back(corner);
 
         corner = RwaUtilities::calculateDestination1(tmpEast, getHeight()/2, 0);
@@ -62,15 +71,10 @@ void RwaArea::setAreaType(int32_t value)
         corner = RwaUtilities::calculateDestination1(tmpWest, getHeight()/2, 180);
         corners.push_back(corner);
 
-        //calculateEnterOffsetCorners();
         calculateExitOffsetCorners();
-        //qDebug() << "INIT POLYGON";
     }
     else
-    {
-        //calculateEnterOffsetCorners();
         calculateExitOffsetCorners();
-    }
 }
 
 int32_t RwaArea::getRadius() const
@@ -103,33 +107,10 @@ void RwaArea::setHeight(int32_t value)
     height = value;
 }
 
-float RwaArea::getEnterOffset() const
-{
-    return enterOffset;
-}
-
-void RwaArea::setEnterOffset(float value)
-{
-    enterOffset = value;
-    if(!corners.empty())
-    {
-        calculateEnterOffsetCorners();
-    }
-}
-
-void RwaArea::calculateEnterOffsetCorners()
-{
-    //enterOffsetCorners->clear();
-    //RwaUtilities::calculatePolygonOffset1(enterOffset, corners, enterOffsetCorners);
-    //qDebug() << "calcEnterOffsetCorners: " << enterOffsetCorners->count();
-
-}
-
 void RwaArea::calculateExitOffsetCorners()
 {
     exitOffsetCorners.clear();
     RwaUtilities::calculatePolygonOffset2(exitOffset, corners, exitOffsetCorners);
-    //qDebug() << "calcExitOffsetCorners: " << enterOffsetCorners->count();
 }
 
 float RwaArea::getExitOffset() const
@@ -141,9 +122,7 @@ void RwaArea::setExitOffset(float value)
 {
     exitOffset = value;
     if(!corners.empty())
-    {
         calculateExitOffsetCorners();
-    }
 }
 
 float RwaArea::getTimeOut() const

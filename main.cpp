@@ -50,7 +50,6 @@ int main(int argc, char **argv)
     RwaBackend::getInstance();
     RwaCreator mainWin;
     qInstallMessageHandler(mainWin.logMessages);
-    //mainWin.resize(1000, 800);
     mainWin.show();
     return app.exec();
 }

@@ -89,26 +89,21 @@ void RwaGraphicsView::initNewGame()
     entityLayer->clearGeometries();
     entityInitialized = false;
     emit sendCurrentScene(backend->getScenes().first());
-    //qDebug() << backend->getCompleteProjectPath() + "/tilecache";
 }
 
 void RwaGraphicsView::addZoomButtons()
 {
     innerLayout->setAlignment(Qt::AlignTop);
-    mc->setLayout(innerLayout);
-    connect(zoomInButton, SIGNAL(clicked(bool)),
-              this, SLOT(zoomIn()));
-    connect(zoomOutButton, SIGNAL(clicked(bool)),
-              this, SLOT(zoomOut()));
-
+    mc->setLayout(innerLayout);   
     leftLayout->addWidget(zoomInButton);
     leftLayout->addWidget(zoomOutButton);
-
     rightLayout->addWidget(mapName);
     rightLayout->setAlignment(Qt::AlignRight);
     leftLayout->setAlignment(Qt::AlignLeft);
     innerLayout->addLayout(leftLayout);
     innerLayout->addLayout(rightLayout);
+    connect(zoomInButton, SIGNAL(clicked(bool)), this, SLOT(zoomIn()));
+    connect(zoomOutButton, SIGNAL(clicked(bool)), this, SLOT(zoomOut()));
 }
 
 double RwaGraphicsView::getDistanceInPxFromGps(QPointF p1, QPointF p2)
@@ -216,7 +211,6 @@ void RwaGraphicsView::movePixmapsOfCurrentAssetChannel(double dx, double dy, int
     }
 }
 
-
 void RwaGraphicsView::moveReflectionPixmapsOfCurrentAsset(double dx, double dy)
 {
     for (int j=0; j<assetReflectionLayer->geometries.count(); j++)
@@ -260,7 +254,6 @@ void RwaGraphicsView::movePixmapsOfAssetReflections(double dx, double dy)
             point1->move(dx, dy);
     }
 }
-
 
 void RwaGraphicsView::movePixmapsOfCurrentScene(double dx, double dy)
 {
@@ -523,7 +516,9 @@ void RwaGraphicsView::resizeArea(QPointF myPoint, RwaArea *currentArea)
     double newHeight = RwaUtilities::calculateDistance1(tmp, myPoint1);
 
     if(editAreaRadius)
+    {
         currentArea->setRadius(newRadius*1000);
+    }
 
     if( (editAreaWidth) && (currentArea->getAreaType() == RWAAREATYPE_SQUARE) )
     {
@@ -589,6 +584,11 @@ bool RwaGraphicsView::mouseDownArea(QPointF myPoint, RwaArea *currentArea)
              mc->setMouseMode(MapControl::None);
              editAreaRadius = true;
              editArea = true;
+
+             if(currentArea->getLocationType() == RWALOCATIONTYPE_SCENE)
+                 editSceneArea = true;
+             else
+                 editStateArea = true;
              return true;
          }
      }
@@ -615,6 +615,10 @@ bool RwaGraphicsView::mouseDownArea(QPointF myPoint, RwaArea *currentArea)
          {
              mc->setMouseMode(MapControl::None);
              editArea = true;
+             if(currentArea->getLocationType() == RWALOCATIONTYPE_SCENE)
+                 editSceneArea = true;
+             else
+                 editStateArea = true;
              return true;
          }
      }
@@ -633,6 +637,11 @@ bool RwaGraphicsView::mouseDownArea(QPointF myPoint, RwaArea *currentArea)
                  editArea = true;
                  mc->setMouseMode(MapControl::None);
                  areaCornerIndex2Edit = i;
+
+                 if(currentArea->getLocationType() == RWALOCATIONTYPE_SCENE)
+                     editSceneArea = true;
+                 else
+                     editStateArea = true;
 
                  return true;
              }
@@ -680,15 +689,18 @@ bool RwaGraphicsView::mouseDoubleClickArea(QPointF myPoint, RwaArea *currentArea
 void RwaGraphicsView::receiveStateName(QString name)
 {
     tmpObjectName = name;
-   // emit sendStateName(currentState, name);
+    tmpState = currentState; // ugly workaround..
 }
 
 void RwaGraphicsView::updateCurrentState()
 {
-    if(currentState->objectName() != tmpObjectName.toStdString())
+    if(tmpState == currentState) // ugly workaround for editing name in graphicsview followed by mouse down in state list
     {
-        currentState->setObjectName(tmpObjectName.toStdString());
-        emit sendWriteUndo("Renamed State");
+        if(currentState->objectName() != tmpObjectName.toStdString())
+        {
+            currentState->setObjectName(tmpObjectName.toStdString());
+            emit sendWriteUndo("Renamed State");
+        }
     }
 
     updatePixmaps(currentStatePoint, statesLayer);
@@ -794,6 +806,7 @@ void RwaGraphicsView::drawState(RwaState *state, bool isActive)
     newPlace->addLabelWidget(stateNameLabel);
 
     connect(stateName, SIGNAL(textEdited(QString)), this, SLOT(receiveStateName(QString)));
+   // connect(stateName, SIGNAL(editingFinished()), this, SLOT(updateCurrentState())); // This crashes somwhow, cannot remember why..
     connect(stateName, SIGNAL(editingFinished()), this, SLOT(workAroundLineEditBug()));
     //connect(stateName, SIGNAL(returnPressed()), this, SLOT(updateCurrentState()));
 
@@ -814,9 +827,6 @@ void RwaGraphicsView::drawState(RwaState *state, bool isActive)
         newPlace->setLabelVisible(true);
 
     statesLayer->addGeometry(newPlace);
-
-    //qDebug() << "COORDINATES: " << newPlace->coordinate().x();
-    //statesLayer->addGeometry(radiusCircle);
 }
 
 void RwaGraphicsView::drawAsset(RwaAsset1 *item, bool isActive)
@@ -1029,9 +1039,7 @@ void RwaGraphicsView::resizeSceneRadii()
 
     for (int j=0; j<sceneRadiusLayer->geometries.count(); j++)
     {
-
         QmapPoint *point1 = (QmapPoint *)statesLayer->geometries.at(j);
-
         point1->setVisible(true);
     }
 }

@@ -1,3 +1,9 @@
+/*
+ * rwaattributeview.h
+ * by Thomas Resch
+ * Base Class for Rwa scene, state and asset attribute view.
+*/
+
 #ifndef RWAATTRIBUTEVIEW_H
 #define RWAATTRIBUTEVIEW_H
 
@@ -40,17 +46,14 @@ protected:
     QButtonGroup *assetAttributeGroup;
     QFont attributeFont;
     QFont dynamicAddButtonFont;
-
     QString senderName, lastSenderName;
     QString senderValue, lastSenderValue;
+    QGridLayout *attributeGridLayout;
 
-
-    //void setCurrentState(RwaState *currentState);
-    //void setCurrentScene(RwaScene *currentScene);
     void setLineEditSignal2editingFinished(QLineEdit *attrLineEdit);
     void addAttrCheckbox(QGridLayout *layout, QString name, int type);
-    QLineEdit *addLineEditAndLabel(QGridLayout *layout, QString name);
     void addLineEditAndLabel(QGridLayout *layout, QString name, QLineEdit **attrLineEdit, QLabel **attrLabel);
+    QLineEdit *addLineEditAndLabel(QGridLayout *layout, QString name);
     QComboBox *addComboBoxAndLabel(QGridLayout *layout, QString name, QStringList values);
 
 protected slots:

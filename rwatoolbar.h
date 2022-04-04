@@ -98,6 +98,7 @@ private:
 
     QToolButton *scanSerialPortsButton;
     QToolButton *calibrateHeadtrackerButton;
+    QToolButton *simulateHeadtrackerStepButton;
     QToolButton *trashAssetsButton;
     QToolButton *startSimulatorButton;
     QToolButton *stopSimulatorButton;
@@ -141,6 +142,7 @@ signals:
     void sendTrashAssets(bool onOff);
     void sendStartStopSimulator(bool startStopSimulator);
     void sendCalibrateHeadtracker();
+    void sendSimulateHeadtrackerStep();
     void sendScanSerialPorts();
     void sendWriteUndo();
     void sendWriteUndo(QString undoAction);
@@ -182,6 +184,7 @@ private slots:
     void newSceneFromSelectedStates();
     void moveScene2NewLocation();
     void showFindPlacesDialog();
+    void receiveSendHeadtrackerStep(bool onOff);
 };
 
 #endif

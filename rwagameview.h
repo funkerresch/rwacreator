@@ -17,7 +17,7 @@ public slots:
 
     void deleteScene(const QString &sceneName);
 protected:
-    void setCurrentScene(RwaScene *currentScene);
+    void setCurrentScene(RwaScene *scene);
 
 private:
 

@@ -180,7 +180,25 @@ void RwaSimulator::receiveEntityPosition(QPointF position)
 void RwaSimulator::receiveStep()
 {
     qDebug() << "Received Step Event from Headtracker";
-    step = true;
+    runtime->step = true;
+
+    oscDevice *device;
+    RwaEntity *entity;
+
+    foreach(entity, entities)
+    {
+        string name = entity->objectName();
+        foreach(device, devices)
+        {
+            if(name == (device->name).toStdString())
+            {
+               device->oscClient->sendData("/step", 1);
+               qDebug() << "send step to Device";
+            }
+        }
+    }
+
+    //step = true;
 }
 
 void RwaSimulator::receiveAzimuth(float azimuth)
