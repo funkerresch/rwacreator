@@ -25,6 +25,7 @@ public slots:
         int getNumberOfSelectedAssets();
         QStringList getSelectedAssets();
 
+        void setCurrentScene(RwaScene *scene);
 protected:
         void keyPressEvent(QKeyEvent *event) override;
         void mousePressEvent(QMouseEvent *event) override;
@@ -38,6 +39,7 @@ protected:
 
     private:
         void setCurrentAssetFromCurrentItem();
+        void findLastTouchedAsset(RwaAsset1 *asset);
 signals:
         void deleteAsset(const QString &path);
         void newAsset(const QString &path);

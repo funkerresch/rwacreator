@@ -3,14 +3,13 @@
 RwaSceneList::RwaSceneList(QWidget* parent, RwaScene *scene) :
     RwaListView(parent, scene)
 {
-    connect(this, SIGNAL(sendCurrentScene(RwaScene*)),
-              backend, SLOT(receiveLastTouchedScene(RwaScene*)));
-
     connect(this, SIGNAL(sendSelectedScenes(QStringList)),
               backend, SLOT(receiveSelectedScenes(QStringList)));
 
     disconnect(backend, SIGNAL(sendLastTouchedState(RwaState *)),
               this, SLOT(setCurrentState(RwaState*)));
+
+    connect(backend, SIGNAL(sendAppendScene()), this, SLOT(update()));
 
     connect(backend, SIGNAL(newGameLoaded()), this, SLOT(update()));
 }
@@ -18,6 +17,7 @@ RwaSceneList::RwaSceneList(QWidget* parent, RwaScene *scene) :
 void RwaSceneList::ListWidgetEditEnd(QWidget *editor, QAbstractItemDelegate::EndEditHint hint)
 {
     QString newName = reinterpret_cast<QLineEdit*>(editor)->text();
+    (void) hint;
     if(currentScene->objectName() != newName.toStdString())
     {
         currentScene->setName(newName.toStdString());
@@ -36,49 +36,46 @@ QStringList RwaSceneList::getSelectedScenes()
     return scenes;
 }
 
-void RwaSceneList::setCurrentScene(RwaScene *currentScene)
+void RwaSceneList::setCurrentScene(RwaScene *scene)
 {
-    if(!currentScene)
+    if(!scene)
          return;
 
-     this->currentScene = currentScene;
+    if(!(QObject::sender() == this->backend))
+    {
+        qDebug();
+        emit sendCurrentScene(scene);
+    }
 
-     if(QObject::sender() == this->backend)
-     {
-         QList<QListWidgetItem *> items = findItems(QString::fromStdString(currentScene->objectName()), Qt::MatchExactly);
-         if(!items.empty())
-         {
-             setCurrentItem(items.at(0));
-             int row = QListWidget::row(currentItem());
-             setCurrentRow(row);
-             //qDebug() << "SET CURRENT ROW" << currentScene->objectName() << row;
-             emit sendSelectedScenes( getSelectedScenes() );
-         }
-
-     }
-     if(!(QObject::sender() == this->backend))
-     {
-         //qDebug() << "SEND CURRENT";
-         emit sendCurrentScene(this->currentScene);
-     }
+    else
+    {
+        QList<QListWidgetItem *> items = findItems(QString::fromStdString(scene->objectName()), Qt::MatchExactly);
+        if(!items.empty())
+        {
+            currentScene = scene;
+            setCurrentItem(items.at(0));
+            int row = QListWidget::row(currentItem());
+            setCurrentRow(row);
+            emit sendSelectedScenes( getSelectedScenes() );
+        }
+    }
 }
 
 void RwaSceneList::setCurrentSceneFromCurrentItem()
 {
-    RwaScene *scene = NULL;
+    RwaScene *scene = nullptr;
 
     if(currentItem())
+    {
         scene = backend->getScene(currentItem()->text());
-
-    if(scene)
         setCurrentScene(scene);
-
-    emit sendSelectedScenes(getSelectedScenes());
+    }
 }
 
 void RwaSceneList::mousePressEvent(QMouseEvent *event)
 {
     QListWidget::mousePressEvent(event);
+    qDebug();
     setCurrentSceneFromCurrentItem();
 }
 
@@ -117,13 +114,14 @@ void RwaSceneList::keyPressEvent(QKeyEvent *event)
 void RwaSceneList::update()
 {
     clear();
-    RwaScene *scene;
+
     if(backend != nullptr)
     {
-        foreach (scene, backend->getScenes())
-        {
+        foreach (RwaScene *scene, backend->getScenes())
             addItem2List(QString::fromStdString(scene->objectName()));
-        }
 
+        if(!backend->getScenes().empty())
+            setCurrentScene(backend->getScenes().front());
     }
 }
+

@@ -18,6 +18,7 @@ RwaAssetList::RwaAssetList(QWidget* parent, RwaScene *scene) :
 
 void RwaAssetList::ListWidgetEditEnd(QWidget *editor, QAbstractItemDelegate::EndEditHint hint)
 {
+    (void) hint;
     QString newName = reinterpret_cast<QLineEdit*>(editor)->text();
     if(currentAsset->objectName() != newName.toStdString())
     {
@@ -42,12 +43,36 @@ void RwaAssetList::ListWidgetEditEnd(QWidget *editor, QAbstractItemDelegate::End
     }
 }
 
-void RwaAssetList::setCurrentState(RwaState *currentState)
+void RwaAssetList::setCurrentState(RwaState *state)
 {
-    if(!currentState)
+    if(!state)
         return;
 
-    this->currentState = currentState;
+    currentState = state;
+
+    clear();
+
+    foreach(RwaAsset1 *asset , state->getAssets() )
+    {
+        QListWidgetItem *item = new QListWidgetItem(RwaUtilities::getFileName(QString::fromStdString(asset->getFullPath())), this);
+        item->setFlags( item->flags() | Qt::ItemIsEditable );
+        addItem(item);
+    }
+
+    setCurrentAsset(state->getLastTouchedAsset());
+}
+
+void RwaAssetList::setCurrentScene(RwaScene *scene)
+{
+    if(!scene)
+        return;
+
+    currentScene = scene;
+
+    if(currentScene->lastTouchedState)
+        setCurrentState(currentScene->lastTouchedState);
+    else
+        setCurrentState(currentScene->getStates().front());
 }
 
 int RwaAssetList::getNumberOfSelectedAssets()
@@ -68,45 +93,34 @@ QStringList RwaAssetList::getSelectedAssets()
 
 void RwaAssetList::setCurrentAsset(RwaAsset1 *asset)
 {
-   if(!currentState || !asset)
+    if(!asset)
         return;
 
-    if(QObject::sender() == this->backend)
+    if(!(QObject::sender() == this->backend))
+        emit sendCurrentAsset(asset);
+
+    else
     {
         QList<QListWidgetItem *> items = findItems(QString::fromStdString(asset->getFileName()), Qt::MatchExactly);
 
         if(!items.empty())
         {
-            if(asset != currentAsset) // this keeps multiple selections after mouse up in attribute view, ugly but working
-            {
-                setCurrentItem(items.at(0));
-                int row = QListWidget::row(currentItem());
-                setCurrentRow(row);
-            }
+            currentAsset = asset;
+            setCurrentItem(items.at(0));
+            int row = QListWidget::row(currentItem());
+            setCurrentRow(row);
             emit sendSelectedAssets( getSelectedAssets() );
         }
     }
-
-    this->currentAsset = asset;
-
-    if(!(QObject::sender() == this->backend))
-        emit sendCurrentAsset(this->currentAsset);
 }
 
 void RwaAssetList::setCurrentAssetFromCurrentItem()
 {
-    RwaAsset1 *asset = nullptr;
-
-    if(currentState)
+    if(currentItem())
     {
-        if(currentItem())
-            asset = currentState->getAsset(currentItem()->text().toStdString());
-
-        if(asset)
-            setCurrentAsset(asset);
+        RwaAsset1 *asset = currentState->getAsset(currentItem()->text().toStdString());
+        setCurrentAsset(asset);
     }
-
-    emit sendSelectedAssets( getSelectedAssets() );
 }
 
 void RwaAssetList::mouseReleaseEvent(QMouseEvent *event)

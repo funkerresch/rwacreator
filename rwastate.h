@@ -41,6 +41,7 @@
 #ifndef AFXSTATE
 #define AFXSTATE
 
+//#include "rwaarea.h"
 #include "rwaasset1.h"
 
 #define RWASTATETYPE_FALLBACK 1
@@ -134,16 +135,16 @@ public:
     int32_t getDefaultPlaybackType() const;
     void setDefaultPlaybackType(const int32_t &value);
 
-    string getNextScene() const;
-    void setNextScene(const string &value);
+    std::string getNextScene() const;
+    void setNextScene(const std::string &value);
 
-    string getNextState() const;
-    void setNextState(const string &value);
+    std::string getNextState() const;
+    void setNextState(const std::string &value);
 
-    string getHintState() const;
-    void setHintState(const string &value);
+    std::string getHintState() const;
+    void setHintState(const std::string &value);
 
-    std::list<string> getRequiredStates() const;
+    std::list<std::string> getRequiredStates() const;
     void setRequiredStates(const std::list<string> &value);
 
     std::list<RwaAsset1 *> getAssets() const;

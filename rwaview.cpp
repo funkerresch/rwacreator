@@ -1,8 +1,9 @@
 #include "rwaview.h"
 
-RwaView::RwaView(QWidget *parent, RwaScene *scene) :
+RwaView::RwaView(QWidget *parent, RwaScene *scene, QString name) :
     QGraphicsView(parent)
 {
+    this->setObjectName(name);
     this->backend = RwaBackend::getInstance();
     this->currentScene = scene;
     this->currentState = scene->getStates().front();
@@ -28,6 +29,27 @@ RwaView::RwaView(QWidget *parent, RwaScene *scene) :
               this, SLOT(setCurrentEntity(RwaEntity*)));
 
     connect(this, SIGNAL(sendWriteUndo(QString)), backend, SLOT(receiveWriteUndo(QString)));
+}
+
+void RwaView::writeSplitterLayout()
+{
+    if(!windowSplitter || objectName().isEmpty())
+        return;
+
+    qDebug() << "Writing " << objectName();
+    QSettings settings("Intrinsic Audio", "Rwa Creator");
+    settings.setValue(objectName()+"Geometry", windowSplitter->saveGeometry());
+    settings.setValue(objectName()+"State", windowSplitter->saveState());
+}
+
+void RwaView::readSplitterLayout()
+{
+    if(!windowSplitter || objectName().isEmpty())
+        return;
+
+    QSettings settings("Intrinsic Audio", "Rwa Creator");
+    windowSplitter->restoreGeometry(settings.value(objectName()+"Geometry").toByteArray());
+    windowSplitter->restoreState(settings.value(objectName()+"State").toByteArray());
 }
 
 RwaViewToolbar* RwaView::setupToolbar(qint32 flags) // toolbar in menu..
@@ -67,6 +89,8 @@ void RwaView::copyLocationCoordinates2Clipboard(RwaLocation1 *location)
 
 void RwaView::updateSceneMenus()
 {
+    qDebug() << "SCENE NAME UPDATE";
+   // currentScene->setObjectName()
     toolbar->updateSelectSceneMenu();
     toolbar->updateSelectStateMenu();
 }
@@ -98,10 +122,12 @@ RwaAsset1 *RwaView::getCurrentAsset()
     return currentAsset;
 }
 
-void RwaView::setCurrentState(RwaState *currentState)
+void RwaView::setCurrentState(RwaState *state)
 {
-    this->lastState = this->currentState;
-    this->currentState = currentState;   
+    lastState = currentState;
+    currentState = state;
+    currentScene->lastTouchedState = state;
+    currentAsset = currentState->getLastTouchedAsset();
 }
 
 void RwaView::setCurrentState(qint32 stateNumber)
@@ -117,9 +143,9 @@ void RwaView::setCurrentState(qint32 stateNumber)
     currentState = *statesList;
 }
 
-void RwaView::setCurrentScene(RwaScene *currentScene)
+void RwaView::setCurrentScene(RwaScene *scene)
 {
-    this->currentScene = currentScene;
+    this->currentScene = scene;
 }
 
 void RwaView::setCurrentScene(qint32 sceneNumber)

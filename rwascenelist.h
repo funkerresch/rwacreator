@@ -15,7 +15,7 @@ public:
 
 public slots:
     void setCurrentScene(RwaScene *currentScene) override;
-    void update() override;
+    void update();
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;

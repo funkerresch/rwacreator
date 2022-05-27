@@ -5,6 +5,7 @@ RwaLocation1::RwaLocation1()
 {
     gpsLocation = std::vector<double>(2, 0.0);
     name = std::string();
+    setObjectName(name);
     locationType = 0;
 }
 RwaLocation1::~RwaLocation1()

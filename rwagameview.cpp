@@ -1,8 +1,7 @@
 #include "RwaGameView.h"
 
-
-RwaGameView::RwaGameView(QWidget *parent, RwaScene *scene) :
-    RwaView(parent, scene)
+RwaGameView::RwaGameView(QWidget *parent, RwaScene *scene, QString name) :
+    RwaView(parent, scene, name)
 
 {
     setAcceptDrops(true);
@@ -10,18 +9,15 @@ RwaGameView::RwaGameView(QWidget *parent, RwaScene *scene) :
     windowSplitter = new QSplitter(this);
     layout = new QBoxLayout(QBoxLayout::LeftToRight,this);
     layout->setContentsMargins(0,0,0,0);
-    //setMinimumSize(450,100);
 
     sceneList = new RwaSceneList(this, scene);
     sceneAttributes = new RwaSceneAttributeView(this, scene);
-    sceneAttributes->scrollArea->setMaximumWidth(250);
 
     currentScene = scene;
     currentState = nullptr;
 
     windowSplitter->addWidget(sceneAttributes->scrollArea);
     windowSplitter->addWidget(sceneList);
-
     layout->addWidget(windowSplitter);
 
     connect(sceneList, SIGNAL(deleteScene(const QString &)),
@@ -35,6 +31,8 @@ RwaGameView::RwaGameView(QWidget *parent, RwaScene *scene) :
 
     disconnect(backend, SIGNAL(sendLastTouchedEntity(RwaEntity *)),
               this, SLOT(setCurrentEntity(RwaEntity*)));
+
+    readSplitterLayout();
 }
 
 void RwaGameView::deleteScene(const QString &sceneName)
@@ -58,7 +56,7 @@ void RwaGameView::setCurrentScene(RwaScene *scene)
     {
         this->currentScene = scene;
         //this->sceneList->setCurrentScene(currentScene);
-        sceneList->update();
+        //sceneList->update();
 
         if(backend->logOther)
             qDebug();

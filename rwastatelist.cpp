@@ -52,26 +52,50 @@ QStringList RwaStateList::getSelectedStates()
     return states;
 }
 
+void RwaStateList::setCurrentScene(RwaScene *scene)
+{
+    if(!scene)
+        return;
+
+    currentScene = scene;
+
+    clear();
+
+    foreach(RwaState *state , scene->getStates() )
+    {
+        QListWidgetItem *item = new QListWidgetItem(RwaUtilities::getFileName(QString::fromStdString(state->objectName())), this);
+        item->setFlags( item->flags() | Qt::ItemIsEditable );
+        addItem(item);
+    }
+
+    setCurrentState(scene->lastTouchedState);
+}
+
 void RwaStateList::setCurrentState(RwaState *state)
 {
     if(!state)
          return;
 
-    currentState = state;
+    if(QObject::sender() != this->backend)
+    {
+        qDebug();
+        emit sendCurrentState(state);
+    }
 
-     if(QObject::sender() == this->backend)
-     {
-         QList<QListWidgetItem *> items = findItems(QString::fromStdString(currentState->objectName()), Qt::MatchExactly);
-         if(!items.empty())
-         {
-             setCurrentItem(items.at(0));
-             int row = QListWidget::row(currentItem());
-             setCurrentRow(row);
-             emit sendSelectedStates(getSelectedStates());
-         }
-     }
-     else
-         emit sendCurrentState(currentState);
+    else
+    {
+        QList<QListWidgetItem *> items = findItems(QString::fromStdString(state->objectName()), Qt::MatchExactly);
+        if(!items.empty())
+        {
+            qDebug();
+            setCurrentItem(items.at(0));
+            int row = QListWidget::row(currentItem());
+            setCurrentRow(row);
+            lastSelectedState = currentState;
+            currentState = state;
+            emit sendSelectedStates(getSelectedStates());
+        }
+    }
 }
 
 void RwaStateList::setCurrentStateFromCurrentListItem()
@@ -79,19 +103,23 @@ void RwaStateList::setCurrentStateFromCurrentListItem()
     RwaState *state = nullptr;
     if(currentScene)
     {
-        lastSelectedState = currentState;
         if(currentItem())
+        {
             state = currentScene->getState(currentItem()->text().toStdString());
-
-        if(state)
+            qDebug();
             setCurrentState(state);
+        }
     }
 }
 
 void RwaStateList::mousePressEvent(QMouseEvent *event)
 {
     QListWidget::mousePressEvent(event);
-    setCurrentStateFromCurrentListItem();
+    if(currentScene)
+    {
+        qDebug();
+        setCurrentStateFromCurrentListItem();
+    }
 }
 
 void RwaStateList::mouseReleaseEvent(QMouseEvent *event)

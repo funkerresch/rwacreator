@@ -34,22 +34,14 @@ public:
     QString completeTmpPath;
     QString completeAssetPath;
     QString completeClientExportPath;
+    QString completeClientProjectExportPath;
+    QString completeClientFileExportPath;
+    QString completeClientAssetExportPath;
+    QStringList assetStringList;
+    QStringList stateStringList;
     QStringList currentlySelectedAssets;
     QStringList currentlySelectedStates;
     qint32 httpProcessId;
-
-    RwaScene *getLastTouchedScene();
-    QList<RwaScene *> &getScenes();
-    RwaScene *getFirstScene();
-    RwaScene *getSceneAt(qint32 sceneNumber);
-    qint32 getNumberOfScenes();
-    qint32 generateAssetId();
-
-    void setLastTouchedScene(RwaScene *scene);
-    RwaScene *getScene(QString sceneName);
-
-    void scanSerialPorts();
-    void setHeadtrackerName(QString name);
 
     bool trashAsset = false;
     bool showStateRadii = false;
@@ -59,68 +51,159 @@ public:
     bool logSim = false;
     bool logOther = false;
 
-    int getStateNameCounter(std::list<RwaState *> &states);  
+    QByteArray stateViewGeometry;
+    QByteArray stateViewState;
 
-    void clearForHistory();
+private:
+
+    QPointF currentMapCoordinates;
+    QList<RwaScene *> scenes;
+    RwaScene *clipboardStates;
+    RwaState *lastTouchedState = nullptr;
+    RwaScene *lastTouchedScene = nullptr;
+    RwaEntity *lastTouchedEntity = nullptr;
+    RwaAsset1 *lastTouchedAssetItem = nullptr;
+    RwaHeadtrackerConnect *headtracker = nullptr;
 
 public slots:
 
-    void generateUuidsForClipboardState(RwaState *state);
+    /** *********************************Undo read and write*********************************** */
+
+    void receiveReadUndoFile(QString name);
+    void receiveWriteUndo(QString undoAction);
+
+    /** ****************************** Last touched/selected functionality ******************************* */
+
     void receiveLastTouchedAsset(RwaAsset1 *item);
     void receiveLastTouchedState(RwaState *state);
     void receiveLastTouchedScene(RwaScene *scene);
     void receiveLastTouchedScene(qint32 sceneNumber);
-    void receiveCurrentStateEdited();
+    void receiveSelectedAssets(QStringList assets);
+    void receiveSelectedStates(QStringList states);
+    void receiveSelectedScenes(QStringList scenes);
+
+    /** ********************************** Scene-related functionality *********************************** */
+
+    /** ****************************************** Get methods ******************************************* */
+
+    RwaScene *getLastTouchedScene();
+    QList<RwaScene *> &getScenes();
+    RwaScene *getFirstScene();
+    RwaScene *getSceneAt(qint32 sceneNumber);
+    qint32 getNumberOfScenes();
+    RwaScene *getScene(QString sceneName);
+
+    /** *********************************** New/Remove Scene functionality ***************************** */
+
+    void appendScene();
+    void appendScene(RwaScene *scene);
+    void duplicateScene(RwaScene *scene);
+    void newSceneFromSelectedStates();
+    void removeScene(RwaScene *scene);
+
+    void clearScene(RwaScene *scene);
+    void clearData();
+    void clearScenes();
+    void emptyTmpDirectories(); 
+
+    void clear();
+    void moveScene2CurrentMapLocation();
+    void receiveMapCoordinates(QPointF);
+    void StartHttpServer(qint32 port);
+
+    /** ************************************  State copy and paste *********************************** */
+
+    void copySelectedStates2Clipboard();
+    void pasteStatesFromClipboard();
+
+    /** *******************  RWA Graphic View receiver to emitter functions ********************* */
+
     void receiveMoveCurrentState1(double dx, double dy);
     void receiveMoveCurrentAsset1(double dx, double dy);
     void receiveMoveCurrentAssetChannel(double dx, double dy, int channel);
     void receiveMoveCurrentAssetReflection(double dx, double dy, int channel);
     void receiveCurrentStateRadiusEdited();
     void receiveCurrentSceneRadiusEdited();
-    void receiveUpdatedAssets();
-    void receiveMapCoordinates(QPointF);
-    void receiveSceneName(RwaScene *scene, QString name);
-    void receiveStateName(RwaState *state, QString name);
-    void receiveCurrentStateString(RwaState *state, QString stateName);
-
-    void receiveRedrawAssets();
-    void receiveSelectedAssets(QStringList assets);
-    void receiveSelectedStates(QStringList states);
-    void receiveEntityPosition(QPointF position);
     void receiveStatePosition(QPointF position);
+    void receiveEntityPosition(QPointF position);
 
-    void receiveLogLonAndLat(int onOff);
-    void receiveLogLibPd(int onOff);
-    void receiveLogSimulator(int onOff);
-    void receiveLogOther(int onOff);
+    /** ************************* Editor Global Rendering/Functionality ************************** */
 
     void receiveTrashAssets(bool onOff);
     void receiveShowStateRadii(bool onOff);
     void receiveShowAssets(bool onOff);
-    void startStopSimulator(bool startStop);  
+
+
+     /** **************************"""**** Logging related functions ***************************** */
+
+    /**
+     * @brief receiveLogLonAndLat
+     * @param onOff
+     */
+
+    void receiveLogLonAndLat(int onOff);
+
+    /**
+     * @brief receiveLogLibPd
+     * @param onOff
+     */
+
+    void receiveLogLibPd(int onOff);
+
+    /**
+     * @brief receiveLogSimulator
+     * @param onOff
+     */
+
+    void receiveLogSimulator(int onOff);
+
+    /**
+     * @brief receiveLogOther
+     * @param onOff
+     */
+
+    void receiveLogOther(int onOff);
+
+    /** ****************************** Simulator and headtracker related functions ***************************** */
+
+    /**
+     * @brief startStopSimulator
+     * @param startStop
+     */
+
+    void startStopSimulator(bool startStop);
+
+    /**
+     * @brief setMainVolume
+     * @param volume
+     */
+
     void setMainVolume(int volume);
+
+    /**
+     * @brief calibrateHeadtracker
+     */
+
     void calibrateHeadtracker();
 
-    void appendScene();
-    void appendScene(RwaScene *scene);
-    void clearScene(RwaScene *scene);
-    void removeScene(RwaScene *scene);
-    void duplicateScene(RwaScene *scene);
-    void clearData();
-    void clearScenes();
-    void emptyTmpDirectories(); 
+    /**
+     * @brief isSimulationRunning
+     * @return
+     */
+
     bool isSimulationRunning();
 
-    void newSceneFromSelectedStates();
-    void clear();
-    void moveScene2CurrentMapLocation();
-    void copySelectedStates2Clipboard();
-    void pasteStatesFromClipboard();
+     /** *********************** Static utility functionality (string generation, UUIDs, ..) ************************* */
 
-    void receiveReadUndoFile(QString name);
-    void receiveWriteUndo(QString undoAction);
+public:
 
-    void StartHttpServer(qint32 port);
+    static void generateUuidsForClipboardState(RwaState *state);
+    static void adjust2UniqueStateName(RwaScene *targetScene, RwaState *newState);
+    static bool adjust2UniqueStateNameRecursively(RwaScene *targetScene, RwaState *newState);
+    static int getStateNameCounter(std::list<RwaState *> &states);
+    static int getNumberFromQString(const QString &xString);
+
+    /** ************************************************** Signals ************************************************** */
 
 signals:
     void readUndoFile(QString name);
@@ -132,11 +215,10 @@ signals:
     void sendSelectedAssets(QStringList assets);
     void sendSelectedStates(QStringList states);
 
+    void sendAppendScene();
     void updateScene(RwaScene *scene);
     void sendClearAll();
-    void sendEditedAsset(RwaState *state, RwaAsset1 *item);
     void sendNewAsset(RwaState *state, RwaAsset1 *item);
-    void sendAddTts2CurrentState(QString fullpath);
     void sendMoveCurrentState1(double dx, double dy);
     void sendMoveCurrentAsset1(double dx, double dy);
     void sendMoveCurrentAssetChannel(double dx, double dy, int channel);
@@ -148,22 +230,9 @@ signals:
     void newGameLoaded();
     void undoGameLoaded();
     void sendRedrawAssets();
-    void sendEntityPosition(QPointF position);
+//    void sendEntityPosition(QPointF position);
+    void sendEntityPosition(vector<double> position);
     void sendStatePosition(QPointF position);
-
-private:
-
-    QPointF currentMapCoordinates;
-    QList<RwaScene *> scenes;
-    RwaScene *clipboardStates;
-    RwaState *lastTouchedState;
-    RwaScene *lastTouchedScene;
-    RwaEntity *lastTouchedEntity;
-    RwaAsset1 *lastTouchedAssetItem;
-    RwaHeadtrackerConnect *headtracker;
-
-    int undoCounter = -1;
-
 };
 
 #endif

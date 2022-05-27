@@ -1,6 +1,7 @@
 #ifndef AFXSCENE_H
 #define AFXSCENE_H
 
+#include "rwaarea.h"
 #include "rwastate.h"
 
 #define RWASCENE_GPS 1
@@ -14,6 +15,10 @@
 #define RWASCENEATTRIBUTE_EXCLUSIVE 3
 #define RWASCENEATTRIBUTE_LOCKPOSITION 7
 #define RWASCENEATTRIBUTE_DISABLEFALLBACK 8
+
+#ifdef QT_VERSION
+#include <QDebug>
+#endif
 
 class RwaScene : public RwaArea
 {
@@ -29,7 +34,8 @@ public:
     std::vector<double> currentViewCoordinates;
 
     RwaState *backgroundState;
-    RwaState *currentState;
+    RwaState *lastTouchedState;
+    //RwaState *currentState;
 
     int32_t level;
     bool disableFallback = false;

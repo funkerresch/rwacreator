@@ -58,7 +58,6 @@ public slots:
     static void logMessages(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 
     void mousePressEvent(QMouseEvent *event);
-    void saveLayout();
     void exportProject();
     void saveForMobileClient();
     void saveAgainForMobileClient();
@@ -66,13 +65,12 @@ public slots:
     void save();
     void write(QString writeMessage, qint32 flags, QString oldAssetPath);
     void prepareWrite(QString fullpath, int flags = 0);
-    void open(QString fileName = QString(""));
+    qint32 open(QString fileName = QString(""));
     void writeUndo(QString undoAction);
-    void loadLayout();
     void cleanUpBeforeQuit();
     void selectOutputDevice(qint32 index);
     void loadDefaultViews();
-    void scanSerialPorts();
+    //void scanSerialPorts();
     void clear();
     void saveAs();
     void enterHtName();
@@ -119,6 +117,8 @@ private:
 
     bool maybeSave();
     void initViewMenu1(QMenu *fileMenu);
+    void saveLayout1();
+    void loadLayout1();
 };
 
 #endif

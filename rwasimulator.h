@@ -89,14 +89,14 @@ public slots:
     void startRwaSimulation();
     void stopRwaSimulation();
     void clearGame();
-    void receiveNewAsset(RwaState *state, RwaAsset1 *item);
     void setCurrentScene(RwaScene *scene);
     void receiveRegisterMessage(QVariant data);
     void receiveAzimuth(float azimuth);
     void receiveElevation(float elevation);
     void receiveZ(float Z);
     void receiveLastTouchedScene(RwaScene *scene);
-    void receiveEntityPosition(QPointF position);
+//    void receiveEntityPosition(QPointF position);
+    void receiveEntityPosition(vector<double> position);
     void receiveStep();
 
     void receiveUndoGameLoaded();

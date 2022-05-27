@@ -328,12 +328,14 @@ void RwaImport::readState()
                     }*/
 
                     readAssets();
+//                    if(xml.attributes().hasAttribute("currentAsset"))
+//                        state->setLastTouchedAsset(state->)
                     if(state->objectName() == "FALLBACK" && stateListIndex != 0)
                         currentScene->InsertStateAtIndex(state, 0);
                     else if(state->objectName() == "BACKGROUND" && stateListIndex != 1)
                         currentScene->InsertStateAtIndex(state, 1);
                     else
-                    currentScene->addState(state);
+                        currentScene->addState(state);
 
                     stateListIndex++;
                 }

@@ -3,7 +3,6 @@
 #include<QDebug>
 #include <QRegularExpression>
 #include "clipper/clipper.hpp"
-#include "rwastate.h"
 
 using namespace ClipperLib;
 
@@ -527,8 +526,6 @@ bool RwaUtilities::checkDataType(QString fullpath)
     return false;
 
 }
-
-
 
 std::string RwaUtilities::getFileName(std::string fullpath)
 {

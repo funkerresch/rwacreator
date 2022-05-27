@@ -1,8 +1,8 @@
 #include "rwasceneview.h"
 
 
-RwaSceneView::RwaSceneView(QWidget *parent, RwaScene *scene) :
-    RwaView(parent, scene)
+RwaSceneView::RwaSceneView(QWidget *parent, RwaScene *scene, QString name) :
+    RwaView(parent, scene, name)
 
 {
     setAcceptDrops(true);
@@ -10,19 +10,16 @@ RwaSceneView::RwaSceneView(QWidget *parent, RwaScene *scene) :
     windowSplitter = new QSplitter(this);
     layout = new QBoxLayout(QBoxLayout::LeftToRight,this);
     layout->setContentsMargins(0,0,0,0);
-    setMinimumSize(450,100);
-
 
     stateList = new RwaStateList(this, scene);
     stateAttributes = new RwaStateAttributeView(this, scene);
     stateAttributes->scrollArea->setMaximumWidth(250);
 
     currentScene = scene;
-    currentState = NULL;
+    currentState = nullptr;
 
     windowSplitter->addWidget(stateAttributes->scrollArea);
     windowSplitter->addWidget(stateList);
-
     layout->addWidget(windowSplitter);
 
     connect(stateList, SIGNAL(deleteState(const QString &)),
@@ -30,11 +27,12 @@ RwaSceneView::RwaSceneView(QWidget *parent, RwaScene *scene) :
 
     connect(this, SIGNAL(sendCurrentScene(RwaScene*)),
             backend, SLOT(receiveLastTouchedScene(RwaScene*)));
+
+    readSplitterLayout();
 }
 
 void RwaSceneView::deleteState(const QString &stateName)
 {
-
     if(currentScene)
     {
        // qDebug() << "delete" << stateName;

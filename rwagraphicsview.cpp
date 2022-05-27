@@ -2,8 +2,8 @@
 #include "rwastyles.h"
 #include <math.h>
 
-RwaGraphicsView::RwaGraphicsView(QWidget *parent, RwaScene *scene) :
-    RwaView(parent, scene)
+RwaGraphicsView::RwaGraphicsView(QWidget *parent, RwaScene *scene, QString name) :
+    RwaView(parent, scene, name)
 {
     QString path = backend->completeBundlePath;
 
@@ -12,6 +12,7 @@ RwaGraphicsView::RwaGraphicsView(QWidget *parent, RwaScene *scene) :
     assetLineEditVisible = false;
     entityVisible = false;
     assetsVisible = false;
+    onlyAssetsOfCurrentStateVisible = false;
     statesVisible = false;
     stateRadiusVisible = false;
     assetStartPointsVisible = true;
@@ -21,9 +22,6 @@ RwaGraphicsView::RwaGraphicsView(QWidget *parent, RwaScene *scene) :
     leftLayout = new QBoxLayout(QBoxLayout::TopToBottom);
     innerLayout = new QBoxLayout(QBoxLayout::LeftToRight);
 
-    mapName = new QLineEdit();
-    mapName->setFixedWidth(120);
-    mapName->setFixedHeight(20);
     zoomInButton = new QPushButton("+");
     zoomOutButton = new QPushButton("-");
     zoomInButton->setMinimumWidth(50);
@@ -33,7 +31,6 @@ RwaGraphicsView::RwaGraphicsView(QWidget *parent, RwaScene *scene) :
 
     zoomInButton->setStyleSheet(rwaButtonStyleSheet);
     zoomOutButton->setStyleSheet(rwaButtonStyleSheet);
-    mapName->setStyleSheet(rwaButtonStyleSheet);
 
     mc = new MapControl(QSize(250,250));
     mapadapter = new OSMMapAdapter();
@@ -79,7 +76,54 @@ RwaGraphicsView::RwaGraphicsView(QWidget *parent, RwaScene *scene) :
     mc->setZoom(18);
     mapCoordinates = (QPointF(8.26,50));
     connect(backend, SIGNAL(newGameLoaded()), this, SLOT(initNewGame()));
-    connect(this, SIGNAL(sendStateName(RwaState*,QString)), backend, SLOT(receiveStateName(RwaState*,QString)));
+}
+
+void RwaGraphicsView::setCurrentScene(RwaScene *scene)
+{
+    RwaView::setCurrentScene(scene);
+}
+
+void RwaGraphicsView::setCurrentState(RwaState *state)
+{
+    if(!state)
+         return;
+
+    if(QObject::sender() != this->backend)
+    {
+        qDebug();
+        emit sendCurrentState(state);
+    }
+
+    else
+    {
+        RwaView::setCurrentState(state);
+        setCurrentAsset(state->getLastTouchedAsset());
+
+        if(statesVisible)
+            updateStatePixmaps();
+
+        if(assetsVisible)
+            redrawAssets();
+
+        if(stateRadiusVisible)
+            redrawStateRadii();
+    }
+}
+
+void RwaGraphicsView::setCurrentAsset(RwaAsset1 *asset)
+{
+    if(!asset)
+        return;
+
+    if(!(QObject::sender() == this->backend))
+        emit sendCurrentAsset(asset);
+    else
+    {
+        this->currentAsset = asset;
+        currentState->setLastTouchedAsset(asset);
+        updateAssetPixmaps();
+        updateReflectionPixmaps();
+    }
 }
 
 void RwaGraphicsView::initNewGame()
@@ -88,7 +132,8 @@ void RwaGraphicsView::initNewGame()
     mc->enablePersistentCache(tilecache);
     entityLayer->clearGeometries();
     entityInitialized = false;
-    emit sendCurrentScene(backend->getScenes().first());
+    if(!backend->getScenes().isEmpty())
+        emit sendCurrentScene(backend->getScenes().first());
 }
 
 void RwaGraphicsView::addZoomButtons()
@@ -97,7 +142,6 @@ void RwaGraphicsView::addZoomButtons()
     mc->setLayout(innerLayout);   
     leftLayout->addWidget(zoomInButton);
     leftLayout->addWidget(zoomOutButton);
-    rightLayout->addWidget(mapName);
     rightLayout->setAlignment(Qt::AlignRight);
     leftLayout->setAlignment(Qt::AlignLeft);
     innerLayout->addLayout(leftLayout);
@@ -443,6 +487,7 @@ void RwaGraphicsView::updateStatePixmaps()
             point->setLabelVisible(true);
         }
     }
+    statesLayer->updateRequest();
 }
 
 void RwaGraphicsView::updatePixmaps(RwaLocation1 *active, GeometryLayer *layer)
@@ -951,7 +996,7 @@ void RwaGraphicsView::redrawAssets()
     if(assetReflectionsVisible)
         assetReflectionLayer->clearGeometries();
 
-    if(assetsVisible)
+    if(assetsVisible && !onlyAssetsOfCurrentStateVisible)
     {
         assetLayer->clearGeometries();
         RwaState *state;
@@ -968,6 +1013,9 @@ void RwaGraphicsView::redrawAssets()
             }
         }
     }
+
+    if(assetsVisible && onlyAssetsOfCurrentStateVisible)
+        redrawAssetsOfCurrentState();
 }
 
 void RwaGraphicsView::redrawRadiusOfCurrentState()

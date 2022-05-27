@@ -13,7 +13,8 @@
 #include <QClipboard>
 #include <QApplication>
 #include <math.h>
-#include "rwaarea.h"
+#include "rwalocation1.h"
+//#include "rwascene.h"
 
 class RwaUtilities : public QObject
 {

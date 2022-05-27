@@ -1,8 +1,8 @@
 #include "rwastateview.h"
 #include <QScrollArea>
 
-RwaStateView::RwaStateView(QWidget* parent, RwaScene *scene)
-: RwaGraphicsView(parent, scene)
+RwaStateView::RwaStateView(QWidget* parent, RwaScene *scene, QString name)
+: RwaGraphicsView(parent, scene, name)
 {
     setAcceptDrops(true);
     setAlignment(Qt::AlignTop);
@@ -20,6 +20,7 @@ RwaStateView::RwaStateView(QWidget* parent, RwaScene *scene)
     editStatePosition = false;
     stateRadiusVisible = true;
     assetsVisible = true;
+    onlyAssetsOfCurrentStateVisible = true;
 
     connect(backend, SIGNAL(sendMoveCurrentState1(double, double)),
               this, SLOT(movePixmapsOfCurrentState(double,double)));
@@ -78,7 +79,9 @@ RwaStateView::RwaStateView(QWidget* parent, RwaScene *scene)
     windowSplitter->addWidget(mc);
     layout->addWidget(windowSplitter);
 
-    QTimer::singleShot(2500, this, SLOT(correctMapView()));
+    readSplitterLayout();
+
+    QTimer::singleShot(1000, this, SLOT(correctMapView()));
 }
 
 void RwaStateView::keyPressEvent(QKeyEvent *event)
@@ -105,7 +108,7 @@ void RwaStateView::keyPressEvent(QKeyEvent *event)
 
 void RwaStateView::correctMapView()
 {
-    mc->resize(QSize(windowSplitter->sizes().at(2), this->height()));
+     mc->resize(QSize(windowSplitter->sizes().at(2), this->height()));
 }
 
 void RwaStateView::receiveNewGameSignal()
@@ -151,11 +154,11 @@ void RwaStateView::setZoomLevel(qint32 zoomLevel)
         redrawStateRadii();
 }
 
-void RwaStateView::setCurrentAsset(RwaAsset1 *currentAsset)
+void RwaStateView::setCurrentAsset(RwaAsset1 *asset)
 {
-    if(currentAsset)
+    if(asset)
     {
-        this->currentAsset = currentAsset;
+        this->currentAsset = asset;
         currentState->setLastTouchedAsset(this->currentAsset);
         updateAssetPixmaps();
         updateReflectionPixmaps();
@@ -188,13 +191,18 @@ void RwaStateView::setMapCoordinates(QPointF coordinates)
 
 void RwaStateView::adaptSize(qint32 width, qint32 height)
 {
-    if(windowSplitter->sizes().at(2) )
-        mc->resize(QSize(windowSplitter->sizes().at(2), this->height()));
+//    mc->resize(QSize(windowSplitter->sizes().at(2), this->height()));
+//    QSettings settings("Intrinsic Audio", "Rwa Creator");
+//    settings.setValue("stateViewGeometry", windowSplitter->saveGeometry());
+//    settings.setValue("stateViewState", windowSplitter->saveState());
 }
 
 void RwaStateView::handleSplitter(int pos, int index)
 {
      mc->resize(QSize(windowSplitter->sizes().at(2), this->height()));
+//    QSettings settings("Intrinsic Audio", "Rwa Creator");
+//    settings.setValue("stateViewGeometry", windowSplitter->saveGeometry());
+//    settings.setValue("stateViewState", windowSplitter->saveState());
 }
 
 void RwaStateView::receiveMouseMoveEvent(const QMouseEvent*, const QPointF myPoint)
@@ -415,40 +423,29 @@ void RwaStateView::moveCurrentState()
 
 void RwaStateView::setCurrentState(RwaState *state)
 {
-    RwaAsset1 *asset;
-    double distance;
-
     if(!state)
         return;
 
-    if(state != currentState)
-    {
-        assetList->clear();
-        foreach(asset , state->getAssets() )
-        {
-            QListWidgetItem *item = new QListWidgetItem(RwaUtilities::getFileName(QString::fromStdString(asset->getFullPath())), assetList);
-            item->setFlags( item->flags() | Qt::ItemIsEditable );
-            assetList->addItem(item);
-        }
-    }
+    QDockWidget *window = static_cast<QDockWidget *>(parent());
+    window->setWindowTitle("State View - "+ QString::fromStdString(state->objectName()));
 
-    this->currentState = state;
+    RwaGraphicsView::setCurrentState(state);
 
     mc->setView(QPointF(currentState->getCoordinates()[0], currentState->getCoordinates()[1]));
     mc->setZoom(currentState->getZoom());
-    mapName->setText(QString::fromStdString(currentState->objectName()));
+}
 
-    distance = getDistanceInPxFromGps(QPointF(currentState->getCoordinates()[0], currentState->getCoordinates()[1]),
-                    RwaUtilities::calculatePointOnCircle(QPointF(currentState->getCoordinates()[0], currentState->getCoordinates()[1]), currentState->getRadius()));
+void RwaStateView::setCurrentScene(RwaScene *scene)
+{
+    if(!scene)
+        return;
 
-    asset = currentState->getLastTouchedAsset();
-    if(asset)
-        setCurrentAsset(asset);
+    RwaGraphicsView::setCurrentScene(scene);
 
-    redrawAssetsOfCurrentState();
-
-    if(stateRadiusVisible)
-        redrawStateRadii();
+    if(scene->lastTouchedState)
+        setCurrentState(scene->lastTouchedState);
+    else
+        setCurrentState(scene->states.front());
 }
 
 int RwaStateView::getNumberOfSelectedAssets()

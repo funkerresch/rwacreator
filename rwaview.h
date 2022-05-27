@@ -23,7 +23,7 @@ class RwaView : public QGraphicsView
     friend class RwaListView;
 
 public:
-    explicit RwaView(QWidget *parent = nullptr, RwaScene *scene = nullptr);
+    explicit RwaView(QWidget *parent = nullptr, RwaScene *scene = nullptr, QString name = "");
 
     RwaScene *getCurrentScene();
     RwaState *getCurrentState();
@@ -43,9 +43,9 @@ public slots:
     void receiveClearAll();
     void updateSceneMenus();
 
-    virtual void setCurrentState(RwaState *currentState);
+    virtual void setCurrentState(RwaState *state);
     virtual void setCurrentState(qint32 stateNumber);
-    virtual void setCurrentScene(RwaScene *currentScene);
+    virtual void setCurrentScene(RwaScene *scene);
     virtual void setCurrentScene(qint32 sceneNumber);
     virtual void setCurrentAsset(RwaAsset1 *currentAsset);
     virtual void setCurrentEntity(RwaEntity *currentEntity);
@@ -62,6 +62,7 @@ protected:
     RwaAsset1 *currentAsset;
     RwaAsset1 *lastAsset;
     RwaViewToolbar *toolbar;
+    QSplitter *windowSplitter = nullptr;
 
     bool dirty;
     QString undoAction;
@@ -71,16 +72,18 @@ protected:
     void copyLocationCoordinates2Clipboard(RwaLocation1 *location);
 
 public:
-    QGridLayout *grid;
-    QBoxLayout *layout;
-    QBoxLayout *topLayout;
-    QBoxLayout *innerLayout;
-    QBoxLayout *leftLayout;
-    QBoxLayout *rightLayout;
-    QSplitter *windowSplitter;
+    QGridLayout *grid = nullptr;
+    QBoxLayout *layout = nullptr;
+    QBoxLayout *topLayout = nullptr;
+    QBoxLayout *innerLayout = nullptr;
+    QBoxLayout *leftLayout = nullptr;
+    QBoxLayout *rightLayout = nullptr;
+
     qint32 tool;
 
     void setUndoAction(const QString &value);
+    void readSplitterLayout();
+    void writeSplitterLayout();
 };
 
 #endif // RWAVIEW_H

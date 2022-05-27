@@ -9,7 +9,7 @@ class RwaSceneView : public RwaView
 {
     Q_OBJECT
 public:
-    explicit RwaSceneView(QWidget *parent, RwaScene *scene);
+    explicit RwaSceneView(QWidget *parent, RwaScene *scene, QString name);
 
 
 public slots:

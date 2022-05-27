@@ -56,7 +56,7 @@ RwaAssetAttributeView::RwaAssetAttributeView(QWidget *parent, RwaScene *scene) :
     addAttrCheckbox(attributeGridLayout, "Play only once", RWAASSETATTRIBUTE_PLAYONCE);
     addAttrCheckbox(attributeGridLayout, "Rotate", RWAASSETATTRIBUTE_AUTOROTATE);
     addAttrCheckbox(attributeGridLayout, "Move", RWAASSETATTRIBUTE_AUTOMOVE);
-    addAttrCheckbox(attributeGridLayout, "Mute", RWAASSETATTRIBUTE_MUTE);
+    addAttrCheckbox(attributeGridLayout, "Mute/Disable", RWAASSETATTRIBUTE_MUTE);
     addAttrCheckbox(attributeGridLayout, "Headtracker relative 2 source", RWAASSETATTRIBUTE_HEADTRACKERRELATIVE2SOURCE);
     addAttrCheckbox(attributeGridLayout, "Lock Position", RWAASSETATTRIBUTE_LOCKPOSITION);
     addAttrCheckbox(attributeGridLayout, "Allow Channel-Positioning", RWAASSETATTRIBUTE_ALLOWINDIVIDUELLCHANNELPOSITIONS);
@@ -234,7 +234,7 @@ void RwaAssetAttributeView::setCurrentAsset(RwaAsset1 *asset)
     if(attrCheckBox)
         attrCheckBox->setChecked(asset->getMoveFromStartPosition());
 
-    attrCheckBox = this->findChild<QCheckBox *>("Mute");
+    attrCheckBox = this->findChild<QCheckBox *>("Mute/Disable");
     if(attrCheckBox)
         attrCheckBox->setChecked(asset->getMute());
 

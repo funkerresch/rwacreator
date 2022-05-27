@@ -10,18 +10,6 @@ RwaBackend *RwaBackend::getInstance()
     return RwaBackend::instance;
 }
 
-int getNumberFromQString(const QString &xString)
-{
-      QRegExp xRegExp("(-?\\d+(?:[\\.,]\\d+(?:e\\d+)?)?)");
-      xRegExp.indexIn(xString);
-      QStringList xList = xRegExp.capturedTexts();
-      if (true == xList.empty())
-      {
-        return 0;
-      }
-      return xList.begin()->toInt();
-}
-
 void RwaBackend::StartHttpServer(qint32 port)
 {
     char buffer[20];
@@ -55,6 +43,8 @@ RwaBackend::RwaBackend(QWidget *parent) :
     simulator = new RwaSimulator(this, this);
     headtracker = RwaHeadtrackerConnect::getInstance();
     clipboardStates = new RwaScene(std::string("ClipboardScene"), std::vector<double>(2, 0.0), 0);
+
+    assetStringList = QStringList();
     appendScene();
 }
 
@@ -63,6 +53,114 @@ RwaBackend::~RwaBackend()
    // QString killHttp = QString("kill %1").arg(httpProcessId);
    // system(killHttp.toStdString().c_str());
 }
+
+/**
+ * ****************************** Undo read and write******************************
+ *
+ * All editors are connected to receiveWriteUndo slot. Backend emits the undoAction
+ * to the creator class which is responsibe for file i/o.
+ *
+ */
+
+void RwaBackend::receiveReadUndoFile(QString name)
+{
+    emit readUndoFile(name);
+    emit sendLastTouchedScene(lastTouchedScene);
+}
+
+void RwaBackend::receiveWriteUndo(QString undoAction)
+{
+    emit sendWriteUndo(undoAction);
+}
+
+/**
+ * ****************************** Last touched/selected functionality ******************************
+ *
+ * All  editors are connected to the last touched asset/state/scene slot receiver
+ * and to the sendLast*.* signals. Whenever the user select a scene/state/asset from an
+ * editor, all other views are signaled and render the lastTouched asset/state/scene too.
+ *
+ * All editors also emit signals of currently selected assets,states and scenes for
+ * delete, copy, paste and multi-item editing functionality
+ *
+ */
+
+void RwaBackend::receiveLastTouchedAsset(RwaAsset1 *asset)
+{
+    if(!asset)
+        return;
+
+   lastTouchedAssetItem = asset;
+
+   if(lastTouchedState)
+        lastTouchedState->lastTouchedAsset = asset;
+
+   emit sendLastTouchedAsset(asset);
+}
+
+void RwaBackend::receiveLastTouchedState(RwaState *state)
+{
+    if(!state)
+        return;
+
+    lastTouchedState = state;
+
+    if(lastTouchedScene)
+        lastTouchedScene->lastTouchedState = state;
+
+    emit sendLastTouchedState(state);
+}
+
+void RwaBackend::receiveLastTouchedScene(RwaScene *scene)
+{
+    if(!scene)
+        return;
+
+    lastTouchedScene = scene;
+    currentMapCoordinates = QPointF(scene->getCoordinates()[0], scene->getCoordinates()[1]);
+    emit sendLastTouchedScene(scene);
+}
+
+void RwaBackend::receiveLastTouchedScene(qint32 sceneNumber)
+{
+    if(sceneNumber < scenes.count())
+    {
+        lastTouchedScene = this->scenes.at(sceneNumber);
+        currentMapCoordinates = QPointF(this->lastTouchedScene->getCoordinates()[0], this->lastTouchedScene->getCoordinates()[1]);
+        emit sendLastTouchedScene(lastTouchedScene);
+    }
+}
+
+void RwaBackend::receiveSelectedAssets(QStringList assets)
+{
+    if(logOther)
+        qDebug() << assets;
+
+    currentlySelectedAssets = assets;
+    emit sendSelectedAssets(currentlySelectedAssets); // not connected to anything yet
+}
+
+void RwaBackend::receiveSelectedStates(QStringList states) // not connected to anything yet
+{
+    if(logOther)
+        qDebug() << states;
+
+    currentlySelectedStates = states;
+    emit sendSelectedStates(currentlySelectedStates);
+}
+
+void RwaBackend::receiveSelectedScenes(QStringList scenes) // not connected to anything yet
+{
+    if(logOther)
+        qDebug() << scenes;
+
+//    currentlySelectedScenes = scenes;
+//    emit sendSelectedScenes(currentlySelectedScenes);
+}
+
+/** ****************************** Scene-related functionality ****************************** */
+
+/** *************************************** Get methods ************************************* */
 
 QList<RwaScene *>& RwaBackend::getScenes()
 {
@@ -79,6 +177,16 @@ RwaScene *RwaBackend::getSceneAt(qint32 sceneNumber)
     return scenes.at(sceneNumber);
 }
 
+RwaScene * RwaBackend::getLastTouchedScene()
+{
+    return lastTouchedScene;
+}
+
+qint32 RwaBackend::getNumberOfScenes()
+{
+    return scenes.count();
+}
+
 RwaScene *RwaBackend::getScene(QString sceneName)
 {
     RwaScene *scene = nullptr;
@@ -90,15 +198,7 @@ RwaScene *RwaBackend::getScene(QString sceneName)
     return scene;
 }
 
-RwaScene * RwaBackend::getLastTouchedScene()
-{
-    return lastTouchedScene;
-}
-
-qint32 RwaBackend::getNumberOfScenes()
-{
-    return scenes.count();
-}
+/** ****************************** New/Remove Scene functionality ****************************** */
 
 void RwaBackend::newSceneFromSelectedStates()
 {
@@ -117,7 +217,8 @@ void RwaBackend::newSceneFromSelectedStates()
     newScene->findStateSurroundingArea();
     newScene->setAreaType(RWAAREATYPE_RECTANGLE);
     scenes.append(newScene);
-    emit sendLastTouchedScene(newScene);
+    lastTouchedScene = newScene;
+    emit sendAppendScene();
 }
 
 void RwaBackend::appendScene()
@@ -128,8 +229,8 @@ void RwaBackend::appendScene()
     RwaScene *newScene = new RwaScene(tmp);
     newScene->setObjectName(QString("Scene %1").arg(scenes.count()).toStdString());
     scenes.append(newScene);
-    emit updateScene(newScene);
-    emit sendLastTouchedScene(newScene);
+    lastTouchedScene = newScene;
+    emit sendAppendScene();
 }
 
 void RwaBackend::appendScene(RwaScene *scene)
@@ -138,14 +239,7 @@ void RwaBackend::appendScene(RwaScene *scene)
         scene->setObjectName(QString("Scene %1").arg(scenes.count()).toStdString());
 
     scenes.append(scene);
-    emit updateScene(scene);
-    emit sendLastTouchedScene(scene);
-}
-
-void RwaBackend::clearScene(RwaScene *scene)
-{
-    scene->clear();
-    emit updateScene(scene);
+    emit sendAppendScene();
 }
 
 void RwaBackend::duplicateScene(RwaScene *scene)
@@ -154,51 +248,30 @@ void RwaBackend::duplicateScene(RwaScene *scene)
         qDebug("BACKEND: duplicateScene");
 }
 
-void RwaBackend::receiveSceneName(RwaScene *scene, QString name)
-{
-    scene->setName(name.toStdString());
-}
-
-void RwaBackend::receiveLastTouchedScene(RwaScene *scene)
-{
-    if(logOther)
-        qDebug();
-
-    this->lastTouchedScene = scene;
-    emit sendLastTouchedScene(scene);
-    if(lastTouchedScene->currentState)
-        receiveLastTouchedState(lastTouchedScene->currentState);
-
-    currentMapCoordinates = QPointF(scene->getCoordinates()[0], scene->getCoordinates()[1]);
-}
-
-void RwaBackend::receiveLastTouchedScene(qint32 sceneNumber)
-{
-    if(sceneNumber < scenes.count())
-    {
-        this->lastTouchedScene = this->scenes.at(sceneNumber);
-        emit sendLastTouchedScene(lastTouchedScene);
-        if(lastTouchedScene->currentState)
-            receiveLastTouchedState(lastTouchedScene->currentState);
-    }
-
-    currentMapCoordinates = QPointF(this->lastTouchedScene->getCoordinates()[0], this->lastTouchedScene->getCoordinates()[1]);
-}
-
 void RwaBackend::removeScene(RwaScene *scene)
 {
     RwaScene *currentScene;
     qint32 index;
+
     if(scenes.count() == 1) // keep always one scene
         return;
     else
     {
         index = scenes.indexOf(scene);
         index--;
+        if(index < 0)
+            index = 0;
+
         scenes.removeOne(scene);
         currentScene = scenes.at(index);
         emit sendLastTouchedScene(currentScene);
     }
+}
+
+void RwaBackend::clearScene(RwaScene *scene)
+{
+    scene->clear();
+    emit updateScene(scene);
 }
 
 void RwaBackend::moveScene2CurrentMapLocation()
@@ -210,171 +283,13 @@ void RwaBackend::moveScene2CurrentMapLocation()
     if(lastTouchedScene)
         lastTouchedScene->moveScene2NewLocation(tmp);
 
+    qDebug() << "Move Scene";
+   // emit sendEntityPosition(tmp);
+    simulator->receiveEntityPosition(tmp);
     emit sendLastTouchedScene(lastTouchedScene);
 }
 
 void RwaBackend::clearScenes()
-{
-    scenes.clear();
-    //appendScene();
-    //emit sendClearAll();
-}
-
-void RwaBackend::receiveReadUndoFile(QString name)
-{
-    emit readUndoFile(name);
-    emit sendLastTouchedScene(lastTouchedScene);
-}
-
-void RwaBackend::receiveWriteUndo(QString undoAction)
-{
-    emit sendWriteUndo(undoAction);
-}
-
-void RwaBackend::receiveLogLonAndLat(int onOff)
-{
-    logCoordinates = onOff;
-}
-
-void RwaBackend::receiveLogLibPd(int onOff)
-{
-    logPd = onOff;
-}
-
-void RwaBackend::receiveLogSimulator(int onOff)
-{
-    logSim = onOff;
-}
-
-void RwaBackend::receiveLogOther(int onOff)
-{
-    logOther = onOff;
-}
-
-void RwaBackend::receiveRedrawAssets()
-{
-    emit sendRedrawAssets();
-}
-
-void RwaBackend::receiveSelectedAssets(QStringList assets)
-{
-    currentlySelectedAssets = assets;
-    emit sendSelectedAssets(currentlySelectedAssets); // not connected to anything yet
-}
-
-void RwaBackend::receiveSelectedStates(QStringList states) // not connected to anything yet
-{
-    if(logOther)
-        qDebug() << states;
-
-    currentlySelectedStates = states;
-    emit sendSelectedStates(currentlySelectedStates);
-}
-
-int RwaBackend::getStateNameCounter(std::list<RwaState *> &states)
-{
-    int maxStateCount = 2;
-    foreach (RwaState *state, states)
-    {
-        QRegularExpression rx("State \\d+");
-        QRegularExpressionMatch match = rx.match(QString::fromStdString(state->objectName()));
-
-        if(match.hasMatch())
-        {
-            QRegularExpression re("\\d+");
-            match = re.match(QString::fromStdString(state->objectName()));
-            if(match.captured(0).toInt() > maxStateCount)
-                maxStateCount = match.captured(0).toInt();
-        }
-    }
-    maxStateCount++;
-    return maxStateCount;
-}
-
-void RwaBackend::copySelectedStates2Clipboard()
-{
-    foreach (QString name, currentlySelectedStates)
-    {
-        RwaState *state = lastTouchedScene->getState(name.toStdString());
-        RwaState *newState = new RwaState(state->objectName());
-        state->copyAttributes(newState);
-        clipboardStates->getStates().push_back(newState);
-    }
-}
-
-void RwaBackend::pasteStatesFromClipboard()
-{
-    foreach (RwaState *clipboardState, clipboardStates->getStates())
-    {
-        RwaState *newState = new RwaState(clipboardState->objectName());
-        clipboardState->copyAttributes(newState);
-        generateUuidsForClipboardState(newState);
-
-        lastTouchedScene->getStates().push_back(newState);
-        newState->setScene(lastTouchedScene);
-    }
-
-    foreach (RwaState *clipboardState, clipboardStates->getStates())
-    {
-        clipboardStates->removeState(clipboardState);
-    }
-
-    emit sendLastTouchedScene(lastTouchedScene);
-}
-
-void RwaBackend::generateUuidsForClipboardState(RwaState *state)
-{
-    foreach(RwaAsset1 *asset, state->getAssets())
-    {
-        asset->getUniqueId() = std::string(QUuid::createUuid().toString().toLatin1());
-    }
-}
-
-void RwaBackend::startStopSimulator(bool startStop)
-{
-    if(startStop)
-        simulator->startRwaSimulation();
-    else
-        simulator->stopRwaSimulation();
-
-    emit updateScene(lastTouchedScene);
-}
-
-void RwaBackend::receiveTrashAssets(bool onOff)
-{
-    trashAsset = onOff;
-}
-
-void RwaBackend::receiveShowStateRadii(bool onOff)
-{
-    showStateRadii = onOff;
-}
-
-void RwaBackend::receiveShowAssets(bool onOff)
-{
-    showAssets = onOff;
-}
-
-void RwaBackend::setMainVolume(int volume)
-{
-    simulator->setMainVolume(float(volume)/100.0f);
-}
-
-bool RwaBackend::isSimulationRunning()
-{
-    return simulator->isSimulationRunning();
-}
-void RwaBackend::setLastTouchedScene(RwaScene *scene)
-{
-    lastTouchedScene = scene;
-}
-
-void RwaBackend::receiveStateName(RwaState *state, QString name)
-{
-    state->setObjectName(name.toStdString());
-}
-
-void RwaBackend::clearForHistory()
 {
     scenes.clear();
 }
@@ -404,54 +319,47 @@ void RwaBackend::receiveMapCoordinates(QPointF mapCoordinates)
     currentMapCoordinates = mapCoordinates;
 }
 
-void RwaBackend::receiveCurrentStateEdited()
+/** *******************************  State copy and paste ******************************* */
+
+void RwaBackend::copySelectedStates2Clipboard()
 {
-   emit sendLastTouchedState(this->lastTouchedState);
+    foreach (RwaState *clipboardState, clipboardStates->getStates())
+        clipboardStates->removeState(clipboardState);
+
+    foreach (QString name, currentlySelectedStates)
+    {
+        RwaState *state = lastTouchedScene->getState(name.toStdString());
+        RwaState *newState = new RwaState(state->objectName());
+        state->copyAttributes(newState);
+        clipboardStates->getStates().push_back(newState);
+    }
 }
 
-void RwaBackend::receiveUpdatedAssets()
+void RwaBackend::pasteStatesFromClipboard()
 {
-    emit updateAssets();
+    foreach (RwaState *clipboardState, clipboardStates->getStates())
+    {
+        RwaState *newState = new RwaState(clipboardState->objectName());
+        clipboardState->copyAttributes(newState);
+        generateUuidsForClipboardState(newState);
+        adjust2UniqueStateName(lastTouchedScene, newState);
+        lastTouchedScene->getStates().push_back(newState);
+        newState->setScene(lastTouchedScene);
+    }
+
+    emit sendLastTouchedScene(lastTouchedScene);
 }
 
-void RwaBackend::calibrateHeadtracker()
-{
-    headtracker->calibrateHeadtracker();
-}
+/** *************************  RWA Graphic View receiver to emitter functions ************************* */
 
 void RwaBackend::receiveEntityPosition(QPointF position)
 {
-    emit sendEntityPosition(position);
+    //emit sendEntityPosition(position);
 }
 
 void RwaBackend::receiveStatePosition(QPointF position)
 {
     emit sendStatePosition(position);
-}
-
-void RwaBackend::receiveLastTouchedAsset(RwaAsset1 *item)
-{
-   this->lastTouchedAssetItem = item;
-   emit sendLastTouchedAsset(item);
-}
-
-void RwaBackend::receiveLastTouchedState(RwaState *state)
-{
-    RwaAsset1 *lastTouched = nullptr;
-    this->lastTouchedState = state;
-    emit sendLastTouchedState(state);
-
-    if(state->getLastTouchedAsset())
-        lastTouched = state->getLastTouchedAsset();
-
-    else
-    {
-        if(!state->getAssets().empty())
-            lastTouched = state->getAssets().front();
-    }
-
-    if(lastTouched)
-        emit sendLastTouchedAsset(lastTouched);
 }
 
 void RwaBackend::receiveMoveCurrentState1(double dx, double dy)
@@ -484,37 +392,135 @@ void RwaBackend::receiveCurrentSceneRadiusEdited()
     emit sendCurrentSceneRadiusEdited();
 }
 
-void RwaBackend::receiveCurrentStateString(RwaState *state, QString stateName)
+/** ******************************** Editor Global Rendering/Functionality ********************************* */
+
+void RwaBackend::receiveTrashAssets(bool onOff)
 {
-    QStringList lines = stateName.split( "\n", QString::SkipEmptyParts );
-    foreach (const QString &text, lines)
-    {
-        if(!text.indexOf("@name: "))
-        {
-            QStringList tmp = text.split( ": ", QString::SkipEmptyParts );
-            tmp.removeFirst();
-            foreach (const QString &attr, tmp)
-            {
-                QStringList values = attr.split( ";", QString::SkipEmptyParts );
-                {
-                    foreach (const QString &value, values)
-                        state->setObjectName(value.toStdString());
-                }
-            }
-        }
-
-        else if(!text.indexOf("@name:"))
-        {
-            QStringList attr = text.split( ":", QString::SkipEmptyParts );
-            attr.removeFirst();
-            foreach (const QString &value, attr)
-            {
-                state->setObjectName(value.toStdString());
-
-            }
-        }
-    }
-    emit updateScene(state->getScene());
+    trashAsset = onOff;
 }
 
+void RwaBackend::receiveShowStateRadii(bool onOff)
+{
+    showStateRadii = onOff;
+}
 
+void RwaBackend::receiveShowAssets(bool onOff)
+{
+    showAssets = onOff;
+}
+
+/** ****************************** Logging related functions ***************************** */
+
+void RwaBackend::receiveLogLonAndLat(int onOff)
+{
+    logCoordinates = onOff;
+}
+
+void RwaBackend::receiveLogLibPd(int onOff)
+{
+    logPd = onOff;
+}
+
+void RwaBackend::receiveLogSimulator(int onOff)
+{
+    logSim = onOff;
+}
+
+void RwaBackend::receiveLogOther(int onOff)
+{
+    logOther = onOff;
+}
+
+/** ****************************** Simulator and headtracker related functions ***************************** */
+
+void RwaBackend::startStopSimulator(bool startStop)
+{
+    if(startStop)
+        simulator->startRwaSimulation();
+    else
+        simulator->stopRwaSimulation();
+
+    emit updateScene(lastTouchedScene);
+}
+
+void RwaBackend::setMainVolume(int volume)
+{
+    simulator->setMainVolume(float(volume)/100.0f);
+}
+
+bool RwaBackend::isSimulationRunning()
+{
+    return simulator->isSimulationRunning();
+}
+
+void RwaBackend::calibrateHeadtracker()
+{
+    headtracker->calibrateHeadtracker();
+}
+
+/** *********************** Static utility functionality (string generation, UUIDs, ..) ************************* */
+
+int RwaBackend::getStateNameCounter(std::list<RwaState *> &states)
+{
+    int maxStateCount = 2;
+    foreach (RwaState *state, states)
+    {
+        QRegularExpression rx("State \\d+");
+        QRegularExpressionMatch match = rx.match(QString::fromStdString(state->objectName()));
+
+        if(match.hasMatch())
+        {
+            QRegularExpression re("\\d+");
+            match = re.match(QString::fromStdString(state->objectName()));
+            if(match.captured(0).toInt() > maxStateCount)
+                maxStateCount = match.captured(0).toInt();
+        }
+    }
+    maxStateCount++;
+    return maxStateCount;
+}
+
+bool RwaBackend::adjust2UniqueStateNameRecursively(RwaScene *targetScene, RwaState *newState)
+{
+    bool found = false;
+
+    foreach (RwaState *state, targetScene->getStates())
+    {
+        if(!state->objectName().compare(newState->objectName()))
+        {
+            found = true;
+            break;
+        }
+    }
+
+    if(found)
+    {
+        std::string stateName(newState->objectName() + " copy");
+        newState->setObjectName(stateName);
+        return true;
+
+    }
+    return false;
+}
+
+void RwaBackend::adjust2UniqueStateName(RwaScene *targetScene, RwaState *newState)
+{
+    while(adjust2UniqueStateNameRecursively(targetScene, newState));
+}
+
+void RwaBackend::generateUuidsForClipboardState(RwaState *state)
+{
+    foreach(RwaAsset1 *asset, state->getAssets())
+        asset->getUniqueId() = std::string(QUuid::createUuid().toString().toLatin1());
+}
+
+int RwaBackend::getNumberFromQString(const QString &xString)
+{
+    QRegExp xRegExp("(-?\\d+(?:[\\.,]\\d+(?:e\\d+)?)?)");
+    xRegExp.indexIn(xString);
+    QStringList xList = xRegExp.capturedTexts();
+    if (true == xList.empty())
+        return 0;
+
+    return xList.begin()->toInt();
+}

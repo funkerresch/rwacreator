@@ -7,7 +7,7 @@ class RwaGraphicsView : public RwaView
 {
     Q_OBJECT
 public:
-    RwaGraphicsView(QWidget *parent = nullptr, RwaScene *scene = nullptr);
+    RwaGraphicsView(QWidget *parent = nullptr, RwaScene *scene = nullptr, QString name = "");
     MapControl* mc;
 
     virtual void receiveMouseDownEvent(const QMouseEvent*, const QPointF) = 0;
@@ -64,6 +64,7 @@ public slots:
 
     void movePixmapsOfAssetReflections(double dx, double dy);
     void moveReflectionPixmapsOfCurrentAsset(double dx, double dy);
+
 protected:
     void updatePixmaps(QmapPoint *active, GeometryLayer *layer);
     void updatePixmaps(RwaLocation1 *active, GeometryLayer *layer);
@@ -92,7 +93,7 @@ protected:
     QmapPoint *currentPolygonPoint = nullptr;
     QmapPoint *currentAssetReflection = nullptr;
 
-    QLineEdit *mapName;
+    //QLineEdit *mapName;
     QPushButton *zoomInButton;
     QPushButton *zoomOutButton;
     QPointF mapCoordinates;
@@ -104,6 +105,7 @@ protected:
     bool entityLineEditVisible;
     bool assetLineEditVisible;
     bool assetsVisible;
+    bool onlyAssetsOfCurrentStateVisible;
     bool entityVisible;
     bool statesVisible;
     bool scenesVisible;
@@ -119,13 +121,10 @@ protected:
     bool editAreaHeight = false;
     bool editAreaRadius = false;
     bool editAreaCorner = false;
-
     bool editStateArea = false;
     bool editSceneArea = false;
 
     int areaCornerIndex2Edit = false;
-
-   // qint32 tool;
     QString tmpObjectName;
     RwaState *tmpState = nullptr;
 
@@ -146,6 +145,11 @@ signals:
     void sendEntityPosition(QPointF position);
     void sendMapPosition(QPointF position);
     void sendStateName(RwaState *state, QString name);
+protected slots:
+    void setCurrentScene(RwaScene *scene);
+    void setCurrentState(RwaState *state);
+    void setCurrentAsset(RwaAsset1 *currentAsset);
+
 };
 
 #endif // RWAGRAPHICSVIEW_H

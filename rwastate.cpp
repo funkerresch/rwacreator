@@ -55,14 +55,14 @@ void RwaState::copyAttributes(RwaState *dest)
     }
 
     for(uint32_t i = 0;i < this->corners.size(); i++)
-        dest->corners.push_back(this->corners[i]);
+        dest->corners.push_back(std::vector<double>(this->corners[i])); // is std::vector<double>(this->corners[i]) really necessary?
 
     for(uint32_t i = 0;i < this->exitOffsetCorners.size(); i++)
-        dest->exitOffsetCorners.push_back(this->exitOffsetCorners[i]);
+        dest->exitOffsetCorners.push_back(std::vector<double>(this->exitOffsetCorners[i]));
 
     dest->locationType = this->locationType;
     dest->areaType = this->areaType;
-    dest->gpsLocation = this->gpsLocation;
+    dest->gpsLocation = std::vector<double>(this->gpsLocation);
     dest->myScene = this->myScene;
     dest->lastTouchedAsset = this->lastTouchedAsset;
     dest->selectedAssetIndex = this->selectedAssetIndex;

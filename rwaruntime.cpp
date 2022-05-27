@@ -708,7 +708,6 @@ void RwaRuntime::sendInitValues2pd(RwaAsset1 *asset, int patcherTag)
      sprintf(pdReceiver, "%d-dampingmax", patcherTag);
      pdMutex->lock();
      libpd_float(pdReceiver, asset->getDampingMax());
-     qDebug("%s %f", asset->fileName.c_str(), asset->getDampingMax());
      pdMutex->unlock();
 
      sprintf(pdReceiver, "%d-offset", patcherTag);
@@ -1263,9 +1262,11 @@ void RwaRuntime::setEntityStartCoordinates(RwaEntity *entity)
         entity->setCoordinates(entity->getCurrentScene()->getCoordinates());
 
      startBackgroundState(entity);
-     if(!entity->getCurrentScene()->getStates().empty())
+     if(!entity->getCurrentScene()->getStates().empty() && !entity->getCurrentScene()->fallbackDisabled())
+     {
+         qDebug() << "Set coordinates and fallback";
          entity->setCurrentState(entity->getCurrentScene()->getStates().front());
-
+     }
 }
 
 void RwaRuntime::setEntityState(RwaEntity *entity)
@@ -1335,6 +1336,7 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
                     if(state->getEnterOnlyOnce())
                     {
                         bool found = (std::find(entity->visitedStates.begin(), entity->visitedStates.end(), state->objectName()) != entity->visitedStates.end());
+
                         if(found)
                             enterconditionsFulfilled = false;
                     }
@@ -1344,10 +1346,12 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
                         sendEnd2activeAssets(entity);
                         state->setBlockUntilRadiusHasBeenLeft(true);
                         entity->setCurrentState(state);
+
                         bool found = (std::find(entity->visitedStates.begin(), entity->visitedStates.end(), state->objectName()) != entity->visitedStates.end());
-                        if(found)
+
+                        if(!found)
                         {
-                            //qDebug() << "Append to visited states" << state->objectName().toLatin1();
+                            qDebug() << "Append to visited states" << QString::fromStdString(state->objectName());
                             entity->visitedStates.push_back(state->objectName());
                         }
 
@@ -1430,10 +1434,9 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
         sendEnd2activeAssets(entity);
     }
 
-
-
     if(exitState)
     {
+        qDebug() << "EXIT STATE";
         if(hint)
         {
              //qDebug() << "auto hint state";
@@ -1460,6 +1463,7 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
             entity->setTimeInCurrentScene(0);
             setEntityStartCoordinates(entity);
             emit sendSelectedScene(nextScene);
+            emit sendSelectedState(entity->getCurrentState());
         }
 
         else if(newScene.compare(""))
@@ -1493,8 +1497,8 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
                 entity->setCurrentState(nextState); // set to fallback state
                 entity->setTimeInCurrentState(0);
                 emit sendSelectedState(nextState);
-                //if(backend->getLogSim())
-                    //qDebug() << "Enter Fallback State";
+               // if(backend->getLogSim())
+                    qDebug() << "Enter Fallback State";
             }
         }
     }

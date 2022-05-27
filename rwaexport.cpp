@@ -64,7 +64,11 @@ bool RwaExport::writeFile(QIODevice *device)
     xml.writeStartElement("rwa");
     xml.writeAttribute("version", "1.0");
     xml.writeStartElement("game");
-    xml.writeAttribute("currentscene",  QString::fromStdString(data->getLastTouchedScene()->objectName()));
+    if(data->getLastTouchedScene())
+        xml.writeAttribute("currentscene",  QString::fromStdString(data->getLastTouchedScene()->objectName()));
+    else
+        xml.writeAttribute("currentscene",  QString::fromStdString(data->getSceneAt(0)->objectName()));
+
     xml.writeEndElement();
 
     for(int i = 0;i<data->getNumberOfScenes();i++)
@@ -165,7 +169,8 @@ void RwaExport::writeAssetItem(RwaAsset1 *item)
 void RwaExport::writeState(RwaState *state)
 {
     xml.writeStartElement("state");
-
+    if(state->getLastTouchedAsset())
+        xml.writeAttribute("currentAsset", QString::fromStdString(state->getLastTouchedAsset()->objectName()));
     xml.writeAttribute("name", QString::fromStdString(state->objectName()));
     xml.writeAttribute("type", QString::number(state->getType()));
     xml.writeAttribute("areatype", QString::number(state->getAreaType()));
@@ -201,7 +206,6 @@ void RwaExport::writeState(RwaState *state)
     {
         for(int i= 0;i< state->corners.size(); i++)
         {
-
             xml.writeTextElement("lon", QString::number(state->corners[i][0], 'f', 8));
             xml.writeTextElement("lat", QString::number(state->corners[i][1], 'f', 8));
         }
@@ -249,8 +253,8 @@ void RwaExport::writeState(RwaState *state)
 void RwaExport::writeScene(RwaScene *scene)
 {
     xml.writeStartElement("scene");
-    if(scene->currentState)
-        xml.writeAttribute("currentstate", QString::fromStdString(scene->currentState->objectName()));
+    if(scene->lastTouchedState)
+        xml.writeAttribute("currentstate", QString::fromStdString(scene->lastTouchedState->objectName()));
     xml.writeAttribute("name", QString::fromStdString(scene->objectName()));
     xml.writeAttribute("lon", QString::number(scene->getCoordinates()[0], 'f', 8));
     xml.writeAttribute("lat", QString::number(scene->getCoordinates()[1], 'f', 8));

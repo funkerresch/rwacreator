@@ -632,7 +632,7 @@ void RwaViewToolbar::newStateFromCurrent()
         currentState->copyAttributes(newState);
         newState->setCoordinates(coordinates);
         qDebug() << QString::number(coordinates[0], 'f', 8);
-        backend->generateUuidsForClipboardState(newState);
+        RwaBackend::generateUuidsForClipboardState(newState);
         setCurrentScene(currentScene);
         setCurrentState(newState);
         emit sendWriteUndo("State from current");
@@ -656,7 +656,7 @@ void RwaViewToolbar::moveScene2NewLocation()
 
 void RwaViewToolbar::newGpsState()
 {
-    std::string stateName("State " + std::to_string(backend->getStateNameCounter(currentScene->getStates())));
+    std::string stateName("State " + std::to_string(RwaBackend::getStateNameCounter(currentScene->getStates())));
     RwaState *newState = currentScene->addState(stateName, coordinates);
     setCurrentScene(currentScene);
     setCurrentState(newState);

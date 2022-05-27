@@ -2,7 +2,8 @@
 #define RWAASSETITEM_H
 
 #include "rwautilities.h"
-#include "rwalocation1.h"
+#include "rwaarea.h"
+//#include "rwalocation1.h"
 #include <string.h>
 #include <stdint.h>
 

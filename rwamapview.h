@@ -11,7 +11,7 @@ class RwaMapView : public RwaGraphicsView
     Q_OBJECT
 public:
 
-    explicit RwaMapView(QWidget* parent = 0, RwaScene *scene = 0);
+    explicit RwaMapView(QWidget* parent = nullptr, RwaScene *scene = nullptr, QString name = "");
 
     void mouseDownArrow(const QMouseEvent *event, const QPointF myPoint);
     void mouseDownRubber(const QMouseEvent *event, const QPointF myPoint);
@@ -52,11 +52,10 @@ public slots:
     void zoomIn();
     void zoomOut();
     void adaptSize(qint32 width, qint32 height);
-    void updateAssets(RwaState *, RwaAsset1 *);
-    void updateState();
     void moveCurrentAsset();
 
     void receiveUpdateCurrentSceneRadius();
+    void receiveHeroPositionEdited();
 protected:
      void setCurrentScene(RwaScene *scene);
      void setCurrentState(RwaState *state);

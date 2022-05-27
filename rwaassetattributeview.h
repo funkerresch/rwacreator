@@ -1,7 +1,6 @@
 #ifndef RWAASSETATTRIBUTEVIEW_H
 #define RWAASSETATTRIBUTEVIEW_H
 
-
 #include "rwaattributeview.h"
 
 class RwaAssetAttributeView : public RwaAttributeView

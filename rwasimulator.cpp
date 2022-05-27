@@ -35,20 +35,14 @@ RwaSimulator::RwaSimulator(QObject *parent, RwaBackend *backend) :
     connect (this, SIGNAL(sendSelectedState(RwaState *)),
              backend, SLOT(receiveLastTouchedState(RwaState *)));
 
-    connect(backend, SIGNAL(sendEditedAsset(RwaState *, RwaAsset1 *)),
-              this, SLOT(receiveNewAsset(RwaState *, RwaAsset1 *)));
-
-    connect(backend, SIGNAL(sendEditedAsset(RwaState *, RwaAsset1 *)),
-              this, SLOT(receiveEditedAsset(RwaState *, RwaAsset1 *)));
-
-    connect(this, SIGNAL(sendRedrawAssets()),
-            backend, SLOT(receiveRedrawAssets()));
-
     connect(gameLoopTimer, SIGNAL(timeout()),
             this, SLOT(updateRwaGameState()));
 
-    connect (backend, SIGNAL(sendEntityPosition(QPointF)),
-             this, SLOT(receiveEntityPosition(QPointF)));
+    connect (backend, SIGNAL(sendEntityPosition(vector<double>)),
+             this, SLOT(receiveEntityPosition(vector<double)));
+
+//    connect (backend, SIGNAL(sendEntityPosition(QPointF)),
+//             this, SLOT(receiveEntityPosition(QPointF)));
 
     connect (headTracker, SIGNAL(sendAzimuth(float)),
              this, SLOT(receiveAzimuth(float)));
@@ -166,16 +160,27 @@ void RwaSimulator::receiveNewGameSignal()
     runtime->assetPath = path.str();
 }
 
-void RwaSimulator::receiveEntityPosition(QPointF position)
+void RwaSimulator::receiveEntityPosition(vector<double> position)
 {
     sendData2Devices();
     RwaEntity *entity;
+    qDebug() << "Entity Coordinates";
     foreach(entity, entities)
     {
-        std::vector<double> tmp {position.x(), position.y()};
-        entity->setCoordinates(tmp);
+        entity->setCoordinates(position);
     }
 }
+
+//void RwaSimulator::receiveEntityPosition(QPointF position)
+//{
+//    sendData2Devices();
+//    RwaEntity *entity;
+//    foreach(entity, entities)
+//    {
+//        std::vector<double> tmp {position.x(), position.y()};
+//        entity->setCoordinates(tmp);
+//    }
+//}
 
 void RwaSimulator::receiveStep()
 {
@@ -253,11 +258,6 @@ void RwaSimulator::setCurrentScene(RwaScene *currentScene)
     }
 }
 
-void RwaSimulator::receiveNewAsset(RwaState *state, RwaAsset1 *item)
-{
-    //qDebug() << "Simulator new Asset";
-}
-
 void RwaSimulator::clearGame()
 {
     RwaEntity *entity;
@@ -278,6 +278,9 @@ void RwaSimulator::startRwaSimulation()
         entity->setCurrentScene(backend->getLastTouchedScene());
     else
         entity->setCurrentScene(backend->getScenes().front());
+
+    if(!entity->getCurrentScene()->fallbackDisabled())
+        entity->setCurrentState(entity->getCurrentScene()->states.front());
 
     runtime->initDynamicPdPatchers(entity);
     libpd_init_audio(ap->inputChannelCount() , ap->outputChannelCount(), 44100); // 2 inputs, 2 output

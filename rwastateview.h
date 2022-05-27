@@ -9,6 +9,7 @@
 #include <QMediaPlayer>
 #include <qmediaplayer.h>
 #include "rwaassetlist.h"
+#include "rwaassetlist1.h"
 #include "rwagraphicsview.h"
 #include "rwaassetattributeview.h"
 
@@ -16,7 +17,7 @@ class RwaStateView : public RwaGraphicsView
 {
     Q_OBJECT
 public:
-    explicit RwaStateView(QWidget* parent = 0, RwaScene *scene = 0);
+    explicit RwaStateView(QWidget* parent = nullptr, RwaScene *scene = nullptr, QString name = "");
 
     void zoomIn();
     void zoomOut();
@@ -28,6 +29,7 @@ private:
     CirclePoint *currentRadius;
     RectPoint *currentRect;
     RwaAssetList *assetList;
+    RwaAssetList1 *assetList1;
     RwaAssetAttributeView *assetAttributes;
 
 public slots:
@@ -42,7 +44,7 @@ public slots:
     void adaptSize(qint32 width, qint32 height);
     void moveCurrentState();
     void setCurrentState(RwaState *currentState);
-    void setCurrentAsset(RwaAsset1 *currentAsset);
+    void setCurrentAsset(RwaAsset1 *asset);
     void addAssetItem(const QString &path, qint32 type);
     void deleteAssetItem(const QString &path);
     int getNumberOfSelectedAssets();
@@ -50,6 +52,7 @@ public slots:
     void receiveUpdateCurrentStateRadius();
     void receiveNewGameSignal();
 
+    void setCurrentScene(RwaScene *scene);
 protected:
     void keyPressEvent(QKeyEvent *event);
 
@@ -64,7 +67,6 @@ private:
     bool editStateWidth;
     bool editStateHeight;
     bool editStatePosition;
-
 };
 
 #endif // RWAASSETVIEW_H

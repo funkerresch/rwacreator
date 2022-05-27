@@ -1,0 +1,14 @@
+#N canvas 894 294 731 477 16;
+#X obj 26 108 soundfiler;
+#X obj 26 21 r filename4metadata;
+#X obj 26 140 s duration4metadata;
+#X obj 240 217 s channels4metadata;
+#X obj 123 173 unpack 0 0 0;
+#X obj 123 267 s samplerate4metadata;
+#X msg 26 67 read \$1;
+#X connect 0 0 2 0;
+#X connect 0 1 4 0;
+#X connect 1 0 6 0;
+#X connect 4 0 5 0;
+#X connect 4 2 3 0;
+#X connect 6 0 0 0;
