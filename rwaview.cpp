@@ -169,8 +169,3 @@ void RwaView::setCurrentAsset(RwaAsset1 *currentAsset)
     currentState->setLastTouchedAsset(this->currentAsset);
 }
 
-//void RwaView::adaptSize(qint32 width, qint32 height)
-//{
-//    (void) width;
-//    (void) height;
-//}
