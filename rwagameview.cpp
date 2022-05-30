@@ -20,9 +20,6 @@ RwaGameView::RwaGameView(QWidget *parent, RwaScene *scene, QString name) :
     windowSplitter->addWidget(sceneList);
     layout->addWidget(windowSplitter);
 
-    connect(sceneList, SIGNAL(deleteScene(const QString &)),
-              this, SLOT(deleteScene(const QString &)));
-
     disconnect(backend, SIGNAL(sendLastTouchedState(RwaState *)),
               this, SLOT(setCurrentState(RwaState*)));
 
@@ -35,32 +32,11 @@ RwaGameView::RwaGameView(QWidget *parent, RwaScene *scene, QString name) :
     readSplitterLayout();
 }
 
-void RwaGameView::deleteScene(const QString &sceneName)
-{
-    if(currentScene)
-    {
-        backend->removeScene(currentScene);
-        //emit sendCurrentScene(currentScene);
-    }
-}
+//void RwaGameView::adaptSize(qint32 width, qint32 height)
+//{
+//    (void) width; // silence warnings
+//    (void) height;
+//}
 
-void RwaGameView::adaptSize(qint32 width, qint32 height)
-{
-    (void) width; // silence warnings
-    (void) height;
-}
-
-void RwaGameView::setCurrentScene(RwaScene *scene)
-{
-    if(this->currentScene != scene)
-    {
-        this->currentScene = scene;
-        //this->sceneList->setCurrentScene(currentScene);
-        //sceneList->update();
-
-        if(backend->logOther)
-            qDebug();
-    }
-}
 
 

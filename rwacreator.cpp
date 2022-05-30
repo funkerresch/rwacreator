@@ -135,14 +135,19 @@ void RwaCreator::cleanUpBeforeQuit()
 bool RwaCreator::eventFilter(QObject *obj, QEvent *event)
 {
     QDockWidget *myWidget;
-    RwaView *myView;
+    RwaGraphicsView *myView;
 
     if (event->type() == QEvent::Resize)
     {
         QResizeEvent *resizeEvent = static_cast<QResizeEvent*>(event);
         myWidget = static_cast<QDockWidget *>(obj);
-        myView =  static_cast<RwaView *>(myWidget->widget());
-        myView->adaptSize(resizeEvent->size().width(),resizeEvent->size().height());
+
+        if(obj->objectName() == "Map View" || obj->objectName() == "State View")
+        {
+            qDebug() << "RESIZE";
+            myView =  static_cast<RwaGraphicsView *>(myWidget->widget());
+            myView->adaptSize(resizeEvent->size().width(),resizeEvent->size().height());
+        }
     }
 
     return QWidget::eventFilter(obj, event);
@@ -684,6 +689,8 @@ void RwaCreator::writeUndo(QString undoAction)
 
 void RwaCreator::readUndoFile(QString name)
 {
+    backend->clearScenes();
+
     QFile file(backend->completeUndoPath +"/"+name);
     if (!file.open(QFile::ReadOnly | QFile::Text))
     {

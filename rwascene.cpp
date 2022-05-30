@@ -243,6 +243,12 @@ void RwaScene::moveMyChildren(double dx, double dy)
 
 void RwaScene::clear()
 {
+    foreach(RwaState *state, states)
+    {
+        delete state;
+        qDebug() << "DELETE STATE";
+    }
+
     this->states.clear();
 }
 

@@ -191,7 +191,7 @@ void RwaStateView::setMapCoordinates(QPointF coordinates)
 
 void RwaStateView::adaptSize(qint32 width, qint32 height)
 {
-//    mc->resize(QSize(windowSplitter->sizes().at(2), this->height()));
+    mc->resize(QSize(windowSplitter->sizes().at(2), this->height()));
 //    QSettings settings("Intrinsic Audio", "Rwa Creator");
 //    settings.setValue("stateViewGeometry", windowSplitter->saveGeometry());
 //    settings.setValue("stateViewState", windowSplitter->saveState());

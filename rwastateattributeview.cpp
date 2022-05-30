@@ -527,8 +527,3 @@ void RwaStateAttributeView::receiveFaderAttributeValue(int id)
 
 }
 
-void RwaStateAttributeView::adaptSize(qint32 width, qint32 height)
-{
-   qDebug() << height;
-
-}

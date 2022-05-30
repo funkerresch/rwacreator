@@ -11,7 +11,6 @@ public:
     RwaAssetAttributeView(QWidget *parent, RwaScene *scene);
 
 public slots:
-    void adaptSize(qint32 width, qint32 height);
     void receiveEditingFinished();
     void receiveCheckBoxAttributeValue(int id);
     void receiveCheckBoxAttributeValue(int id, bool value);

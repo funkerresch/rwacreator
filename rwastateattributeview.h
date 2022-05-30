@@ -13,7 +13,6 @@ public:
 
 public slots:
     void updateStateArea();
-    void adaptSize(qint32 width, qint32 height);
     void setCurrentState(RwaState *currentState);
     void setCurrentScene(RwaScene *scene);
     void receiveEditingFinished();

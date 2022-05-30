@@ -41,17 +41,9 @@ void RwaSceneView::deleteState(const QString &stateName)
     }
 }
 
-void RwaSceneView::adaptSize(qint32 width, qint32 height)
+void RwaSceneView::setCurrentScene(RwaScene *scene)
 {
-    //stateAttributes->setFixedWidth(width*0.55);
-    //stateList->setFixedWidth(width*0.35);
-}
-
-void RwaSceneView::setCurrentScene(RwaScene *currentScene)
-{
-    this->currentScene = currentScene;
-    //this->stateList->setCurrentScene(currentScene);
-    stateList->update();
+    currentScene = scene;
 }
 
 void RwaSceneView::setCurrentState(RwaState *currentState)

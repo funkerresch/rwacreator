@@ -11,12 +11,8 @@ class RwaGameView : public RwaView
 public:
     explicit RwaGameView(QWidget *parent = nullptr, RwaScene *scene = nullptr, QString name = "");
 
-public slots:
-    void adaptSize(qint32 width, qint32 height);
-
-    void deleteScene(const QString &sceneName);
-protected:
-    void setCurrentScene(RwaScene *scene);
+//public slots:
+//    void adaptSize(qint32 width, qint32 height);
 
 private:
 

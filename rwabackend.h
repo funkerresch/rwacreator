@@ -99,6 +99,7 @@ public slots:
     void appendScene(RwaScene *scene);
     void duplicateScene(RwaScene *scene);
     void newSceneFromSelectedStates();
+    void removeScene(QString sceneName);
     void removeScene(RwaScene *scene);
 
     void clearScene(RwaScene *scene);

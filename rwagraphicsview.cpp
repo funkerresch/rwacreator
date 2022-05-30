@@ -22,8 +22,8 @@ RwaGraphicsView::RwaGraphicsView(QWidget *parent, RwaScene *scene, QString name)
     leftLayout = new QBoxLayout(QBoxLayout::TopToBottom);
     innerLayout = new QBoxLayout(QBoxLayout::LeftToRight);
 
-    zoomInButton = new QPushButton("+");
-    zoomOutButton = new QPushButton("-");
+    zoomInButton = new QPushButton("+", this);
+    zoomOutButton = new QPushButton("-", this);
     zoomInButton->setMinimumWidth(50);
     zoomInButton->setFixedHeight(20);
     zoomOutButton->setFixedWidth(50);
@@ -32,7 +32,7 @@ RwaGraphicsView::RwaGraphicsView(QWidget *parent, RwaScene *scene, QString name)
     zoomInButton->setStyleSheet(rwaButtonStyleSheet);
     zoomOutButton->setStyleSheet(rwaButtonStyleSheet);
 
-    mc = new MapControl(QSize(250,250));
+    mc = new MapControl(QSize(250,250), MapControl::MouseMode::Panning, this);
     mapadapter = new OSMMapAdapter();
     l = new MapLayer("Custom Layer", mapadapter);
     mc->addLayer(l);

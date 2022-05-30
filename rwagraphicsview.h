@@ -55,6 +55,7 @@ public slots:
 
     virtual void zoomIn() = 0;
     virtual void zoomOut() = 0;
+    virtual void adaptSize(qint32 width, qint32 height) = 0;
 
     void receiveStateName(QString name);
     void workAroundLineEditBug();

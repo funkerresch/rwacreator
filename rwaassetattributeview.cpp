@@ -76,11 +76,6 @@ RwaAssetAttributeView::RwaAssetAttributeView(QWidget *parent, RwaScene *scene) :
     this->setMaximumWidth(260);
 }
 
-void RwaAssetAttributeView::adaptSize(qint32 width, qint32 height)
-{
-    //qDebug() << "adaptSize";
-}
-
 void RwaAssetAttributeView::receiveSelectedAssets(QStringList assets)
 {
     selectedAssets = assets;

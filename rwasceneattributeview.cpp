@@ -361,8 +361,3 @@ void RwaSceneAttributeView::receiveFaderAttributeValue(int id)
 
 }
 
-void RwaSceneAttributeView::adaptSize(qint32 width, qint32 height)
-{
-   qDebug() << height;
-
-}

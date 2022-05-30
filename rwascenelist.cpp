@@ -12,6 +12,8 @@ RwaSceneList::RwaSceneList(QWidget* parent, RwaScene *scene) :
     connect(backend, SIGNAL(sendAppendScene()), this, SLOT(update()));
 
     connect(backend, SIGNAL(newGameLoaded()), this, SLOT(update()));
+
+    connect(this, SIGNAL(deleteScene(QString)), backend, SLOT(removeScene(QString)));
 }
 
 void RwaSceneList::ListWidgetEditEnd(QWidget *editor, QAbstractItemDelegate::EndEditHint hint)

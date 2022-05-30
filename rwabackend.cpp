@@ -248,9 +248,17 @@ void RwaBackend::duplicateScene(RwaScene *scene)
         qDebug("BACKEND: duplicateScene");
 }
 
+void RwaBackend::removeScene(QString sceneName)
+{
+    RwaScene *scene = getScene(sceneName);
+    if(!scene)
+        return;
+
+    removeScene(scene);
+}
+
 void RwaBackend::removeScene(RwaScene *scene)
 {
-    RwaScene *currentScene;
     qint32 index;
 
     if(scenes.count() == 1) // keep always one scene
@@ -263,9 +271,10 @@ void RwaBackend::removeScene(RwaScene *scene)
             index = 0;
 
         scenes.removeOne(scene);
-        currentScene = scenes.at(index);
-        emit sendLastTouchedScene(currentScene);
+        lastTouchedScene = scenes.at(index);
+        emit sendLastTouchedScene(lastTouchedScene);
     }
+    scene->clear();
 }
 
 void RwaBackend::clearScene(RwaScene *scene)
@@ -291,11 +300,17 @@ void RwaBackend::moveScene2CurrentMapLocation()
 
 void RwaBackend::clearScenes()
 {
+    foreach(RwaScene *scene, scenes)
+        scene->clear();
+
     scenes.clear();
 }
 
 void RwaBackend::clear()
 {
+    foreach(RwaScene *scene, scenes)
+        scene->clear();
+
     emptyTmpDirectories();
     scenes.clear();
 }
@@ -303,6 +318,10 @@ void RwaBackend::clear()
 void RwaBackend::clearData()
 {
     emptyTmpDirectories();
+
+    foreach(RwaScene *scene, scenes)
+        scene->clear();
+
     scenes.clear();
     appendScene();
     emit updateScene(scenes.first());

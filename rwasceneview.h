@@ -11,14 +11,10 @@ class RwaSceneView : public RwaView
 public:
     explicit RwaSceneView(QWidget *parent, RwaScene *scene, QString name);
 
-
-public slots:
-    void adaptSize(qint32 width, qint32 height);
-
     void deleteState(const QString &stateName);
 protected:
     void setCurrentState(RwaState *currentState);
-    void setCurrentScene(RwaScene *currentScene);
+    void setCurrentScene(RwaScene *scene);
 
 private:
 

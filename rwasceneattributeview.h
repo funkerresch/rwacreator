@@ -11,7 +11,6 @@ public:
 
 public slots:
     void updateSceneArea();
-    void adaptSize(qint32 width, qint32 height);
     void setCurrentScene(RwaScene *currentScene);
 
     void receiveEditingFinished();

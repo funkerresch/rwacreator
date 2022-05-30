@@ -2,7 +2,8 @@
 #include <qdebug.h>
 
 
-RwaAsset1::RwaAsset1(const std::string &data, std::vector<double> gps, qint32 type, const string uid) : RwaLocation1()
+RwaAsset1::RwaAsset1(const std::string &data, std::vector<double> gps, qint32 type, const string uid)
+    : RwaLocation1()
 {
     this->currentPosition = std::vector<double>(2, 0.0);
     this->currentPosition = gps;
