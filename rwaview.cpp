@@ -36,7 +36,6 @@ void RwaView::writeSplitterLayout()
     if(!windowSplitter || objectName().isEmpty())
         return;
 
-    qDebug() << "Writing " << objectName();
     QSettings settings("Intrinsic Audio", "Rwa Creator");
     settings.setValue(objectName()+"Geometry", windowSplitter->saveGeometry());
     settings.setValue(objectName()+"State", windowSplitter->saveState());

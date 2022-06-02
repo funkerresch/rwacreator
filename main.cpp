@@ -49,7 +49,7 @@ int main(int argc, char **argv)
     QApplication app(argc, argv);
     RwaBackend::getInstance();
     RwaCreator mainWin;
-    qInstallMessageHandler(mainWin.logMessages);
+    //qInstallMessageHandler(mainWin.logMessages);
     mainWin.show();
     return app.exec();
 }

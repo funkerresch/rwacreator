@@ -12,6 +12,7 @@ class RwaMapView : public RwaGraphicsView
 public:
 
     explicit RwaMapView(QWidget* parent = nullptr, RwaScene *scene = nullptr, QString name = "");
+    ~RwaMapView();
 
     void mouseDownArrow(const QMouseEvent *event, const QPointF myPoint);
     void mouseDownRubber(const QMouseEvent *event, const QPointF myPoint);
@@ -24,9 +25,11 @@ public:
     void moveCurrentScene(const QPointF myPoint);
     bool mouseDownScenes(const QPointF myPoint);
 
+    void writeSettings();
 private:
     int stateIndex2Delete;
 
+    void readSettings();
 public slots:
     void receiveMouseMoveEvent(const QMouseEvent*, const QPointF);
     void receiveMouseReleaseEvent();
@@ -40,8 +43,6 @@ public slots:
     void receiveSceneName(QString name);
     void receiveUpdateCurrentStateRadius();
     //void receiveUpdateCurrentSceneRadius();
-    void setAssetsVisible(bool onOff);
-    void setRadiiVisible(bool onOff);
 
     bool mouseDownStates(const QPointF myPoint);
     bool mouseDownEntities(const QPointF myPoint);
@@ -56,12 +57,12 @@ public slots:
 
     void receiveUpdateCurrentSceneRadius();
     void receiveHeroPositionEdited();
+
 protected:
      void setCurrentScene(RwaScene *scene);
      void setCurrentState(RwaState *state);
      void setCurrentState(qint32 stateNumber);
      void setCurrentAsset(RwaAsset1 *asset);
-     //void setCurrentAsset(RwaAssetItem *currentAsset);
 
 signals:
      void sendSceneName(RwaScene *scene, QString name);
@@ -73,8 +74,6 @@ signals:
      void sendStartStopSimulator(bool startStop);
      void sendStateCoordinate(QPointF);
      void sendSelectedStates(QStringList states);
-
-
 };
 
 #endif // RWAMAPVIEW_H

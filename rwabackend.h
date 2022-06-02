@@ -24,6 +24,7 @@ public:
     ~RwaBackend();
     static RwaBackend *instance;
     static RwaBackend *getInstance();
+    void StartHttpServer(qint32 port);
 
     RwaSimulator *simulator;
     QString projectName;
@@ -67,7 +68,7 @@ private:
 
 public slots:
 
-    /** *********************************Undo read and write*********************************** */
+    /** *********************************Undo read and write********************************************** */
 
     void receiveReadUndoFile(QString name);
     void receiveWriteUndo(QString undoAction);
@@ -99,25 +100,26 @@ public slots:
     void appendScene(RwaScene *scene);
     void duplicateScene(RwaScene *scene);
     void newSceneFromSelectedStates();
+
+    /** ************************ Clear/Remove/Reset Scene(s) functionality **************************** */
+
     void removeScene(QString sceneName);
     void removeScene(RwaScene *scene);
-
     void clearScene(RwaScene *scene);
-    void clearData();
     void clearScenes();
-    void emptyTmpDirectories(); 
+    void reset();
 
-    void clear();
+    /** ************************************* Location functionality ********************************** */
+
     void moveScene2CurrentMapLocation();
     void receiveMapCoordinates(QPointF);
-    void StartHttpServer(qint32 port);
 
     /** ************************************  State copy and paste *********************************** */
 
     void copySelectedStates2Clipboard();
     void pasteStatesFromClipboard();
 
-    /** *******************  RWA Graphic View receiver to emitter functions ********************* */
+    /** ************************  RWA Graphic View receiver to emitter functions ********************* */
 
     void receiveMoveCurrentState1(double dx, double dy);
     void receiveMoveCurrentAsset1(double dx, double dy);
@@ -128,7 +130,7 @@ public slots:
     void receiveStatePosition(QPointF position);
     void receiveEntityPosition(QPointF position);
 
-    /** ************************* Editor Global Rendering/Functionality ************************** */
+    /** ************************* Editor Global Rendering/Functionality ***************************** */
 
     void receiveTrashAssets(bool onOff);
     void receiveShowStateRadii(bool onOff);
@@ -206,6 +208,7 @@ public:
 
     /** ************************************************** Signals ************************************************** */
 
+    bool fileUsedByAnotherAsset(RwaAsset1 *asset2Delete);
 signals:
     void readUndoFile(QString name);
     void sendWriteUndo(QString undoAction);
@@ -226,12 +229,12 @@ signals:
     void sendMoveCurrentAssetReflection(double dx, double dy, int channel);
     void sendCurrentStateRadiusEdited();
     void sendCurrentSceneRadiusEdited();
+    void sendHeroPositionEdited();
     void updateAssets();  // update simulator if assets are updated while simulation runs..
-    void sendSave();
+    //void sendSave();
     void newGameLoaded();
     void undoGameLoaded();
     void sendRedrawAssets();
-//    void sendEntityPosition(QPointF position);
     void sendEntityPosition(vector<double> position);
     void sendStatePosition(QPointF position);
 };

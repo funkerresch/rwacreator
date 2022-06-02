@@ -3,6 +3,7 @@
  * Created by Thomas Resch
  * ©2022 by Thomas Resch
  *
+ * rwacreator is the main window of the RwaCreator Application
  *
  */
 
@@ -46,7 +47,7 @@ RwaCreator::RwaCreator(QWidget *parent, Qt::WindowFlags flags)
     allViewsLoaded = false;
     headtracker = RwaHeadtrackerConnect::getInstance();
 
-    QObject::connect(backend, SIGNAL(sendSave()), this, SLOT(save()));
+   // QObject::connect(backend, SIGNAL(sendSave()), this, SLOT(save()));
     QObject::connect(backend, SIGNAL(sendWriteUndo(QString)), this, SLOT(writeUndo(QString)));
     QObject::connect(backend, SIGNAL(readUndoFile(QString )), this, SLOT(readUndoFile(QString )));
     QObject::connect(QApplication::instance(), SIGNAL(aboutToQuit()),this, SLOT(cleanUpBeforeQuit()));
@@ -54,22 +55,21 @@ RwaCreator::RwaCreator(QWidget *parent, Qt::WindowFlags flags)
     setCentralWidget(backend);   
     createInitFolder();      
     loadDefaultViews();
-    openInit();
+    //openInit();
     setupMenuBar();
+    loadLayoutAndSettings();
+
 }
 
-void RwaCreator::closeDockWidget(RwaDockWidget *dock)
+/** *************************** logMessages redirects qDebug() to rwalogview ***************************************** */
+
+void RwaCreator::logMessages(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
-    (void) dock;
-    qDebug() << "Close Dockwidget";
-    //removeDockWidget(dock);
+    if(logWindow)
+        logWindow->outputMessage( type, context, msg );
 }
 
-void RwaCreator::closeEvent(QCloseEvent *event)
-{
-    (void) event;
-    qDebug() << "Closing Creator";
-}
+/** ************* Create RWA directory in home director and filelist of RWA games as .txt file *********************** */
 
 void RwaCreator::createInitFolder()
 {
@@ -96,6 +96,209 @@ void RwaCreator::createInitFolder()
         QDir().mkdir(path);
 }
 
+/** ******************************* Open and write rwainit.txt for global app settings ********************************** */
+
+void RwaCreator::openInit()
+{
+    int lineNumber = 0;
+    QString filename = QString("%1%2%3").arg(QDir::homePath()).arg("/RWACreator/").arg("rwainit.txt");
+    QFile file(filename);
+
+    if(!file.open(QIODevice::ReadOnly))
+    {
+        clear();
+        return;
+    }
+
+    QTextStream in(&file);
+
+    while(!in.atEnd())
+    {
+        QString line = in.readLine();
+
+        if(lineNumber == 0)
+        {
+            if(!open(line))
+                clear();
+        }
+
+        if(lineNumber == 1)
+            headtracker->setName(line);
+
+        lineNumber++;
+    }
+
+    file.close();
+ }
+
+void RwaCreator::writeInit()
+{
+    QString filename = QString("%1%2%3").arg(QDir::homePath()).arg("/RWACreator/").arg("rwainit.txt");
+    QFile file(filename);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        QTextStream stream(&file);
+        stream << backend->completeFilePath << endl;
+        stream << headtracker->getName() << endl;
+        if(backend->showStateRadii)
+            stream << "1" << endl;
+        else
+            stream << "0" << endl;
+        if(backend->showAssets)
+            stream << "1" << endl;
+        else
+            stream << "0";
+        file.close();
+    }
+    else
+        qDebug() << "Error writing init";
+}
+
+/** ******************************** Save and load main window layout and settings ********************************** */
+
+void RwaCreator::saveLayoutAndSettings()
+{
+    QSettings settings("Intrinsic Audio", "Rwa Creator");
+    settings.setValue("geometry", saveGeometry());
+    settings.setValue("windowState", saveState());
+    settings.setValue("lastgame", backend->completeFilePath);
+    settings.setValue("headtrackerid", headtracker->getName());
+    settings.sync(); // forces to write the settings to storage
+}
+
+void RwaCreator::loadLayoutAndSettings()
+{
+    QSettings settings("Intrinsic Audio", "Rwa Creator");
+    restoreGeometry(settings.value("geometry").toByteArray());
+    restoreState(settings.value("windowState").toByteArray());
+    headtracker->setName(settings.value("headtrackerid").toString());
+    if(!open(settings.value("lastgame").toString()))
+        clear();
+}
+
+/** ********************************************* Add default views ************************************************** */
+
+void RwaCreator::loadDefaultViews()
+{
+    addMapView();
+    addStateView();
+    addSceneView();
+    addLogView();
+    addGameView();
+    addHistoryView();
+    allViewsLoaded = true;
+}
+
+void RwaCreator::addMapView() // qt bug: stylesheet is applied only if widget is docked:(
+{
+    RwaDockWidget *dw = new RwaDockWidget(this);
+    mapView = new RwaMapView(this, backend->getFirstScene(), "MapView");
+    //dw->setStyleSheet("QDockWidget { background-color:lightgrey; font-size: 20px; color: black}");
+    //dw->setStyleSheet("QDockWidget { font: bold }");
+    dw->setObjectName(tr("Map View"));
+    dw->setWindowTitle(tr("Map View"));
+    dw->setGeometry(0,0,1000,300);
+    dw->setWidget(mapView);
+    dw->installEventFilter(this);
+    dw->setWindowFlags(Qt::WindowStaysOnTopHint );
+    addDockWidget(Qt::TopDockWidgetArea, dw);
+
+    rwaDockWidgets.append(dw);
+}
+
+void RwaCreator::addLogView()
+{
+    logWindow = new RwaLogWindow(this);
+    RwaDockWidget *dw = new RwaDockWidget(this);
+    dw->setObjectName(tr("Log View"));
+    dw->setWindowTitle(tr("Log View"));
+    dw->setGeometry(0,0,600,300);
+    dw->setWidget(logWindow);
+    dw->setWindowFlags(Qt::WindowStaysOnTopHint );
+    addDockWidget(Qt::TopDockWidgetArea, dw);
+    rwaDockWidgets.append(dw);
+}
+
+void RwaCreator::addGameView()
+{
+    RwaDockWidget *dw = new RwaDockWidget(this);
+    dw->setObjectName(tr("Game View"));
+    dw->setWindowTitle(tr("Game View"));
+    dw->setGeometry(0,0,600,300);
+    dw->setWidget(new RwaGameView(this, backend->getFirstScene(), "GameView"));
+    dw->installEventFilter(this);
+    addDockWidget(Qt::LeftDockWidgetArea, dw);
+    rwaDockWidgets.append(dw);
+}
+
+void RwaCreator::addSceneView()
+{
+    RwaDockWidget *dw = new RwaDockWidget(this);
+    dw->setObjectName(tr("Scene View"));
+    dw->setWindowTitle(tr("Scene View"));
+    dw->setGeometry(0,0,600,300);
+    dw->setWidget(new RwaSceneView(this, backend->getFirstScene(), "SceneView"));
+    dw->installEventFilter(this);
+    addDockWidget(Qt::LeftDockWidgetArea, dw);
+    rwaDockWidgets.append(dw);
+}
+
+void RwaCreator::addStateView()
+{
+    RwaDockWidget *dw = new RwaDockWidget(this);
+    dw->setObjectName(tr("State View"));
+    dw->setWindowTitle(tr("State View"));
+    dw->setGeometry(0,0,600,300);
+    dw->setWidget(new RwaStateView(this, backend->getFirstScene(), "StateView"));
+    dw->installEventFilter(this);
+    addDockWidget(Qt::BottomDockWidgetArea, dw);
+    rwaDockWidgets.append(dw);
+}
+
+void RwaCreator::addHistoryView()
+{
+    RwaDockWidget *dw = new RwaDockWidget(this);
+    dw->setObjectName(tr("History View"));
+    dw->setWindowTitle(tr("History View"));
+    dw->setGeometry(0,0,600,300);
+    dw->setWidget(new RwaHistory(this));
+    addDockWidget(Qt::RightDockWidgetArea, dw);
+    rwaDockWidgets.append(dw);
+}
+
+/** ******************************* Save app settings and clean up before quit**************************************** */
+
+void RwaCreator::closeDockWidget(RwaDockWidget *dock)
+{
+    RwaView *myView =  static_cast<RwaView *>(dock->widget()); // somehow this slot is not getting called
+    myView->writeSplitterLayout();                             // doing it for now in cleanupBeforeQuit
+    qDebug();
+}
+
+void RwaCreator::closeEvent(QCloseEvent *event)
+{
+    (void) event;
+    qDebug();
+}
+
+void RwaCreator::cleanUpBeforeQuit()
+{
+    qDebug() << "Clean up and quit!";
+    backend->simulator->stopRwaSimulation();
+    RwaView *myView;
+
+    foreach(QDockWidget *dw, rwaDockWidgets)
+    {
+        myView =  static_cast<RwaView *>(dw->widget());
+        myView->writeSplitterLayout();
+    }
+
+    maybeSave();
+    saveLayoutAndSettings();
+    emptyTmpDirectories();
+    backend->clearScenes();
+}
+
 bool RwaCreator::maybeSave()
 {
     const QMessageBox::StandardButton ret
@@ -115,22 +318,7 @@ bool RwaCreator::maybeSave()
     return true;
 }
 
-void RwaCreator::cleanUpBeforeQuit()
-{
-    qDebug() << "Clean up and quit!";
-    RwaView *myView;
-    foreach(QDockWidget *dw, rwaDockWidgets)
-    {
-        myView =  static_cast<RwaView *>(dw->widget());
-        myView->writeSplitterLayout();
-    }
-
-    writeInit();    
-    maybeSave();
-    saveLayout1();
-    backend->emptyTmpDirectories();
-    backend->getScenes().clear();
-}
+/** ***************************** Event filter calls resize events to the graphic views ********************************** */
 
 bool RwaCreator::eventFilter(QObject *obj, QEvent *event)
 {
@@ -142,20 +330,14 @@ bool RwaCreator::eventFilter(QObject *obj, QEvent *event)
         QResizeEvent *resizeEvent = static_cast<QResizeEvent*>(event);
         myWidget = static_cast<QDockWidget *>(obj);
 
-        if(obj->objectName() == "Map View" || obj->objectName() == "State View")
-        {
-            qDebug() << "RESIZE";
+        if(obj->objectName() == "Map View" || obj->objectName() == "State View") // We need this for resizing the mapcontroller
+        {                                                                        // when the parent window is resized
             myView =  static_cast<RwaGraphicsView *>(myWidget->widget());
             myView->adaptSize(resizeEvent->size().width(),resizeEvent->size().height());
         }
     }
 
     return QWidget::eventFilter(obj, event);
-}
-
-void RwaCreator::mousePressEvent(QMouseEvent *event)
-{
-    qDebug("Mainwindow::mousePressEvent: '%d' ", event->type());
 }
 
 void RwaCreator::selectOutputDevice(qint32 index)
@@ -316,11 +498,6 @@ void RwaCreator::initHeadtrackerMenu(QMenu *headtrackerMenu)
     connect(btactionDisconnect, SIGNAL(triggered()), headtracker, SLOT(disconnectHeadtracker()));
 }
 
-//void RwaCreator::scanSerialPorts()
-//{
-//    initHeadtrackerMenu(headtrackerMenu);
-//}
-
 void RwaCreator::setupMenuBar()
 {
     QMenu *selectAudioDevice = menuBar()->addMenu(tr("&Select Audio Device"));
@@ -336,93 +513,13 @@ void RwaCreator::setupMenuBar()
     initHeadtrackerMenu(headtrackerMenu);
 }
 
-void RwaCreator::saveLayout1()
-{
-    QSettings settings("Intrinsic Audio", "Rwa Creator");
-    settings.setValue("geometry", saveGeometry());
-    settings.setValue("windowState", saveState());
-    settings.sync(); // forces to write the settings to storage
-}
-
-void RwaCreator::loadLayout1()
-{
-    QSettings settings("Intrinsic Audio", "Rwa Creator");
-    restoreGeometry(settings.value("geometry").toByteArray());
-    restoreState(settings.value("windowState").toByteArray());
-}
-
-void RwaCreator::writeInit()
-{
-    QString filename = QString("%1%2%3").arg(QDir::homePath()).arg("/RWACreator/").arg("rwainit.txt");
-    QFile file(filename);
-    if (file.open(QIODevice::WriteOnly | QIODevice::Text))
-    {
-        QTextStream stream(&file);
-        stream << backend->completeFilePath << endl;
-        stream << headtracker->getName() << endl;
-        if(backend->showStateRadii)
-            stream << "1" << endl;
-        else
-            stream << "0" << endl;
-        if(backend->showAssets)
-            stream << "1" << endl;
-        else
-            stream << "0";
-        file.close();
-    }
-    else
-        qDebug() << "Error writing init";
-}
-
-void RwaCreator::openInit()
-{
-    int lineNumber = 0;
-    QString filename = QString("%1%2%3").arg(QDir::homePath()).arg("/RWACreator/").arg("rwainit.txt");
-    QFile file(filename);
-
-    if(!file.open(QIODevice::ReadOnly))
-    {
-        clear();
-        return;
-    }
-
-    QTextStream in(&file);
-
-    while(!in.atEnd())
-    {
-        QString line = in.readLine();
-
-        if(lineNumber == 0)
-        {
-            if(!open(line))
-                clear();
-        }
-
-        if(lineNumber == 1)
-            headtracker->setName(line);
-
-        lineNumber++;
-    }
-
-    file.close();
- }
-
 void RwaCreator::write(QString writeMessage, qint32 flags, QString oldAssetPath)
 {
     QString completeFilePath;
     QString completeProjectPath;
 
-    if(!(flags & RWAEXPORT_EXPORTFORMOBILECLIENT))
-    {
-        completeFilePath = backend->completeFilePath;
-        completeProjectPath = backend->completeProjectPath;
-    }
-
-    else
-    {
-
-    }
-
+    completeFilePath = backend->completeFilePath;
+    completeProjectPath = backend->completeProjectPath;
 
     if (completeFilePath.isEmpty())
         return;
@@ -444,12 +541,6 @@ void RwaCreator::write(QString writeMessage, qint32 flags, QString oldAssetPath)
     {
         if(!writeMessage.isEmpty())
             statusBar()->showMessage(writeMessage, 2000);
-    }
-
-    if(!(flags & RWAEXPORT_EXPORTFORMOBILECLIENT))
-    {
-        writeInit();
-        saveLayout1();
     }
 }
 
@@ -525,10 +616,10 @@ void RwaCreator::saveForMobileClient()
     if(fullpath.isEmpty())
         return;
 
+    qDebug();
     prepareWrite(fullpath, flags);
     write("Exported for mobile Client", flags, oldAssetPath);
     backend->completeClientExportPath = fullpath;
-
     backend->completeAssetPath = oldAssetPath;
     backend->completeFilePath = oldFilePath;
     backend->completeProjectPath = oldProjectPath;
@@ -604,7 +695,8 @@ qint32 RwaCreator::open(QString fileName)
         return 0;
     }
 
-    backend->clear();
+    emptyTmpDirectories();
+    backend->clearScenes();
     projectName = RwaUtilities::getFileName(fullpath);
     QStringList pieces = projectName.split( "." );
     projectName = pieces.first();
@@ -635,34 +727,26 @@ qint32 RwaCreator::open(QString fileName)
         writeUndo("Init Game");
     }
 
-    loadLayout1();
     return 1;
+}
+
+void RwaCreator::emptyTmpDirectories()
+{
+    RwaUtilities::emtpyDirectory(backend->completeUndoPath);
+    RwaUtilities::emtpyDirectory(backend->completeTmpPath);
 }
 
 void RwaCreator::clear()
 {
     qDebug() << "Clear";
+    emptyTmpDirectories();
     undoCounter = 0;
     backend->projectName = QString();
     backend->completeFilePath = QString();
     backend->completeProjectPath = QString();
-    backend->clearData();
+    backend->reset();
     setWindowTitle("Not saved");
     exportProject();
-}
-
-void RwaCreator::newProject()
-{
-    QString fullpath = QFileDialog::getSaveFileName(this, tr("New Rwa Project"), QDir::homePath(), tr("RWA Files (*.rwa *.xml)"));
-    if(fullpath.isEmpty())
-    {
-        open(QString("defaultproject/default.rwa"));
-        return;
-    }
-
-    prepareWrite(fullpath);
-    write("Successfully created new Rwa Project", 0, "");
-    writeUndo("Init Game");
 }
 
 void RwaCreator::writeUndo(QString undoAction)
@@ -722,95 +806,4 @@ void RwaCreator::showEvent(QShowEvent *event)
     QMainWindow::showEvent(event);
 }
 
-void RwaCreator::addMapView()
-{
-    RwaDockWidget *dw = new RwaDockWidget(this);
-    // qt bug: stylesheet is applied only if widget is docked:(
-    //dw->setStyleSheet("QDockWidget { background-color:lightgrey; font-size: 20px; color: black}");
-    //dw->setStyleSheet("QDockWidget { font: bold }");
-    dw->setObjectName(tr("Map View"));
-    dw->setWindowTitle(tr("Map View"));
-    dw->setGeometry(0,0,1000,300);
-    dw->setWidget(new RwaMapView(this, backend->getFirstScene(), "MapView"));
-    dw->installEventFilter(this);
-    dw->setWindowFlags(Qt::WindowStaysOnTopHint );
-    addDockWidget(Qt::TopDockWidgetArea, dw);
-    rwaDockWidgets.append(dw);
-}
 
-void RwaCreator::addLogView()
-{
-    logWindow = new RwaLogWindow(this);
-    RwaDockWidget *dw = new RwaDockWidget(this);
-    dw->setObjectName(tr("Log View"));
-    dw->setWindowTitle(tr("Log View"));
-    dw->setGeometry(0,0,600,300);
-    dw->setWidget(logWindow);
-    dw->setWindowFlags(Qt::WindowStaysOnTopHint );
-    addDockWidget(Qt::TopDockWidgetArea, dw);
-    rwaDockWidgets.append(dw);
-}
-
-void RwaCreator::addGameView()
-{
-    RwaDockWidget *dw = new RwaDockWidget(this);
-    dw->setObjectName(tr("Game View"));
-    dw->setWindowTitle(tr("Game View"));
-    dw->setGeometry(0,0,600,300);
-    dw->setWidget(new RwaGameView(this, backend->getFirstScene(), "GameView"));
-    dw->installEventFilter(this);
-    addDockWidget(Qt::LeftDockWidgetArea, dw);
-    rwaDockWidgets.append(dw);
-}
-
-void RwaCreator::addSceneView()
-{
-    RwaDockWidget *dw = new RwaDockWidget(this);
-    dw->setObjectName(tr("Scene View"));
-    dw->setWindowTitle(tr("Scene View"));
-    dw->setGeometry(0,0,600,300);
-    dw->setWidget(new RwaSceneView(this, backend->getFirstScene(), "SceneView"));
-    dw->installEventFilter(this);
-    addDockWidget(Qt::LeftDockWidgetArea, dw);
-    rwaDockWidgets.append(dw);
-}
-
-void RwaCreator::addStateView()
-{
-    RwaDockWidget *dw = new RwaDockWidget(this);
-    dw->setObjectName(tr("State View"));
-    dw->setWindowTitle(tr("State View"));
-    dw->setGeometry(0,0,600,300);
-    dw->setWidget(new RwaStateView(this, backend->getFirstScene(), "StateView"));
-    dw->installEventFilter(this);
-    addDockWidget(Qt::BottomDockWidgetArea, dw);
-    rwaDockWidgets.append(dw);
-}
-
-void RwaCreator::addHistoryView()
-{
-    RwaDockWidget *dw = new RwaDockWidget();
-    dw->setObjectName(tr("History View"));
-    dw->setWindowTitle(tr("History View"));
-    dw->setGeometry(0,0,600,300);
-    dw->setWidget(new RwaHistory(this));
-    addDockWidget(Qt::RightDockWidgetArea, dw);
-    rwaDockWidgets.append(dw);
-}
-
-void RwaCreator::logMessages(QtMsgType type, const QMessageLogContext &context, const QString &msg)
-{
-    if(logWindow)
-        logWindow->outputMessage( type, context, msg );
-}
-
-void RwaCreator::loadDefaultViews()
-{
-    addMapView();
-    addStateView();
-    addSceneView();
-    addLogView();
-    addGameView();
-    addHistoryView();
-    allViewsLoaded = true;
-}

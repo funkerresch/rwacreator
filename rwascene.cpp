@@ -6,27 +6,7 @@ RwaScene::RwaScene(std::vector<double> gps) :
     locationType = RWALOCATIONTYPE_SCENE;
     gpsLocation[0] = gps[0];
     gpsLocation[1] = gps[1];
-
-    RwaState *fallbackState = createFallbackState();
-    addState(fallbackState);
-    RwaState *backgroundState = createBackgroundState();
-    addState(backgroundState);
-
-    this->backgroundState = backgroundState;
-    //this->currentState = nullptr;
-    this->lastTouchedState = states.front();
-    this->zoom = 13;
-
-    level = -1;
-    areaType = RWAAREATYPE_CIRCLE;
-    radius = 200;
-    width = 200;
-    height = 200;
-    //enterOffset = 0;
-    exitOffset = 0;
-    timeOut = 0;
-    positionLocked = true;
-    childrenFollowMe = true;
+    clear();
 }
 
 RwaScene::RwaScene(std::string sceneName, std::vector<double> gps, int32_t zoom) :
@@ -35,7 +15,6 @@ RwaScene::RwaScene(std::string sceneName, std::vector<double> gps, int32_t zoom)
     locationType = RWALOCATIONTYPE_SCENE;
     setObjectName(sceneName);
     backgroundState = nullptr;
-    //currentState = nullptr;
     lastTouchedState = nullptr;
     gpsLocation = gps;
     this->zoom = zoom;
@@ -44,7 +23,6 @@ RwaScene::RwaScene(std::string sceneName, std::vector<double> gps, int32_t zoom)
     width = -1;
     height = -1;
     level = -1;
-    //enterOffset = 0;
     exitOffset = 0;
     timeOut = 0;
     positionLocked = true;
@@ -55,6 +33,32 @@ RwaScene::~RwaScene()
 {
     foreach(RwaState *state, states)
         delete state;
+}
+
+void RwaScene::clear()
+{
+    foreach(RwaState *state, states)
+        delete state;
+
+    states.clear();
+
+    RwaState *fbState = createFallbackState();
+    addState(fbState);
+    RwaState *bgState = createBackgroundState();
+    addState(bgState);
+
+    backgroundState = bgState;
+    zoom = 13;
+    lastTouchedState = states.front();
+    level = -1;
+    areaType = RWAAREATYPE_CIRCLE;
+    radius = 200;
+    width = 200;
+    height = 200;
+    exitOffset = 0;
+    timeOut = 0;
+    positionLocked = true;
+    childrenFollowMe = true;
 }
 
 void RwaScene::addState(RwaState *state)
@@ -239,17 +243,6 @@ void RwaScene::moveMyChildren(double dx, double dy)
         state->setCoordinates(newCoordinates);
         state->moveMyChildren(dx, dy);
     }
-}
-
-void RwaScene::clear()
-{
-    foreach(RwaState *state, states)
-    {
-        delete state;
-        qDebug() << "DELETE STATE";
-    }
-
-    this->states.clear();
 }
 
 std::list <RwaState *> &RwaScene::getStates()

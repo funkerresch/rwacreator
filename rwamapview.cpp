@@ -126,6 +126,29 @@ RwaMapView::RwaMapView(QWidget* parent, RwaScene *scene, QString name)
 
     connect(this,    SIGNAL(sendMapCoordinates(double,double)),
         toolbar, SLOT(receiveMapCoordinates(double,double)));
+
+    readSettings();
+}
+
+RwaMapView::~RwaMapView()
+{
+    writeSettings();
+}
+
+void RwaMapView::readSettings()
+{
+    QSettings settings("Intrinsic Audio", "Rwa Creator");
+    setAssetsVisible(settings.value("mapviewassetsvisible").toBool());
+    toolbar->assetsVisibleButton->setChecked(settings.value("mapviewassetsvisible").toBool());
+    setRadiiVisible(settings.value("mapviewradiivisible").toBool());
+    toolbar->radiiVisibleButton->setChecked(settings.value("mapviewradiivisible").toBool());
+}
+
+void RwaMapView::writeSettings()
+{
+    QSettings settings("Intrinsic Audio", "Rwa Creator");
+    settings.setValue("mapviewassetsvisible", assetsVisible);
+    settings.setValue("mapviewradiivisible", stateRadiusVisible);
 }
 
 void RwaMapView::receiveStartStopSimulator(bool startStop)
@@ -624,7 +647,7 @@ void RwaMapView::receiveUpdateCurrentStateRadius()
 
 void RwaMapView::receiveHeroPositionEdited()
 {
-
+    redrawEntities();
 }
 
 void RwaMapView::receiveUpdateCurrentSceneRadius()
@@ -725,16 +748,4 @@ void RwaMapView::moveCurrentAsset()
         redrawAssets();
 }
 
-void RwaMapView::setAssetsVisible(bool onOff)
-{
-    this->assetsVisible = onOff;
-    assetLayer->setVisible(onOff);
-    redrawAssets();
-}
 
-void RwaMapView::setRadiiVisible(bool onOff)
-{
-    this->stateRadiusVisible = onOff;
-    stateRadiusLayer->setVisible(onOff);
-    redrawStateRadii();
-}

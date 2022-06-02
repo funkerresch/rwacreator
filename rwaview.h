@@ -48,7 +48,6 @@ public slots:
     virtual void setCurrentScene(qint32 sceneNumber);
     virtual void setCurrentAsset(RwaAsset1 *currentAsset);
     virtual void setCurrentEntity(RwaEntity *currentEntity);
-    //virtual void adaptSize(qint32 width, qint32 height);
 
 protected:
 
@@ -56,7 +55,7 @@ protected:
     RwaBackend *backend;
     RwaState *currentState;
     RwaState *lastState;
-    RwaScene *currentScene;
+    RwaScene *currentScene = nullptr;
     RwaEntity *currentEntity;
     RwaAsset1 *currentAsset;
     RwaAsset1 *lastAsset;

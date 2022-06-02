@@ -24,6 +24,8 @@
 QT_FORWARD_DECLARE_CLASS(QMenu)
 QT_FORWARD_DECLARE_CLASS(QSignalMapper)
 
+/** ********************************* Subclassed QDockWidget for cleanup ********************************************* */
+
 class RwaDockWidget : public QDockWidget
 {
     Q_OBJECT
@@ -46,6 +48,8 @@ protected:
     }
 };
 
+/** ************************************* Rwa Creator Application Main Window ***************************************** */
+
 class RwaCreator : public QMainWindow
 {
     Q_OBJECT
@@ -55,42 +59,68 @@ public:
     //~RwaCreator();
 
 public slots:
+
+/** *************************** logMessages redirects qDebug() to rwalogview ***************************************** */
+
     static void logMessages(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 
-    void mousePressEvent(QMouseEvent *event);
-    void exportProject();
-    void saveForMobileClient();
-    void saveAgainForMobileClient();
-    void newProject();
-    void save();
-    void write(QString writeMessage, qint32 flags, QString oldAssetPath);
-    void prepareWrite(QString fullpath, int flags = 0);
-    qint32 open(QString fileName = QString(""));
-    void writeUndo(QString undoAction);
-    void cleanUpBeforeQuit();
-    void selectOutputDevice(qint32 index);
-    void loadDefaultViews();
-    //void scanSerialPorts();
-    void clear();
-    void saveAs();
-    void enterHtName();
-    void selectInputDevice(qint32 index);
+private:
+
+/** ************* Create RWA directory in home director and filelist of RWA games as .txt file *********************** */
+
+    void createInitFolder();
+
+/** ****************************** Open and write rwainit.txt for global app settings ******************************** */
+
     void openInit();
     void writeInit();
-    void readUndoFile(QString name);
+
+/** *************************************** Save and load main window layout ***************************************** */
+
+    void saveLayoutAndSettings();
+    void loadLayoutAndSettings();
+
+/** ********************************************* Add default views ************************************************** */
 
 private slots:
+
+    void loadDefaultViews();
     void addMapView();
     void addSceneView();
     void addGameView();
     void addStateView();
     void addHistoryView();
     void addLogView();
+
+/** ******************************* Save app settings and clean up before quit**************************************** */
+
     void closeEvent(QCloseEvent *event);
     void closeDockWidget(RwaDockWidget *dock);
+    void cleanUpBeforeQuit();
+
+public slots:
+
+    void exportProject();
+    void saveForMobileClient();
+    void saveAgainForMobileClient();
+    void save();
+    void write(QString writeMessage, qint32 flags, QString oldAssetPath);
+    void prepareWrite(QString fullpath, int flags = 0);
+    qint32 open(QString fileName = QString(""));
+    void writeUndo(QString undoAction);
+    void selectOutputDevice(qint32 index);
+    void clear();
+    void saveAs();
+    void enterHtName();
+    void selectInputDevice(qint32 index);
+    void readUndoFile(QString name);
+
+
 private:
     static RwaLogWindow *logWindow;
     RwaBackend *backend = nullptr;
+    RwaMapView *mapView = nullptr;
+    RwaStateView *stateView = stateView;
     RwaHeadtrackerConnect *headtracker = nullptr;
     QList<RwaDockWidget *> rwaDockWidgets = QList<RwaDockWidget *>();
     QSignalMapper *mapper = nullptr;
@@ -113,12 +143,11 @@ private:
     void setWindowPositionOccupied(int position, char occupied);
     void initAudioPreferencesMenu(QMenu *audioDeviceMenu);
     void initHeadtrackerMenu(QMenu *headtrackerMenu);
-    void createInitFolder();
 
     bool maybeSave();
     void initViewMenu1(QMenu *fileMenu);
-    void saveLayout1();
-    void loadLayout1();
+
+    void emptyTmpDirectories();
 };
 
 #endif

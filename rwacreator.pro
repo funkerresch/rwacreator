@@ -15,6 +15,7 @@ QMAKE_CC=clang
 QMAKE_CXX=clang++
 CONFIG += static
 CONFIG += c++11
+CONFIG(release):DEFINES += QT_NO_DEBUG_OUTPUT
 
 QMAKE_RPATHDIR += @executable_path/../Frameworks
 
@@ -48,10 +49,8 @@ HEADERS += \
     libogg/include/ogg/os_types.h \
     lo/lo.h \
     rwaasset1.h \
-    rwaassetlist1.h \
     rwaheadtrackerconnect.h \
     rwahistory.h \
-    rwalistview1.h \
     rwalocation1.h \
     rwapdextra~.h \
     rwaruntime.h \
@@ -164,10 +163,8 @@ SOURCES += main.cpp \
     pd-extra/pd/externals/pdogg/oggread~.c \
     pd-extra/pd/externals/pdogg/oggwrite~.c \
     rwaasset1.cpp \
-    rwaassetlist1.cpp \
     rwaheadtrackerconnect.cpp \
     rwahistory.cpp \
-    rwalistview1.cpp \
     rwalocation1.cpp \
     rwaruntime.cpp \
     rwasearchdialog.cpp \
@@ -283,11 +280,9 @@ QMAKE_EXTRA_TARGETS += first copydata
 target.path = $$PWD/build
 INSTALLS += target
 
-
 macx: LIBS += -L$$PWD/portaudio/lib/.libs/ -lportaudio
 macx: LIBS += -L$$PWD/libpd/libs/ -lpd
-#PRE_TARGETDEPS += $$PWD/portaudio/lib/.libs/libportaudio.a
-#PRE_TARGETDEPS += $$PWD/libpd/libs/libpd.a
+
 
 
 

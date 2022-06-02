@@ -56,6 +56,7 @@
 RwaViewToolbar::RwaViewToolbar(const QString &title, qint32 flags, RwaBackend *backend,  QWidget *parent)
     : QToolBar(parent)
 {
+
     numberOfScenes = 1;
     this->currentScene  = nullptr;
     this->currentState = nullptr;
@@ -187,8 +188,8 @@ RwaViewToolbar::RwaViewToolbar(const QString &title, qint32 flags, RwaBackend *b
 
 void RwaViewToolbar::showFindPlacesDialog()
 {
-        searchDialog->hide();
-        searchDialog->show();
+     searchDialog->hide();
+     searchDialog->show();
 }
 
 void RwaViewToolbar::setCurrentState(RwaState *currentState)

@@ -198,26 +198,14 @@ RwaScene *RwaBackend::getScene(QString sceneName)
     return scene;
 }
 
-/** ****************************** New/Remove Scene functionality ****************************** */
+/** ****************************** New/Append Scene functionality ****************************** */
 
-void RwaBackend::newSceneFromSelectedStates()
+void RwaBackend::appendScene(RwaScene *scene)
 {
-    std::string sceneName = "Scene " + std::to_string(scenes.count());
-    RwaScene *newScene = new RwaScene(sceneName, lastTouchedScene->getCoordinates(), lastTouchedScene->getZoom());
+    if(scene->objectName().empty())
+        scene->setObjectName(QString("Scene %1").arg(scenes.count()).toStdString());
 
-    foreach (QString name, currentlySelectedStates)
-    {
-        RwaState *state = lastTouchedScene->getState(name.toStdString());
-        RwaState *newState = new RwaState(state->objectName());
-        state->copyAttributes(newState);
-        state->setScene(newScene);
-        newScene->getStates().push_back(newState);
-    }
-
-    newScene->findStateSurroundingArea();
-    newScene->setAreaType(RWAAREATYPE_RECTANGLE);
-    scenes.append(newScene);
-    lastTouchedScene = newScene;
+    scenes.append(scene);
     emit sendAppendScene();
 }
 
@@ -233,13 +221,37 @@ void RwaBackend::appendScene()
     emit sendAppendScene();
 }
 
-void RwaBackend::appendScene(RwaScene *scene)
+void RwaBackend::newSceneFromSelectedStates()
 {
-    if(scene->objectName().empty())
-        scene->setObjectName(QString("Scene %1").arg(scenes.count()).toStdString());
+    bool hasFallback = false;
+    bool hasBackground = false;
+    std::string sceneName = "Scene " + std::to_string(scenes.count());
+    RwaScene *newScene = new RwaScene(sceneName, lastTouchedScene->getCoordinates(), lastTouchedScene->getZoom());
 
-    scenes.append(scene);
+    foreach (QString name, currentlySelectedStates)
+    {
+        RwaState *state = lastTouchedScene->getState(name.toStdString());
+        RwaState *newState = new RwaState(state->objectName());
+        state->copyAttributes(newState);
+        newState->setScene(newScene);
+        newScene->getStates().push_back(newState);
+        if(state->objectName() == "FALLBACK")
+            hasFallback = true;
+        if(state->objectName() == "BACKGROUND")
+            hasBackground = true;
+    }
+
+    if(!hasFallback)
+        newScene->InsertDefaultFallbackState();
+    if(!hasBackground)
+        newScene->InsertDefaultBackgroundState();
+
+    newScene->findStateSurroundingArea();
+    scenes.append(newScene);
+    lastTouchedScene = newScene;
     emit sendAppendScene();
+    emit sendLastTouchedScene(lastTouchedScene);
+
 }
 
 void RwaBackend::duplicateScene(RwaScene *scene)
@@ -248,14 +260,7 @@ void RwaBackend::duplicateScene(RwaScene *scene)
         qDebug("BACKEND: duplicateScene");
 }
 
-void RwaBackend::removeScene(QString sceneName)
-{
-    RwaScene *scene = getScene(sceneName);
-    if(!scene)
-        return;
-
-    removeScene(scene);
-}
+/** **************************** Clear/Remove/Reset Scene(s) functionality **************************** */
 
 void RwaBackend::removeScene(RwaScene *scene)
 {
@@ -277,24 +282,19 @@ void RwaBackend::removeScene(RwaScene *scene)
     scene->clear();
 }
 
+void RwaBackend::removeScene(QString sceneName)
+{
+    RwaScene *scene = getScene(sceneName);
+    if(!scene)
+        return;
+
+    removeScene(scene);
+}
+
 void RwaBackend::clearScene(RwaScene *scene)
 {
     scene->clear();
-    emit updateScene(scene);
-}
-
-void RwaBackend::moveScene2CurrentMapLocation()
-{
-    std::vector<double> tmp(2, 0.0);
-    tmp[0] = currentMapCoordinates.x();
-    tmp[1] = currentMapCoordinates.y();
-
-    if(lastTouchedScene)
-        lastTouchedScene->moveScene2NewLocation(tmp);
-
-    qDebug() << "Move Scene";
-   // emit sendEntityPosition(tmp);
-    simulator->receiveEntityPosition(tmp);
+    lastTouchedScene = scene;
     emit sendLastTouchedScene(lastTouchedScene);
 }
 
@@ -306,31 +306,29 @@ void RwaBackend::clearScenes()
     scenes.clear();
 }
 
-void RwaBackend::clear()
+void RwaBackend::reset()
 {
-    foreach(RwaScene *scene, scenes)
-        scene->clear();
-
-    emptyTmpDirectories();
-    scenes.clear();
-}
-
-void RwaBackend::clearData()
-{
-    emptyTmpDirectories();
-
-    foreach(RwaScene *scene, scenes)
-        scene->clear();
-
-    scenes.clear();
+    clearScenes();
     appendScene();
     emit updateScene(scenes.first());
 }
 
-void RwaBackend::emptyTmpDirectories()
+/** ************************************* Location functionality ************************************* */
+
+void RwaBackend::moveScene2CurrentMapLocation()
 {
-    RwaUtilities::emtpyDirectory(completeUndoPath);
-    RwaUtilities::emtpyDirectory(completeTmpPath);
+    std::vector<double> tmp(2, 0.0);
+    tmp[0] = currentMapCoordinates.x();
+    tmp[1] = currentMapCoordinates.y();
+
+    if(lastTouchedScene)
+        lastTouchedScene->moveScene2NewLocation(tmp);
+
+    qDebug() << "Move Scene";
+
+    emit sendEntityPosition(tmp);
+    emit sendHeroPositionEdited();
+    emit sendLastTouchedScene(lastTouchedScene);
 }
 
 void RwaBackend::receiveMapCoordinates(QPointF mapCoordinates)
@@ -521,6 +519,27 @@ bool RwaBackend::adjust2UniqueStateNameRecursively(RwaScene *targetScene, RwaSta
     }
     return false;
 }
+
+bool RwaBackend::fileUsedByAnotherAsset(RwaAsset1 *asset2Delete)
+{
+    foreach(RwaScene *scene, scenes)
+    {
+        foreach(RwaState *state, scene->states)
+        {
+            foreach(RwaAsset1 *asset, state->assets)
+            {
+                if(asset !=asset2Delete)
+                {
+                    if(asset->getFileName() == asset2Delete->getFileName())
+                       return true;
+                }
+
+            }
+        }
+    }
+    return false;
+}
+
 
 void RwaBackend::adjust2UniqueStateName(RwaScene *targetScene, RwaState *newState)
 {

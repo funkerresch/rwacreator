@@ -476,7 +476,7 @@ void RwaStateView::deleteAssetItem(const QString &path)
         RwaAsset1 *item = currentState->getAsset(path.toStdString());
         QFile file(QString::fromStdString(item->getFullPath()));
 
-        if(backend->trashAsset)
+        if(backend->trashAsset && !backend->fileUsedByAnotherAsset(item))
         {
             if(file.exists())
                 file.remove();

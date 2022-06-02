@@ -15,6 +15,8 @@ public slots:
     void receiveCheckBoxAttributeValue(int id);
     void receiveCheckBoxAttributeValue(int id, bool value);
 
+    void setCurrentState(RwaState *state);
+    void setCurrentScene(RwaScene *scene);
 protected:
     void setCurrentAsset(RwaAsset1 *asset);
 

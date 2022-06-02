@@ -81,6 +81,28 @@ void RwaAssetAttributeView::receiveSelectedAssets(QStringList assets)
     selectedAssets = assets;
 }
 
+void RwaAssetAttributeView::setCurrentScene(RwaScene *scene)
+{
+    if(!scene)
+        return;
+
+    currentScene = scene;
+
+    if(scene->lastTouchedState)
+        setCurrentState(scene->lastTouchedState);
+}
+
+void RwaAssetAttributeView::setCurrentState(RwaState *state)
+{
+    if(!state)
+        return;
+
+    currentState = state;
+
+    if(state->lastTouchedAsset)
+        setCurrentAsset(state->lastTouchedAsset);
+}
+
 void RwaAssetAttributeView::setCurrentAsset(RwaAsset1 *asset)
 {
     if(!asset)

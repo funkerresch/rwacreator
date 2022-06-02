@@ -193,15 +193,6 @@ void RwaGraphicsView::setTool(qint32 tool)
     }
 }
 
-void RwaGraphicsView::setAssetsVisible(bool assetsVisible)
-{
-    this->assetsVisible = assetsVisible;
-    if(assetsVisible)
-        redrawAssets();
-    else
-        assetLayer->clearGeometries();
-}
-
 void RwaGraphicsView::setEntitiesVisible(bool entitiesVisible)
 {
     this->entityVisible = entitiesVisible;
@@ -219,6 +210,20 @@ void RwaGraphicsView::setStateRadiusVisible(bool radiusVisible)
         redrawStateRadii();
     else
         stateRadiusLayer->clearGeometries();
+}
+
+void RwaGraphicsView::setAssetsVisible(bool onOff)
+{
+    this->assetsVisible = onOff;
+    assetLayer->setVisible(onOff);
+    redrawAssets();
+}
+
+void RwaGraphicsView::setRadiiVisible(bool onOff)
+{
+    this->stateRadiusVisible = onOff;
+    stateRadiusLayer->setVisible(onOff);
+    redrawStateRadii();
 }
 
 void RwaGraphicsView::movePixmapsOfCurrentAsset(double dx, double dy)
@@ -993,6 +998,9 @@ void RwaGraphicsView::drawEntity(RwaEntity *entity, bool isActive)
 
 void RwaGraphicsView::redrawAssets()
 {
+    if(!currentScene)
+        return;
+
     if(assetReflectionsVisible)
         assetReflectionLayer->clearGeometries();
 
@@ -1113,6 +1121,8 @@ void RwaGraphicsView::redrawStateRadii()
 {
     if(backend->logOther)
         qDebug();
+    if(!currentScene)
+        return;
 
     stateRadiusLayer->clearGeometries();
     RwaState *state;
@@ -1138,6 +1148,7 @@ void RwaGraphicsView::redrawStateRadii()
 
 void RwaGraphicsView::redrawEntities()
 {
+    entityLayer->clearGeometries();
     for (int i=0; i<backend->simulator->entities.count(); i++)
     {
         RwaEntity *entity = backend->simulator->entities.at(i);
@@ -1159,6 +1170,9 @@ void RwaGraphicsView::setEntityCoordinates()
 
         entity->setCoordinates(currentScene->getCoordinates());
     }
+    entityLayer->updateRequest();
 }
+
+
 
 

@@ -39,10 +39,7 @@ RwaSimulator::RwaSimulator(QObject *parent, RwaBackend *backend) :
             this, SLOT(updateRwaGameState()));
 
     connect (backend, SIGNAL(sendEntityPosition(vector<double>)),
-             this, SLOT(receiveEntityPosition(vector<double)));
-
-//    connect (backend, SIGNAL(sendEntityPosition(QPointF)),
-//             this, SLOT(receiveEntityPosition(QPointF)));
+             this, SLOT(receiveEntityPosition(vector<double>)));
 
     connect (headTracker, SIGNAL(sendAzimuth(float)),
              this, SLOT(receiveAzimuth(float)));
@@ -171,17 +168,6 @@ void RwaSimulator::receiveEntityPosition(vector<double> position)
     }
 }
 
-//void RwaSimulator::receiveEntityPosition(QPointF position)
-//{
-//    sendData2Devices();
-//    RwaEntity *entity;
-//    foreach(entity, entities)
-//    {
-//        std::vector<double> tmp {position.x(), position.y()};
-//        entity->setCoordinates(tmp);
-//    }
-//}
-
 void RwaSimulator::receiveStep()
 {
     qDebug() << "Received Step Event from Headtracker";
@@ -273,6 +259,7 @@ void RwaSimulator::startRwaSimulation()
 {
     RwaEntity *entity = entities.front();
     runtime->unblockStates(entity);
+    runtime->entities.front()->scenes = backend->getScenes().toStdList();
 
     if(backend->getLastTouchedScene())
         entity->setCurrentScene(backend->getLastTouchedScene());

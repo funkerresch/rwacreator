@@ -1,6 +1,6 @@
 #include "rwaasset1.h"
 #include <qdebug.h>
-
+#include <quuid.h>
 
 RwaAsset1::RwaAsset1(const std::string &data, std::vector<double> gps, qint32 type, const string uid)
     : RwaLocation1()
@@ -131,6 +131,9 @@ void RwaAsset1::copyAttributes(RwaAsset1 *dest)
         dest->channelRotateFreq[i] = this->channelRotateFreq[i];
         dest->individuellChannelPosition[i] = this->individuellChannelPosition[i];
     }
+
+    string uid = std::string(QUuid::createUuid().toString().toLatin1());
+    dest->uniqueId = uid;
 }
 
 void RwaAsset1::calculateReflectionPositions()

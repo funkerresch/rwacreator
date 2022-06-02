@@ -1,6 +1,5 @@
 #include "rwahistory.h"
 
-
 RwaHistory::RwaHistory(QWidget *parent):
     QListView(parent)
 {

@@ -38,6 +38,7 @@ public slots:
     void movePixmapsOfCurrentAssetChannel(double dx, double dy, int channel);
     void movePixmapsOfCurrentAssetReflection(double dx, double dy, int channel);
     void setAssetsVisible(bool assetsVisible);
+    void setRadiiVisible(bool onOff);
     void setEntitiesVisible(bool entitiesVisible);
     void setStatesVisible(bool statesVisible);
     void setStateRadiusVisible(bool radiusVisible);
@@ -65,6 +66,7 @@ public slots:
 
     void movePixmapsOfAssetReflections(double dx, double dy);
     void moveReflectionPixmapsOfCurrentAsset(double dx, double dy);
+
 
 protected:
     void updatePixmaps(QmapPoint *active, GeometryLayer *layer);
@@ -105,7 +107,6 @@ protected:
     bool sceneLineEditVisible;
     bool entityLineEditVisible;
     bool assetLineEditVisible;
-    bool assetsVisible;
     bool onlyAssetsOfCurrentStateVisible;
     bool entityVisible;
     bool statesVisible;
@@ -128,6 +129,9 @@ protected:
     int areaCornerIndex2Edit = false;
     QString tmpObjectName;
     RwaState *tmpState = nullptr;
+
+ public:
+    bool assetsVisible;
 
     void updateReflectionPixmaps();
 signals:

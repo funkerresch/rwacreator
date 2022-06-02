@@ -25,13 +25,12 @@ public slots:
         int getNumberOfSelectedAssets();
         QStringList getSelectedAssets();
 
-        void setCurrentScene(RwaScene *scene);
+        void setCurrentScene(RwaScene *scene) override;
 protected:
         void keyPressEvent(QKeyEvent *event) override;
         void mousePressEvent(QMouseEvent *event) override;
         void mouseReleaseEvent(QMouseEvent *event) override;
         void dragEnterEvent(QDragEnterEvent *event) override;
-        void dragMoveEvent(QDragMoveEvent *event) override;
         void dropEvent(QDropEvent *event) override;
         void setCurrentAsset(RwaAsset1 *asset) override;
         void setCurrentState(RwaState *currentState) override;

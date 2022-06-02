@@ -170,16 +170,7 @@ void RwaAssetList::keyPressEvent(QKeyEvent *event)
 
 void RwaAssetList::dragEnterEvent(QDragEnterEvent *event)
 {
-    //qDebug("dragEnterEvent");
-
     event->acceptProposedAction();
-
-}
-
-void RwaAssetList::dragMoveEvent(QDragMoveEvent *event)
-{
-    //qDebug("dragMoveEvent");
-    //event->acceptProposedAction();
 }
 
 void RwaAssetList::add2ListAndCopy(QString fullpath)
@@ -240,7 +231,6 @@ void RwaAssetList::dropEvent(QDropEvent *event)
 
     foreach( const QString fullpath, newItems )
         add2ListAndCopy(fullpath);
-
 
     event->acceptProposedAction();
 

@@ -1192,7 +1192,6 @@ void RwaRuntime::setEntityScene(RwaEntity *entity)
         {
             if(scene != entity->getCurrentScene())
             {
-
                 if(entityIsWithinArea(entity, scene, RWAAREAOFFSETTYPE_ENTER))
                 {
                     if(backend->logSim)
@@ -1200,7 +1199,6 @@ void RwaRuntime::setEntityScene(RwaEntity *entity)
 
                     sendEnd2backgroundAssets(entity);
                     entity->getCurrentState()->setBlockUntilRadiusHasBeenLeft(false);
-                    //currentScene = scene;
                     entity->setCurrentScene(scene);
                     entity->setTimeInCurrentScene(0);
                     setEntityStartCoordinates(entity);

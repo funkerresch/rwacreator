@@ -40,9 +40,13 @@ QT_FORWARD_DECLARE_CLASS(QLabel)
 #define RWATOOLBAR_MAINVOLUME 1 << 13
 #define RWATOOLBAR_STATEMENU 1 << 14
 
+class RwaMapView;
+
 class RwaViewToolbar : public QToolBar
 {
     Q_OBJECT
+
+    friend class RwaMapView;
 
 public:
     RwaViewToolbar(const QString &title, qint32 flags, RwaBackend *backend, QWidget *parent);
@@ -96,15 +100,15 @@ private:
     QActionGroup *selectSceneGroup;
     QActionGroup *selectStateGroup;
 
-    QToolButton *scanSerialPortsButton;
-    QToolButton *calibrateHeadtrackerButton;
-    QToolButton *simulateHeadtrackerStepButton;
-    QToolButton *trashAssetsButton;
-    QToolButton *startSimulatorButton;
-    QToolButton *stopSimulatorButton;
-    QToolButton *assetsVisibleButton;
-    QToolButton *radiiVisibleButton;
-    QToolButton *findButton;
+    QToolButton *scanSerialPortsButton = nullptr;
+    QToolButton *calibrateHeadtrackerButton = nullptr;
+    QToolButton *simulateHeadtrackerStepButton = nullptr;
+    QToolButton *trashAssetsButton = nullptr;
+    QToolButton *startSimulatorButton = nullptr;
+    QToolButton *stopSimulatorButton = nullptr;
+    QToolButton *assetsVisibleButton = nullptr;
+    QToolButton *radiiVisibleButton = nullptr;
+    QToolButton *findButton = nullptr;
 
     QMenu *selectSceneMenu;
     QMenu *selectStateMenu;
@@ -147,7 +151,6 @@ signals:
     void sendWriteUndo();
     void sendWriteUndo(QString undoAction);
 
-
 public slots:
     void setCurrentState(RwaState *currentState);
     void setCurrentState(qint32 stateNumber);
@@ -155,6 +158,7 @@ public slots:
     void setCurrentScene(qint32 sceneNumber);
     void receiveMapCoordinates(double lon, double lat);
     void receiveTrashAssets(bool onOff);
+
 private slots:
 
     // scene menu

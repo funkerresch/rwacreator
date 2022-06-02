@@ -9,7 +9,6 @@
 #include <QMediaPlayer>
 #include <qmediaplayer.h>
 #include "rwaassetlist.h"
-#include "rwaassetlist1.h"
 #include "rwagraphicsview.h"
 #include "rwaassetattributeview.h"
 
@@ -29,7 +28,6 @@ private:
     CirclePoint *currentRadius;
     RectPoint *currentRect;
     RwaAssetList *assetList;
-    RwaAssetList1 *assetList1;
     RwaAssetAttributeView *assetAttributes;
 
 public slots:
