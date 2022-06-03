@@ -1,19 +1,21 @@
 cd "$(dirname "$0")"
-if [ -f portaudio/lib/.libs/libportaudio.a ] 
-then echo "Found portaudio"
- else cd portaudio 
+ if [ -f portaudio/lib/.libs/libportaudio.dylib ]
+ then echo "Found portaudio"
+ else
+ cd portaudio
+ make clean
  ./configure && make
+ cd ..
  fi
 
-cd ..
-if [ -f libpd/libs/libpd.a ]
-then echo "Found static libpd"
- else cd libpd
- make STATIC=true EXTRA=true
+if [ -f libpd/libs/libpd.dylib ]
+then echo "Found libpd"
+ else
+ echo "compiling libpd"
+ cd libpd
+ make clean
+ make EXTRA=true
+ cd ..
  fi
  
-if [ -f libpd/libs/libpd.dylib ]
-then echo "Found dynamic libpd"
-  else make clean
-  make EXTRA=true
-  fi
+

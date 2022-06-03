@@ -13,7 +13,7 @@ PRE_TARGETDEPS = extra
 
 QMAKE_CC=clang
 QMAKE_CXX=clang++
-CONFIG += static
+
 CONFIG += c++11
 CONFIG(release):DEFINES += QT_NO_DEBUG_OUTPUT
 
@@ -249,12 +249,11 @@ LIBS += -lncurses
 LIBS += -lz
 
 installs.files += $$PWD/libpd/libs/libpd.dylib
-installs.files += $$PWD/portaudio/lib/.libs/libportaudio.a
+installs.files += $$PWD/portaudio/lib/.libs/libportaudio.2.dylib
 installs.path = $$OUT_PWD/rwacreator.app/Contents/MacOS
 INSTALLS += installs
 
 copydata.commands = $(COPY_DIR) $$PWD/images $$OUT_PWD/rwacreator.app/Contents/MacOS \
-&& $(COPY_FILE) $$PWD/rwainit.txt $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/fabian_dir256.txt $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/rwaloopplayermono.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/rwaloopplayerstereo.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
@@ -267,9 +266,7 @@ copydata.commands = $(COPY_DIR) $$PWD/images $$OUT_PWD/rwacreator.app/Contents/M
 && $(COPY_FILE) $$PWD/puredata/rwaplayerstereobinaural_fabian.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/rwaplayerstereobinaural.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/stereoout.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
-&& $(COPY_FILE) $$PWD/puredata/rwagetmetadata.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
-&& $(COPY_FILE) $$PWD/portaudio/lib/.libs/libportaudio.2.dylib /usr/local/lib/ \
-&& $(COPY_FILE) $$PWD/libpd/libs/libpd.dylib /Users/harveykeitel/libs \
+&& $(COPY_FILE) $$PWD/puredata/rwagetmetadata.pd $$OUT_PWD/rwacreator.app/Contents/MacOS
 
 first.depends = $(first) copydata
 export(first.depends)
@@ -280,7 +277,7 @@ QMAKE_EXTRA_TARGETS += first copydata
 target.path = $$PWD/build
 INSTALLS += target
 
-macx: LIBS += -L$$PWD/portaudio/lib/.libs/ -lportaudio
+macx: LIBS += -L$$PWD/portaudio/lib/.libs/ -lportaudio.2
 macx: LIBS += -L$$PWD/libpd/libs/ -lpd
 
 
