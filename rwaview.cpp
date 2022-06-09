@@ -31,9 +31,14 @@ RwaView::RwaView(QWidget *parent, RwaScene *scene, QString name) :
     connect(this, SIGNAL(sendWriteUndo(QString)), backend, SLOT(receiveWriteUndo(QString)));
 }
 
+RwaView::~RwaView()
+{
+    writeSplitterLayout();
+}
+
 void RwaView::writeSplitterLayout()
 {
-    if(!windowSplitter || objectName().isEmpty())
+    if(!windowSplitter)
         return;
 
     QSettings settings("Intrinsic Audio", "Rwa Creator");
@@ -123,10 +128,20 @@ RwaAsset1 *RwaView::getCurrentAsset()
 
 void RwaView::setCurrentState(RwaState *state)
 {
+    if(!state)
+        return;
+
     lastState = currentState;
     currentState = state;
     currentScene->lastTouchedState = state;
-    currentAsset = currentState->getLastTouchedAsset();
+
+    if(currentState->getAssets().size() > 0)
+    {
+        if(!currentState->getLastTouchedAsset())
+            currentState->lastTouchedAsset = currentState->getAssets().front();
+
+        currentAsset = currentState->getLastTouchedAsset();
+    }
 }
 
 void RwaView::setCurrentState(qint32 stateNumber)
@@ -144,7 +159,15 @@ void RwaView::setCurrentState(qint32 stateNumber)
 
 void RwaView::setCurrentScene(RwaScene *scene)
 {
-    this->currentScene = scene;
+    if(!scene)
+        return;
+
+    if(currentScene == scene)
+        return;
+
+    currentScene = scene;
+    if(!currentScene->lastTouchedState)
+        currentScene->lastTouchedState = currentScene->getStates().front();
 }
 
 void RwaView::setCurrentScene(qint32 sceneNumber)
@@ -158,13 +181,13 @@ void RwaView::setCurrentEntity(RwaEntity *currentEntity)
     this->currentEntity = currentEntity;
 }
 
-void RwaView::setCurrentAsset(RwaAsset1 *currentAsset)
+void RwaView::setCurrentAsset(RwaAsset1 *asset)
 {
     if(!currentState)
         return;
 
-    lastAsset = this->currentAsset;
-    this->currentAsset = currentAsset;
+    lastAsset = currentAsset;
+    currentAsset = asset;
     currentState->setLastTouchedAsset(this->currentAsset);
 }
 

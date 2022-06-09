@@ -16,11 +16,7 @@ class RwaStateView : public RwaGraphicsView
 {
     Q_OBJECT
 public:
-    explicit RwaStateView(QWidget* parent = nullptr, RwaScene *scene = nullptr, QString name = "");
-
-    void zoomIn();
-    void zoomOut();
-
+    explicit RwaStateView(QWidget* parent = nullptr, RwaScene *scene = nullptr, QString name = "");    
 private:
 
     QmapPoint *currentPoint;
@@ -30,29 +26,36 @@ private:
     RwaAssetList *assetList;
     RwaAssetAttributeView *assetAttributes;
 
+    void zoomIn() override;
+    void zoomOut() override;
+
 public slots:
-    void receiveMouseMoveEvent(const QMouseEvent*, const QPointF);
-    void receiveMouseReleaseEvent();
-    void receiveMouseDownEvent(const QMouseEvent*, const QPointF);
-    void dropEvent(QDropEvent *event);
+
+    void setCurrentState(RwaState *currentState) override;
+    void setCurrentAsset(RwaAsset1 *asset) override;
+    void setCurrentScene(RwaScene *scene) override;
+
+    void receiveMouseMoveEvent(const QMouseEvent*, const QPointF) override;
+    void receiveMouseReleaseEvent() override;
+    void receiveMouseDownEvent(const QMouseEvent*, const QPointF) override;
+    void dropEvent(QDropEvent *event) override;
+
     void handleSplitter(int pos, int index);
     void setMapCoordinates(double lon, double lat);
     void setMapCoordinates(QPointF coordinates);
     void setZoomLevel(qint32 zoomLevel);
-    void adaptSize(qint32 width, qint32 height);
+    void adaptSize(qint32 width, qint32 height) override;
     void moveCurrentState();
-    void setCurrentState(RwaState *currentState);
-    void setCurrentAsset(RwaAsset1 *asset);
+
     void addAssetItem(const QString &path, qint32 type);
     void deleteAssetItem(const QString &path);
     int getNumberOfSelectedAssets();
     void redrawStateRadii();
     void receiveUpdateCurrentStateRadius();
-    void receiveNewGameSignal();
 
-    void setCurrentScene(RwaScene *scene);
+
 protected:
-    void keyPressEvent(QKeyEvent *event);
+    void keyPressEvent(QKeyEvent *event) override;
 
 signals:
 

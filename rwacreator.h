@@ -1,3 +1,31 @@
+/*
+*
+* This file is part of RwaCreator
+* an open-source cross-platform Middleware for creating interactive Soundwalks
+*
+* Copyright (C) 2015 - 2022 Thomas Resch
+*
+* License: MIT
+*
+* The RwaCreator class is the main window. On startup, it loads all views/editors.
+* It is also responsible for all File I/O.
+*
+* ToDo next:
+*
+* Remove all direct setCurrentState(), setCurrentScene() calls from all views. Instead use
+* sendLastTouchedScene() etc..
+*
+* Make select states in Map GUI working
+*
+* Clean up RwaImport & RwaExport
+*
+* Reflection GUI -> Render only current Asset
+*
+*
+*
+*/
+
+
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
@@ -24,27 +52,17 @@
 QT_FORWARD_DECLARE_CLASS(QMenu)
 QT_FORWARD_DECLARE_CLASS(QSignalMapper)
 
-/** ********************************* Subclassed QDockWidget for cleanup ********************************************* */
+/** ***************************************** Subclassed QDockWidget ************************************************** */
 
-class RwaDockWidget : public QDockWidget
+class RwaDockWidget : public QDockWidget // Thought it might come in handy for cleaning up, but...
 {
     Q_OBJECT
 
 public:
-    RwaDockWidget(QWidget *parent = nullptr) : QDockWidget(parent) {
-
-        QObject::connect(this, SIGNAL(closeWindow(RwaDockWidget *)), parent, SLOT(closeDockWidget(RwaDockWidget *)));
-    }
-
-signals:
-    void closeWindow(RwaDockWidget *me);
-
-protected:
-    void closeEvent(QCloseEvent *event) override
+    RwaDockWidget(QWidget *parent = nullptr)
+        : QDockWidget(parent)
     {
-        qDebug() << "Close DockWidget";
-        emit closeWindow(this);
-        event->ignore();
+
     }
 };
 
@@ -95,7 +113,6 @@ private slots:
 /** ******************************* Save app settings and clean up before quit**************************************** */
 
     void closeEvent(QCloseEvent *event);
-    void closeDockWidget(RwaDockWidget *dock);
     void cleanUpBeforeQuit();
 
 public slots:
@@ -115,12 +132,14 @@ public slots:
     void selectInputDevice(qint32 index);
     void readUndoFile(QString name);
 
+signals:
+    void sendReadNewGame();
 
 private:
     static RwaLogWindow *logWindow;
     RwaBackend *backend = nullptr;
     RwaMapView *mapView = nullptr;
-    RwaStateView *stateView = stateView;
+    RwaStateView *stateView = nullptr;
     RwaHeadtrackerConnect *headtracker = nullptr;
     QList<RwaDockWidget *> rwaDockWidgets = QList<RwaDockWidget *>();
     QSignalMapper *mapper = nullptr;
@@ -143,10 +162,8 @@ private:
     void setWindowPositionOccupied(int position, char occupied);
     void initAudioPreferencesMenu(QMenu *audioDeviceMenu);
     void initHeadtrackerMenu(QMenu *headtrackerMenu);
-
     bool maybeSave();
     void initViewMenu1(QMenu *fileMenu);
-
     void emptyTmpDirectories();
 };
 

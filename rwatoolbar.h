@@ -50,6 +50,8 @@ class RwaViewToolbar : public QToolBar
 
 public:
     RwaViewToolbar(const QString &title, qint32 flags, RwaBackend *backend, QWidget *parent);
+
+public slots:
     void updateSelectSceneMenu();
     void updateSelectStateMenu();
 
@@ -103,6 +105,7 @@ private:
     QToolButton *scanSerialPortsButton = nullptr;
     QToolButton *calibrateHeadtrackerButton = nullptr;
     QToolButton *simulateHeadtrackerStepButton = nullptr;
+    QToolButton *heroFollowsSceneAndStateButton = nullptr;
     QToolButton *trashAssetsButton = nullptr;
     QToolButton *startSimulatorButton = nullptr;
     QToolButton *stopSimulatorButton = nullptr;
@@ -137,13 +140,16 @@ signals:
 
     void sendAppendScene();
     void sendRemoveScene(RwaScene *scene);
-    void sendDuplicateScene(RwaScene *scene);
+    void sendDuplicateScene();
     void sendClearScene(RwaScene *scene);
     void sendMapCoordinates(double lon, double lat);
     void sendSelectedTool(int tool);
     void sendAssetsVisible(bool assetsVisible);
     void sendRadiiVisible(bool radiiVisible);
     void sendTrashAssets(bool onOff);
+    void sendHeroFollowsSceneAndState(bool onOff);
+    void sendMoveHero2CurrentState();
+    void sendMoveHero2CurrentScene();
     void sendStartStopSimulator(bool startStopSimulator);
     void sendCalibrateHeadtracker();
     void sendSimulateHeadtrackerStep();
@@ -189,6 +195,7 @@ private slots:
     void moveScene2NewLocation();
     void showFindPlacesDialog();
     void receiveSendHeadtrackerStep(bool onOff);
+    void receiveHeroFollowsSceneAndState(bool onOff);
 };
 
 #endif

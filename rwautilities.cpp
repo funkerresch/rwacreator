@@ -405,8 +405,6 @@ bool RwaUtilities::coordinateWithinPolygon1(QPointF p, QVector <QPointF> *corner
             if (corners->data()[i].x()+(p.y()-corners->data()[i].y())/(corners->data()[j].y()-corners->data()[i].y())*(corners->data()[j].x()-corners->data()[i].x())<p.x())
             {
                 oddNodes=!oddNodes;
-
-
             }
          }
          j=i;

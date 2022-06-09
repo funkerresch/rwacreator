@@ -9,7 +9,7 @@ RwaSceneList::RwaSceneList(QWidget* parent, RwaScene *scene) :
     disconnect(backend, SIGNAL(sendLastTouchedState(RwaState *)),
               this, SLOT(setCurrentState(RwaState*)));
 
-    connect(backend, SIGNAL(sendAppendScene()), this, SLOT(update()));
+    connect(backend, SIGNAL(updateGame()), this, SLOT(update()));
 
     connect(backend, SIGNAL(newGameLoaded()), this, SLOT(update()));
 
@@ -47,6 +47,7 @@ void RwaSceneList::setCurrentScene(RwaScene *scene)
     {
         qDebug();
         emit sendCurrentScene(scene);
+        emit sendCurrentState(scene->lastTouchedState);
     }
 
     else
@@ -100,6 +101,7 @@ void RwaSceneList::keyPressEvent(QKeyEvent *event)
              // qDebug() << "Delete Scene";
               takeItem(getSelectedIndex());
               emit deleteScene(QString::fromStdString(currentScene->objectName()));
+              emit sendWriteUndo("Delete Scene");
               break;
           case 16777237:
               setCurrentSceneFromCurrentItem();

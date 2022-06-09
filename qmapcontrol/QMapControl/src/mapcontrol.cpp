@@ -114,6 +114,12 @@ namespace qmapcontrol
     void MapControl::moveTo(QPointF coordinate)
     {
         target = coordinate;
+        QPoint dest = layermanager->layer()->mapadapter()->coordinateToDisplay(target);
+       // layermanager->scrollView(dest);
+        layermanager->setView(dest);
+        update();
+        return;
+
         steps = 8;
         if (moveMutex.tryLock())
         {

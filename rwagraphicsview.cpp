@@ -17,6 +17,7 @@ RwaGraphicsView::RwaGraphicsView(QWidget *parent, RwaScene *scene, QString name)
     stateRadiusVisible = false;
     assetStartPointsVisible = true;
     assetReflectionsVisible = true;
+    sceneRadiusVisible = false;
 
     rightLayout = new QBoxLayout(QBoxLayout::TopToBottom);
     leftLayout = new QBoxLayout(QBoxLayout::TopToBottom);
@@ -28,7 +29,6 @@ RwaGraphicsView::RwaGraphicsView(QWidget *parent, RwaScene *scene, QString name)
     zoomInButton->setFixedHeight(20);
     zoomOutButton->setFixedWidth(50);
     zoomOutButton->setFixedHeight(20);
-
     zoomInButton->setStyleSheet(rwaButtonStyleSheet);
     zoomOutButton->setStyleSheet(rwaButtonStyleSheet);
 
@@ -78,9 +78,28 @@ RwaGraphicsView::RwaGraphicsView(QWidget *parent, RwaScene *scene, QString name)
     connect(backend, SIGNAL(newGameLoaded()), this, SLOT(initNewGame()));
 }
 
-void RwaGraphicsView::setCurrentScene(RwaScene *scene)
+void RwaGraphicsView::setMap2AreaZoomLevel(RwaArea *area)
 {
+    mc->setZoom(area->getZoom());
+}
+
+void RwaGraphicsView::setCurrentScene(RwaScene *scene)
+{    
+    if(!scene)
+         return;
+
     RwaView::setCurrentScene(scene);
+
+    if(stateRadiusVisible)
+       redrawStateRadii();
+    if(statesVisible)
+       redrawStates();
+    if(sceneRadiusVisible)
+        redrawSceneRadii();
+    if(scenesVisible)
+        redrawScenes();
+    if(sceneRadiusVisible)
+        redrawSceneRadii();
 }
 
 void RwaGraphicsView::setCurrentState(RwaState *state)
@@ -88,26 +107,16 @@ void RwaGraphicsView::setCurrentState(RwaState *state)
     if(!state)
          return;
 
-    if(QObject::sender() != this->backend)
-    {
-        qDebug();
-        emit sendCurrentState(state);
-    }
+    RwaView::setCurrentState(state);
 
-    else
-    {
-        RwaView::setCurrentState(state);
-        setCurrentAsset(state->getLastTouchedAsset());
+    if(statesVisible)
+        updateStatePixmaps();
 
-        if(statesVisible)
-            updateStatePixmaps();
+    if(assetsVisible)
+        redrawAssets();
 
-        if(assetsVisible)
-            redrawAssets();
-
-        if(stateRadiusVisible)
-            redrawStateRadii();
-    }
+    if(stateRadiusVisible)
+        redrawStateRadii();
 }
 
 void RwaGraphicsView::setCurrentAsset(RwaAsset1 *asset)
@@ -115,15 +124,12 @@ void RwaGraphicsView::setCurrentAsset(RwaAsset1 *asset)
     if(!asset)
         return;
 
-    if(!(QObject::sender() == this->backend))
-        emit sendCurrentAsset(asset);
-    else
-    {
-        this->currentAsset = asset;
-        currentState->setLastTouchedAsset(asset);
-        updateAssetPixmaps();
-        updateReflectionPixmaps();
-    }
+    RwaView::setCurrentAsset(asset);
+
+    //redrawAssets();
+
+    updateAssetPixmaps();
+    updateReflectionPixmaps();
 }
 
 void RwaGraphicsView::initNewGame()
@@ -132,8 +138,6 @@ void RwaGraphicsView::initNewGame()
     mc->enablePersistentCache(tilecache);
     entityLayer->clearGeometries();
     entityInitialized = false;
-    if(!backend->getScenes().isEmpty())
-        emit sendCurrentScene(backend->getScenes().first());
 }
 
 void RwaGraphicsView::addZoomButtons()
@@ -231,14 +235,10 @@ void RwaGraphicsView::movePixmapsOfCurrentAsset(double dx, double dy)
     for (int j=0; j<assetLayer->geometries.count(); j++)
     {
         RwaMapItem *point1;
-        point1 = (RwaMapItem *)assetLayer->geometries.at(j);
-
-        RwaAsset1 *item = (RwaAsset1 *)point1->data;
-
+        point1 = static_cast<RwaMapItem *>(assetLayer->geometries.at(j));
+        RwaAsset1 *item = static_cast<RwaAsset1 *>(point1->data);
         if( (item == currentAsset) && (point1->getRwaType() != RWAPOSITIONTYPE_ASSETSTARTPOINT) )
-        {
             point1->move(dx, dy);
-        }
     }
 
     moveReflectionPixmapsOfCurrentAsset(dx, dy);
@@ -250,13 +250,9 @@ void RwaGraphicsView::movePixmapsOfCurrentAssetChannel(double dx, double dy, int
     {
         RwaMapItem *point1;
         point1 = static_cast<RwaMapItem *>(assetLayer->geometries.at(j));
-
         RwaAsset1 *item = static_cast<RwaAsset1 *>(point1->data);
-
         if( (item == currentAsset) && (point1->getRwaType() == RWAPOSITIONTYPE_ASSETCHANNEL) && point1->getChannel() == channel)
-        {
             point1->move(dx, dy);
-        }
     }
 }
 
@@ -266,13 +262,9 @@ void RwaGraphicsView::moveReflectionPixmapsOfCurrentAsset(double dx, double dy)
     {
         RwaMapItem *point1;
         point1 = static_cast<RwaMapItem *>(assetReflectionLayer->geometries.at(j));
-
         RwaAsset1 *item = static_cast<RwaAsset1 *>(point1->data);
-
         if( (item == currentAsset) && (point1->getRwaType() == RWAPOSITIONTYPE_REFLECTIONPOSITION) )
-        {
             point1->move(dx, dy);
-        }
     }
 }
 
@@ -282,13 +274,9 @@ void RwaGraphicsView::movePixmapsOfCurrentAssetReflection(double dx, double dy, 
     {
         RwaMapItem *point1;
         point1 = static_cast<RwaMapItem *>(assetReflectionLayer->geometries.at(j));
-
         RwaAsset1 *item = static_cast<RwaAsset1 *>(point1->data);
-
         if( (item == currentAsset) && (point1->getRwaType() == RWAPOSITIONTYPE_REFLECTIONPOSITION) && point1->getChannel() == channel)
-        {
             point1->move(dx, dy);
-        }
     }
 }
 
@@ -298,7 +286,6 @@ void RwaGraphicsView::movePixmapsOfAssetReflections(double dx, double dy)
     {
         RwaMapItem *point1;
         point1 = static_cast<RwaMapItem *>(assetReflectionLayer->geometries.at(j));
-
         if( point1->getRwaType() == RWAPOSITIONTYPE_REFLECTIONPOSITION)
             point1->move(dx, dy);
     }
@@ -307,14 +294,11 @@ void RwaGraphicsView::movePixmapsOfAssetReflections(double dx, double dy)
 void RwaGraphicsView::movePixmapsOfCurrentScene(double dx, double dy)
 {
     QmapPoint *point1;
-
-
-   // if(statesVisible)
+    //if(statesVisible)
     {
         for (int j=0; j<statesLayer->geometries.count(); j++)
         {
             point1 = static_cast<QmapPoint *>(statesLayer->geometries.at(j));
-
             RwaState *state = static_cast<RwaState *>(point1->data);
             if(state->getScene() == currentScene)
             {
@@ -323,9 +307,8 @@ void RwaGraphicsView::movePixmapsOfCurrentScene(double dx, double dy)
                 {
                     for (int j=0; j<assetLayer->geometries.count(); j++)
                     {
-                        point1 = (QmapPoint *)assetLayer->geometries.at(j);
-
-                        RwaAsset1 *item = (RwaAsset1 *)point1->data;
+                        point1 = static_cast<QmapPoint *>(assetLayer->geometries.at(j));
+                        RwaAsset1 *item = static_cast<RwaAsset1 *>(point1->data);
                         if(item->myState == state)
                             point1->move(dx, dy);
                     }
@@ -335,12 +318,10 @@ void RwaGraphicsView::movePixmapsOfCurrentScene(double dx, double dy)
                 {
                     for (int j=0; j<assetReflectionLayer->geometries.count(); j++)
                     {
-                        point1 = (QmapPoint *)assetReflectionLayer->geometries.at(j);
-
-                        RwaAsset1 *item = (RwaAsset1 *)point1->data;
+                        point1 = static_cast<QmapPoint *>(assetReflectionLayer->geometries.at(j));
+                        RwaAsset1 *item = static_cast<RwaAsset1 *>(point1->data);
                         if(item->myState == state)
                             point1->move(dx, dy);
-
                     }
                 }
             }
@@ -351,12 +332,10 @@ void RwaGraphicsView::movePixmapsOfCurrentScene(double dx, double dy)
     {
         for (int j=0; j<stateRadiusLayer->geometries.count(); j++)
         {
-            point1 = (QmapPoint *)stateRadiusLayer->geometries.at(j);
-
-            RwaState *state = (RwaState *)point1->data;
+            point1 = static_cast<QmapPoint *>(stateRadiusLayer->geometries.at(j));
+            RwaState *state = static_cast<RwaState *>(point1->data);
             if(state->getScene() == currentScene)
                 point1->move(dx, dy);
-
         }
     }
 }
@@ -365,18 +344,14 @@ void RwaGraphicsView::movePixmapsOfCurrentState(double dx, double dy)
 {
     QmapPoint *point1;
 
-    //if(statesVisible)
+    if(statesVisible)
     {
         for (int j=0; j<statesLayer->geometries.count(); j++)
         {
-            point1 = (QmapPoint *)statesLayer->geometries.at(j);
-
-            RwaState *state = (RwaState *)point1->data;
-
+            point1 = static_cast<QmapPoint *>(statesLayer->geometries.at(j));
+            RwaState *state = static_cast<RwaState *>(point1->data);
             if(state == currentState )
-            {
                 point1->move(dx, dy);
-            }
         }
     }
 
@@ -384,14 +359,10 @@ void RwaGraphicsView::movePixmapsOfCurrentState(double dx, double dy)
     {
         for (int j=0; j<stateRadiusLayer->geometries.count(); j++)
         {
-            point1 = (QmapPoint *)stateRadiusLayer->geometries.at(j);
-
-            RwaState *state = (RwaState *)point1->data;
-
+            point1 = static_cast<QmapPoint *>(stateRadiusLayer->geometries.at(j));
+            RwaState *state = static_cast<RwaState *>(point1->data);
             if(state == currentState )
-            {
                 point1->move(dx, dy);
-            }
         }
     }
 
@@ -399,26 +370,18 @@ void RwaGraphicsView::movePixmapsOfCurrentState(double dx, double dy)
     {
         if(currentState->childrenDoFollowMe())
         {
-
             for (int j=0; j<assetLayer->geometries.count(); j++)
             {
-                point1 = (QmapPoint *)assetLayer->geometries.at(j);
-
-                RwaAsset1 *item = (RwaAsset1 *)point1->data;
-
+                point1 = static_cast<QmapPoint *>(assetLayer->geometries.at(j));
+                RwaAsset1 *item = static_cast<RwaAsset1 *>(point1->data);
                 if(item->myState == currentState )
-                {
                     point1->move(dx, dy);
-                }
             }
 
             if(assetReflectionsVisible)
                 movePixmapsOfAssetReflections(dx, dy);
         }
-
-
     }
-
 }
 
 void RwaGraphicsView::updateAssetPixmaps()
@@ -426,43 +389,44 @@ void RwaGraphicsView::updateAssetPixmaps()
     for (int i=0; i<assetLayer->geometries.count(); i++)
     {
         RwaMapItem *point;
-        point = (RwaMapItem *)assetLayer->geometries.at(i);
-
+        point = static_cast<RwaMapItem *>(assetLayer->geometries.at(i));
         if(point->getRwaType() == RWAPOSITIONTYPE_ASSET)
         {
             if(point->data == currentAsset)
-            {
                 point->setPixmap(assetLayer->getActivePixmap());
-            }
             else
-            {
                 point->setPixmap(assetLayer->getPassivePixmap());
-            }
         }
     }
+
     if(assetLayer->isVisible())
         assetLayer->setVisible(true);
 }
 
 void RwaGraphicsView::updateReflectionPixmaps()
 {
+    assetReflectionLayer->clearGeometries();
+
     for (int i=0; i<assetReflectionLayer->geometries.count(); i++)
     {
-        RwaMapItem *point;
-        point = (RwaMapItem *)assetReflectionLayer->geometries.at(i);
+        RwaMapItem *point;       
+        point = static_cast<RwaMapItem *>(assetReflectionLayer->geometries.at(i));
+        RwaAsset1 *asset = static_cast<RwaAsset1 *>(point->data);
+//        qDebug() << QString::fromStdString(asset->objectName());
+//        qDebug() << QString::fromStdString(currentAsset->objectName());
 
-        if(point->getRwaType() == RWAPOSITIONTYPE_REFLECTIONPOSITION)
+ //       if(currentAsset == asset)
         {
-            if(point->getChannel() == currentAsset->currentReflection)
+            if(point->getRwaType() == RWAPOSITIONTYPE_REFLECTIONPOSITION)
             {
-                point->setPixmap(assetReflectionLayer->getActivePixmap());
-            }
-            else
-            {
-                point->setPixmap(assetReflectionLayer->getPassivePixmap());
+                if(point->getChannel() == currentAsset->currentReflection)
+                    point->setPixmap(assetReflectionLayer->getActivePixmap());
+                else
+                    point->setPixmap(assetReflectionLayer->getPassivePixmap());
             }
         }
     }
+
     if(assetReflectionLayer->isVisible())
         assetReflectionLayer->setVisible(true);
 }
@@ -473,7 +437,7 @@ void RwaGraphicsView::updateStatePixmaps()
     {
         QmapPoint *point;
         QLineEdit *lineEdit;
-        point = (QmapPoint *)statesLayer->geometries.at(i);
+        point = static_cast<QmapPoint *>(statesLayer->geometries.at(i));
         if(point->data == currentState)
         {
             point->setPixmap(statesLayer->getActivePixmap());
@@ -501,7 +465,7 @@ void RwaGraphicsView::updatePixmaps(RwaLocation1 *active, GeometryLayer *layer)
     {
         QmapPoint *point;
         QLineEdit *lineEdit;
-        point = (QmapPoint *)layer->geometries.at(i);
+        point = static_cast<QmapPoint *>(layer->geometries.at(i));
         if(point->data == active)
         {
             point->setPixmap(layer->getActivePixmap());
@@ -530,7 +494,7 @@ void RwaGraphicsView::updatePixmaps(QmapPoint *active, GeometryLayer *layer)
     {
         QmapPoint *point;
         QLineEdit *lineEdit;
-        point = (QmapPoint *)layer->geometries.at(i);
+        point = static_cast<QmapPoint *>(layer->geometries.at(i));
         if(point == active)
         {
             point->setPixmap(layer->getActivePixmap());
@@ -805,17 +769,12 @@ void RwaGraphicsView::drawArea(RwaArea *area, GeometryLayer *layer, bool isActiv
 
     if(area->getAreaType() == RWAAREATYPE_POLYGON)
     {
-
-        if(area->corners.empty())
-        {
-
-        }
-        else
+        if(!area->corners.empty())
         {
             PolygonPoint *stateArea = new PolygonPoint(area->getCoordinates()[0], area->getCoordinates()[1], &area->corners);
             if(!isActive)
                 stateArea->setPenColor(QColor(240,60,50,200));
-            stateArea->setData( area);
+            stateArea->setData(area);
             layer->addGeometry(stateArea);
         }
     }
@@ -967,19 +926,16 @@ void RwaGraphicsView::drawAsset(RwaAsset1 *item, bool isActive)
         }
     }
 
-    if(item->getPlaybackType() == RWAPLAYBACKTYPE_BINAURALSPACE)
+    if((item->getPlaybackType() == RWAPLAYBACKTYPE_BINAURALSPACE) && isActive)
     {
-        if(assetReflectionsVisible)
+        for(int i = 0;i < item->getReflectionCount(); i++)
         {
-            for(int i = 0;i < item->getReflectionCount(); i++)
-            {
-                if(i == item->currentReflection)
-                    mapItem = new RwaMapItem(QPointF(item->reflectioncoordinates[i][0], item->reflectioncoordinates[i][1]), item, RWAPOSITIONTYPE_REFLECTIONPOSITION, assetReflectionLayer->getActivePixmap(), i);
-                else
-                    mapItem = new RwaMapItem(QPointF(item->reflectioncoordinates[i][0], item->reflectioncoordinates[i][1]), item, RWAPOSITIONTYPE_REFLECTIONPOSITION, assetReflectionLayer->getPassivePixmap(), i);
+            if(i == item->currentReflection)
+                mapItem = new RwaMapItem(QPointF(item->reflectioncoordinates[i][0], item->reflectioncoordinates[i][1]), item, RWAPOSITIONTYPE_REFLECTIONPOSITION, assetReflectionLayer->getActivePixmap(), i);
+            else
+                mapItem = new RwaMapItem(QPointF(item->reflectioncoordinates[i][0], item->reflectioncoordinates[i][1]), item, RWAPOSITIONTYPE_REFLECTIONPOSITION, assetReflectionLayer->getPassivePixmap(), i);
 
-                assetReflectionLayer->addGeometry(mapItem);
-            }
+            assetReflectionLayer->addGeometry(mapItem);
         }
     }
 }
@@ -999,7 +955,7 @@ void RwaGraphicsView::drawEntity(RwaEntity *entity, bool isActive)
 void RwaGraphicsView::redrawAssets()
 {
     if(!currentScene)
-        return;
+        return;        
 
     if(assetReflectionsVisible)
         assetReflectionLayer->clearGeometries();
@@ -1038,14 +994,15 @@ void RwaGraphicsView::redrawRadiusOfCurrentState()
 
 void RwaGraphicsView::redrawAssetsOfCurrentState()
 {
-    assetLayer->clearGeometries();
-    assetReflectionLayer->clearGeometries();
-
-    RwaState *state;
-    RwaAsset1 *item;
-
     if(!currentState)
         return;
+
+    if(currentState->getAssets().empty())
+        return;
+
+    assetLayer->clearGeometries();
+    assetReflectionLayer->clearGeometries();
+    RwaAsset1 *item;
 
     foreach (item, currentState->getAssets())
     {
@@ -1080,19 +1037,15 @@ void RwaGraphicsView::redrawStates()
     RwaState *state;
     foreach (state, currentScene->getStates())
     {
-        //if(state->isGpsState)
-        {
-             if(state != currentState)
-                drawState(state);
-             else
-                 drawState(state, 1);
-        }
+         if(state != currentState)
+            drawState(state);
+         else
+            drawState(state, 1);
     }
 }
 
 void RwaGraphicsView::resizeSceneRadii()
 {
-
     for (int j=0; j<sceneRadiusLayer->geometries.count(); j++)
     {
         QmapPoint *point1 = (QmapPoint *)statesLayer->geometries.at(j);
@@ -1105,6 +1058,7 @@ void RwaGraphicsView::redrawSceneRadii()
     sceneRadiusLayer->clearGeometries();
     RwaScene *scene;
     int currentLevel = currentScene->getLevel();
+    qDebug();
     foreach (scene, backend->getScenes())
     {
          if(scene->getLevel() == currentLevel)
@@ -1155,13 +1109,13 @@ void RwaGraphicsView::redrawEntities()
         if(!entity)
             return;
 
-        entity->setCoordinates(currentScene->getCoordinates());
         drawEntity(entity, true);
     }
 }
 
-void RwaGraphicsView::setEntityCoordinates()
+void RwaGraphicsView::setEntityCoordinates2CurrentScene()
 {
+    entityLayer->clearGeometries();
     for (int i=0; i<backend->simulator->entities.count(); i++)
     {
         RwaEntity *entity = backend->simulator->entities.at(i);
@@ -1169,8 +1123,22 @@ void RwaGraphicsView::setEntityCoordinates()
             return;
 
         entity->setCoordinates(currentScene->getCoordinates());
+        drawEntity(entity, true);
     }
-    entityLayer->updateRequest();
+}
+
+void RwaGraphicsView::setEntityCoordinates2CurrentState()
+{
+    entityLayer->clearGeometries();
+    for (int i=0; i<backend->simulator->entities.count(); i++)
+    {
+        RwaEntity *entity = backend->simulator->entities.at(i);
+        if(!entity)
+            return;
+
+        entity->setCoordinates(currentState->getCoordinates());
+        drawEntity(entity, true);
+    }
 }
 
 

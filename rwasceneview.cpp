@@ -28,6 +28,9 @@ RwaSceneView::RwaSceneView(QWidget *parent, RwaScene *scene, QString name) :
     connect(this, SIGNAL(sendCurrentScene(RwaScene*)),
             backend, SLOT(receiveLastTouchedScene(RwaScene*)));
 
+    connect(this, SIGNAL(sendCurrentState(RwaState*)),
+            backend, SLOT(receiveLastTouchedState(RwaState*)));
+
     readSplitterLayout();
 }
 
@@ -35,9 +38,10 @@ void RwaSceneView::deleteState(const QString &stateName)
 {
     if(currentScene)
     {
-       // qDebug() << "delete" << stateName;
         currentScene->removeState(currentScene->getState(stateName.toStdString()));
         emit sendCurrentScene(currentScene);
+        emit sendCurrentState(currentScene->lastTouchedState);
+        emit sendWriteUndo("Delete State");
     }
 }
 

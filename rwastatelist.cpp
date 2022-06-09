@@ -68,7 +68,13 @@ void RwaStateList::setCurrentScene(RwaScene *scene)
         addItem(item);
     }
 
-    setCurrentState(scene->lastTouchedState);
+    if(QObject::sender() != this->backend)
+    {
+        qDebug();
+        emit sendCurrentState(scene->lastTouchedState);
+    }
+
+   // setCurrentState(scene->lastTouchedState);
 }
 
 void RwaStateList::setCurrentState(RwaState *state)
@@ -87,7 +93,6 @@ void RwaStateList::setCurrentState(RwaState *state)
         QList<QListWidgetItem *> items = findItems(QString::fromStdString(state->objectName()), Qt::MatchExactly);
         if(!items.empty())
         {
-            qDebug();
             setCurrentItem(items.at(0));
             int row = QListWidget::row(currentItem());
             setCurrentRow(row);
@@ -151,9 +156,9 @@ void RwaStateList::keyPressEvent(QKeyEvent *event)
             if(currentState->objectName() != "FALLBACK" && currentState->objectName() != "BACKGROUND")
             {
                 RwaState *toDelete = currentState;
-                takeItem(getSelectedIndex());
-                setCurrentState(currentScene->states.front());
+                takeItem(getSelectedIndex());               
                 emit deleteState(QString::fromStdString(toDelete->objectName()));
+                //setCurrentState(currentScene->states.front());
             }
             else
                 qDebug() << "Fallback/Background States can not be deleted.";

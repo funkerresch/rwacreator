@@ -15,9 +15,10 @@ QMAKE_CC=clang
 QMAKE_CXX=clang++
 
 CONFIG += c++11
-CONFIG(release):DEFINES += QT_NO_DEBUG_OUTPUT
+#CONFIG(release):DEFINES += QT_NO_DEBUG_OUTPUT
 
 QMAKE_RPATHDIR += @executable_path/../Frameworks
+QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.7
 
 INCLUDEPATH += /usr/local/include
 INCLUDEPATH += $$PWD/vas_library/source

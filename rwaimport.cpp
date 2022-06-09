@@ -650,6 +650,8 @@ void RwaImport::readAssets()
 
                 if(xml.attributes().hasAttribute("channelcount"))
                     item->setNumberOfChannels(xml.attributes().value("channelcount").toInt());
+                if(xml.attributes().hasAttribute("individualchannelpositions"))
+                    item->allowIndividuellChannelPositions = (xml.attributes().value("individualchannelpositions").toInt());
                 else
                 {
                     if(type != RWAASSETTYPE_PD)
@@ -682,6 +684,7 @@ void RwaImport::readAssets()
                 item->setFixedAzimuth(xml.attributes().value("fixedazimuth").toInt());
                 item->setFixedElevation(xml.attributes().value("fixedelevation").toInt());
                 item->setFixedDistance(xml.attributes().value("fixeddistance").toInt());
+
                 std::vector<double> tmp(2, 0.0);
                 tmp[0] = startPosition.x();
                 tmp[1] = startPosition.y();

@@ -1,3 +1,24 @@
+/*
+*
+* This file is part of RwaCreator
+* an open-source cross-platform Middleware for creating interactive Soundwalks
+*
+* Copyright (C) 2015 - 2022 Thomas Resch
+*
+* License: MIT
+*
+* The RwaBackend class contains the data model in the form of a linked list of rwaScenes.
+* It is realised a singleton so all views/editors can easily access it.
+* Almost all GUI updates are realised by sending the lastTouched.*.() signals from the
+* corresponding view to the backend which then emits the sendLastTouched.*. signal
+* to synchronize all other views/editors. The only exception are the list views where states, scenes
+* and assets can be deleted vie keyboard using the basic QListWidget event.
+* Otherwise the setCurrent.*.() functions should only be called using Qt's SIGNALS/SLOTS.
+*
+*/
+
+
+
 #ifndef AFXSCENEBACKEND_H
 #define AFXSCENEBACKEND_H
 
@@ -47,6 +68,7 @@ public:
     bool trashAsset = false;
     bool showStateRadii = false;
     bool showAssets = false;
+    bool heroFollowsSceneAndState = false;
     bool logCoordinates = false;
     bool logPd = false;
     bool logSim = false;
@@ -66,6 +88,7 @@ private:
     RwaAsset1 *lastTouchedAssetItem = nullptr;
     RwaHeadtrackerConnect *headtracker = nullptr;
 
+    void updateLastTouchedSceneStateAndAsset();
 public slots:
 
     /** *********************************Undo read and write********************************************** */
@@ -98,7 +121,7 @@ public slots:
 
     void appendScene();
     void appendScene(RwaScene *scene);
-    void duplicateScene(RwaScene *scene);
+    void duplicateScene();
     void newSceneFromSelectedStates();
 
     /** ************************ Clear/Remove/Reset Scene(s) functionality **************************** */
@@ -135,6 +158,7 @@ public slots:
     void receiveTrashAssets(bool onOff);
     void receiveShowStateRadii(bool onOff);
     void receiveShowAssets(bool onOff);
+    void receiveHeroFollowsSceneAndState(bool onOff);
 
 
      /** **************************"""**** Logging related functions ***************************** */
@@ -198,6 +222,10 @@ public slots:
 
      /** *********************** Static utility functionality (string generation, UUIDs, ..) ************************* */
 
+    void receiveMoveHero2CurrentState();
+    void receiveMoveHero2CurrentScene();
+    void receiveMoveCurrentScene();
+    void receiveReadNewGame();
 public:
 
     static void generateUuidsForClipboardState(RwaState *state);
@@ -209,6 +237,8 @@ public:
     /** ************************************************** Signals ************************************************** */
 
     bool fileUsedByAnotherAsset(RwaAsset1 *asset2Delete);
+    bool adjust2UniqueSceneNameRecursively(RwaScene *newScene);
+    void adjust2UniqueSceneName(RwaScene *newScene);
 signals:
     void readUndoFile(QString name);
     void sendWriteUndo(QString undoAction);
@@ -218,11 +248,13 @@ signals:
     void sendLastTouchedEntity(RwaEntity *entity);
     void sendSelectedAssets(QStringList assets);
     void sendSelectedStates(QStringList states);
-
-    void sendAppendScene();
+    void sendMoveHero2CurrentState();
+    void sendMoveHero2CurrentScene();
     void updateScene(RwaScene *scene);
+    void updateGame();
     void sendClearAll();
     void sendNewAsset(RwaState *state, RwaAsset1 *item);
+    void sendMoveCurrentScene();
     void sendMoveCurrentState1(double dx, double dy);
     void sendMoveCurrentAsset1(double dx, double dy);
     void sendMoveCurrentAssetChannel(double dx, double dy, int channel);
@@ -231,7 +263,6 @@ signals:
     void sendCurrentSceneRadiusEdited();
     void sendHeroPositionEdited();
     void updateAssets();  // update simulator if assets are updated while simulation runs..
-    //void sendSave();
     void newGameLoaded();
     void undoGameLoaded();
     void sendRedrawAssets();

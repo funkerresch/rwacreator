@@ -19,11 +19,15 @@ RwaStateView::RwaStateView(QWidget* parent, RwaScene *scene, QString name)
     editStateWidth = false;
     editStatePosition = false;
     stateRadiusVisible = true;
+    assetReflectionsVisible = true;
     assetsVisible = true;
     onlyAssetsOfCurrentStateVisible = true;
 
     connect(backend, SIGNAL(sendMoveCurrentState1(double, double)),
               this, SLOT(movePixmapsOfCurrentState(double,double)));
+
+    connect(backend, SIGNAL(sendMoveCurrentScene()),
+              this, SLOT(moveCurrentState()));
 
     connect(this, SIGNAL(sendMoveCurrentState1(double, double)),
               backend, SLOT(receiveMoveCurrentState1(double,double)));
@@ -70,9 +74,6 @@ RwaStateView::RwaStateView(QWidget* parent, RwaScene *scene, QString name)
     connect(backend, SIGNAL(sendCurrentStateRadiusEdited()),
               this, SLOT(receiveUpdateCurrentStateRadius()));
 
-    connect (backend, SIGNAL(newGameLoaded()),
-             this, SLOT(receiveNewGameSignal()));
-
     addZoomButtons();
     windowSplitter->addWidget(assetAttributes->scrollArea);
     windowSplitter->addWidget(assetList);
@@ -109,11 +110,6 @@ void RwaStateView::keyPressEvent(QKeyEvent *event)
 void RwaStateView::correctMapView()
 {
      mc->resize(QSize(windowSplitter->sizes().at(2), this->height()));
-}
-
-void RwaStateView::receiveNewGameSignal()
-{
-
 }
 
 void RwaStateView::receiveUpdateCurrentStateRadius()
@@ -156,16 +152,18 @@ void RwaStateView::setZoomLevel(qint32 zoomLevel)
 
 void RwaStateView::setCurrentAsset(RwaAsset1 *asset)
 {
-    if(asset)
-    {
-        this->currentAsset = asset;
-        currentState->setLastTouchedAsset(this->currentAsset);
-        updateAssetPixmaps();
-        updateReflectionPixmaps();
+    if(!asset)
+        return;
 
-        if(!(QObject::sender() == this->backend))
-            emit sendCurrentAsset(this->currentAsset);
-    }
+    RwaGraphicsView::setCurrentAsset(asset);
+
+//    currentAsset = asset;
+//    currentState->setLastTouchedAsset(this->currentAsset);
+//    updateAssetPixmaps();
+//    updateReflectionPixmaps();
+//    if(!(QObject::sender() == backend))
+//        emit sendCurrentAsset(currentAsset);
+
 }
 
 void RwaStateView::redrawStateRadii()
@@ -348,8 +346,7 @@ void RwaStateView::receiveMouseDownEvent(const QMouseEvent *event, const QPointF
 
                  if(currentMapItem->getRwaType() != RWAPOSITIONTYPE_ASSETCHANNEL)
                  {
-                     setCurrentAsset(asset);
-                     assetLayer->setVisible(true);
+                     emit sendCurrentAsset(asset);
                      mc->setMouseMode(MapControl::None);
                      return;
                  }
@@ -357,8 +354,7 @@ void RwaStateView::receiveMouseDownEvent(const QMouseEvent *event, const QPointF
                  {
                      if(asset->individuellChannelPositionsAllowed())
                      {
-                         setCurrentAsset(asset);
-                         assetLayer->setVisible(true);
+                         emit sendCurrentAsset(asset);
                          mc->setMouseMode(MapControl::None);
                          return;
                      }
@@ -373,8 +369,7 @@ void RwaStateView::receiveMouseDownEvent(const QMouseEvent *event, const QPointF
                  currentMapItem = static_cast<RwaMapItem *>(assetReflectionLayer->geometries.at(i));
                  asset = static_cast<RwaAsset1 *>(currentMapItem->data);
                  asset->currentReflection = currentMapItem->getChannel();
-                 setCurrentAsset(asset);
-                 assetReflectionLayer->setVisible(true);
+                 emit sendCurrentAsset(asset);
                  mc->setMouseMode(MapControl::None);
                  return;
              }
@@ -428,11 +423,16 @@ void RwaStateView::setCurrentState(RwaState *state)
 
     QDockWidget *window = static_cast<QDockWidget *>(parent());
     window->setWindowTitle("State View - "+ QString::fromStdString(state->objectName()));
+    mc->setView(QPointF(state->getCoordinates()[0], state->getCoordinates()[1]));
+    setMap2AreaZoomLevel(state);
+    RwaGraphicsView::setCurrentState(state);    
 
-    RwaGraphicsView::setCurrentState(state);
+    if(QObject::sender() != this->backend)
+    {
+        qDebug();
+        emit sendCurrentAsset(state->lastTouchedAsset);
+    }
 
-    mc->setView(QPointF(currentState->getCoordinates()[0], currentState->getCoordinates()[1]));
-    mc->setZoom(currentState->getZoom());
 }
 
 void RwaStateView::setCurrentScene(RwaScene *scene)
@@ -440,12 +440,16 @@ void RwaStateView::setCurrentScene(RwaScene *scene)
     if(!scene)
         return;
 
+    if(scene == currentScene)
+        return;
+
     RwaGraphicsView::setCurrentScene(scene);
 
-    if(scene->lastTouchedState)
-        setCurrentState(scene->lastTouchedState);
-    else
-        setCurrentState(scene->states.front());
+    if(QObject::sender() != this->backend)
+    {
+        qDebug();
+        emit sendCurrentState(scene->lastTouchedState);
+    }
 }
 
 int RwaStateView::getNumberOfSelectedAssets()

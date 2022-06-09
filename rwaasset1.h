@@ -329,7 +329,6 @@ private:
     bool blocked = false;     // blocked, can't be activated; for example: blocked by another client..
     bool headtrackerRelative2Source = true;
     bool lockPosition = false;
-    bool allowIndividuellChannelPositions = false;
     bool rawSensors2pd = false;
     bool gps2pd = false;
     bool hasCoordinates = false; // if, else use state coordinates
@@ -343,6 +342,9 @@ private:
     bool surviveAfterLeavingState = false; // for following assets
     bool alwaysPlayFromBeginning = true;
     bool updatePlayheadPosition = true;
+
+public:
+    bool allowIndividuellChannelPositions = false;
 };
 
 #endif // RWAASSETITEM_H

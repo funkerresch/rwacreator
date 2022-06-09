@@ -24,6 +24,7 @@ class RwaView : public QGraphicsView
 
 public:
     explicit RwaView(QWidget *parent = nullptr, RwaScene *scene = nullptr, QString name = "");
+    ~RwaView();
 
     RwaScene *getCurrentScene();
     RwaState *getCurrentState();
@@ -82,6 +83,7 @@ public:
     void setUndoAction(const QString &value);
     void readSplitterLayout();
     void writeSplitterLayout();
+
 };
 
 #endif // RWAVIEW_H

@@ -61,6 +61,26 @@ void RwaScene::clear()
     childrenFollowMe = true;
 }
 
+void RwaScene::copyAttributes(RwaScene * dest)
+{
+    dest->zoom = zoom;
+    dest->level = level;
+    dest->areaType = areaType;
+    dest->radius = radius;
+    dest->width = width;
+    dest->height = height;
+    dest->exitOffset = exitOffset;
+    dest->timeOut = timeOut;
+    dest->positionLocked = positionLocked;
+    dest->childrenFollowMe = childrenFollowMe;
+
+    for(uint32_t i = 0;i < this->corners.size(); i++)
+        dest->corners.push_back(std::vector<double>(this->corners[i])); // is std::vector<double>(this->corners[i]) really necessary?
+
+    for(uint32_t i = 0;i < this->exitOffsetCorners.size(); i++)
+        dest->exitOffsetCorners.push_back(std::vector<double>(this->exitOffsetCorners[i]));
+}
+
 void RwaScene::addState(RwaState *state)
 {
     state->setScene(this);
@@ -81,6 +101,7 @@ RwaState *RwaScene::addState(std::string stateName,  std::vector<double> gpsCoor
     newState->setDefaultPlaybackType(RWAPLAYBACKTYPE_BINAURAL);
     newState->isImmortal = false;
     states.push_back(newState);
+    lastTouchedState = newState;
     return newState;
 }
 
@@ -330,6 +351,7 @@ void RwaScene::resetAssets()
 
 void RwaScene::removeState(RwaState *state)
 {
+    lastTouchedState = states.front();
     states.remove(state);
     delete state;
 }

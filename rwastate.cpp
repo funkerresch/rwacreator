@@ -30,7 +30,6 @@ RwaState::RwaState(std::string stateName) :
     setEnterOnlyAfterAssetsFinish(false);
     setEnterOnlyOnce(false);
     isExclusive = false;
-    //enterOffset = -6;
     exitOffset = 0;
     positionLocked = false;
     childrenFollowMe = true;

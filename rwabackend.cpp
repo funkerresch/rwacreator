@@ -54,6 +54,40 @@ RwaBackend::~RwaBackend()
    // system(killHttp.toStdString().c_str());
 }
 
+void RwaBackend::updateLastTouchedSceneStateAndAsset()
+{
+    emit updateGame();
+
+    if(!lastTouchedScene)
+        lastTouchedScene = scenes.front();
+
+    emit sendLastTouchedScene(lastTouchedScene);
+
+    if(!lastTouchedScene->lastTouchedState)
+        lastTouchedScene->lastTouchedState = lastTouchedScene->states.front();
+
+    lastTouchedState = lastTouchedScene->lastTouchedState;
+
+    emit sendLastTouchedState(lastTouchedState);
+
+    if(!lastTouchedState->assets.empty())
+    {
+        if(!lastTouchedState->lastTouchedAsset)
+            lastTouchedState->lastTouchedAsset = lastTouchedState->assets.front();
+
+        lastTouchedAssetItem = lastTouchedState->lastTouchedAsset;
+        emit sendLastTouchedAsset(lastTouchedAssetItem);
+    }
+
+    emit sendMoveHero2CurrentScene();
+}
+
+void RwaBackend::receiveReadNewGame()
+{
+    emit newGameLoaded();
+    updateLastTouchedSceneStateAndAsset();
+}
+
 /**
  * ****************************** Undo read and write******************************
  *
@@ -65,8 +99,10 @@ RwaBackend::~RwaBackend()
 void RwaBackend::receiveReadUndoFile(QString name)
 {
     emit readUndoFile(name);
-    emit sendLastTouchedScene(lastTouchedScene);
+    updateLastTouchedSceneStateAndAsset();
 }
+
+/** ******* Receives Undo Action as String from Editors and send signal to RwaCreator.c ******** **/
 
 void RwaBackend::receiveWriteUndo(QString undoAction)
 {
@@ -206,7 +242,7 @@ void RwaBackend::appendScene(RwaScene *scene)
         scene->setObjectName(QString("Scene %1").arg(scenes.count()).toStdString());
 
     scenes.append(scene);
-    emit sendAppendScene();
+    emit updateGame();
 }
 
 void RwaBackend::appendScene()
@@ -218,7 +254,7 @@ void RwaBackend::appendScene()
     newScene->setObjectName(QString("Scene %1").arg(scenes.count()).toStdString());
     scenes.append(newScene);
     lastTouchedScene = newScene;
-    emit sendAppendScene();
+    emit updateGame();
 }
 
 void RwaBackend::newSceneFromSelectedStates()
@@ -249,15 +285,30 @@ void RwaBackend::newSceneFromSelectedStates()
     newScene->findStateSurroundingArea();
     scenes.append(newScene);
     lastTouchedScene = newScene;
-    emit sendAppendScene();
+    emit updateGame();
     emit sendLastTouchedScene(lastTouchedScene);
 
 }
 
-void RwaBackend::duplicateScene(RwaScene *scene)
+void RwaBackend::duplicateScene()
 {
-    if(logOther)
-        qDebug("BACKEND: duplicateScene");
+    RwaScene *newScene = new RwaScene(lastTouchedScene->objectName(), lastTouchedScene->getCoordinates(), lastTouchedScene->getZoom());
+    adjust2UniqueSceneName(newScene);
+
+    foreach (RwaState *state, lastTouchedScene->states)
+    {
+        RwaState *newState = new RwaState(state->objectName());
+        state->copyAttributes(newState);
+        newState->setScene(newScene);
+        newScene->getStates().push_back(newState);
+    }
+
+    lastTouchedScene->copyAttributes(newScene);
+    scenes.append(newScene);
+    lastTouchedScene = newScene;
+    moveScene2CurrentMapLocation();
+    emit updateGame();
+    emit sendLastTouchedScene(lastTouchedScene);
 }
 
 /** **************************** Clear/Remove/Reset Scene(s) functionality **************************** */
@@ -308,9 +359,12 @@ void RwaBackend::clearScenes()
 
 void RwaBackend::reset()
 {
+    projectName = QString();
+    completeFilePath = QString();
+    completeProjectPath = QString();
     clearScenes();
     appendScene();
-    emit updateScene(scenes.first());
+    updateLastTouchedSceneStateAndAsset();
 }
 
 /** ************************************* Location functionality ************************************* */
@@ -326,9 +380,10 @@ void RwaBackend::moveScene2CurrentMapLocation()
 
     qDebug() << "Move Scene";
 
-    emit sendEntityPosition(tmp);
-    emit sendHeroPositionEdited();
+//    emit sendEntityPosition(tmp);
+//    emit sendHeroPositionEdited();
     emit sendLastTouchedScene(lastTouchedScene);
+    emit sendMoveHero2CurrentScene();
 }
 
 void RwaBackend::receiveMapCoordinates(QPointF mapCoordinates)
@@ -368,6 +423,17 @@ void RwaBackend::pasteStatesFromClipboard()
 }
 
 /** *************************  RWA Graphic View receiver to emitter functions ************************* */
+
+void RwaBackend::receiveMoveHero2CurrentState()
+{
+    qDebug();
+    emit sendMoveHero2CurrentState();
+}
+
+void RwaBackend::receiveMoveHero2CurrentScene()
+{
+    emit sendMoveHero2CurrentScene();
+}
 
 void RwaBackend::receiveEntityPosition(QPointF position)
 {
@@ -409,6 +475,11 @@ void RwaBackend::receiveCurrentSceneRadiusEdited()
     emit sendCurrentSceneRadiusEdited();
 }
 
+void RwaBackend::receiveMoveCurrentScene()
+{
+    emit sendMoveCurrentScene();
+}
+
 /** ******************************** Editor Global Rendering/Functionality ********************************* */
 
 void RwaBackend::receiveTrashAssets(bool onOff)
@@ -424,6 +495,11 @@ void RwaBackend::receiveShowStateRadii(bool onOff)
 void RwaBackend::receiveShowAssets(bool onOff)
 {
     showAssets = onOff;
+}
+
+void RwaBackend::receiveHeroFollowsSceneAndState(bool onOff)
+{
+    heroFollowsSceneAndState = onOff;
 }
 
 /** ****************************** Logging related functions ***************************** */
@@ -496,6 +572,35 @@ int RwaBackend::getStateNameCounter(std::list<RwaState *> &states)
     maxStateCount++;
     return maxStateCount;
 }
+
+bool RwaBackend::adjust2UniqueSceneNameRecursively(RwaScene *newScene)
+{
+    bool found = false;
+
+    foreach (RwaScene *scene, scenes)
+    {
+        if(!scene->objectName().compare(newScene->objectName()))
+        {
+            found = true;
+            break;
+        }
+    }
+
+    if(found)
+    {
+        std::string stateName(newScene->objectName() + " copy");
+        newScene->setObjectName(stateName);
+        return true;
+
+    }
+    return false;
+}
+
+void RwaBackend::adjust2UniqueSceneName(RwaScene *newScene)
+{
+    while(adjust2UniqueSceneNameRecursively(newScene));
+}
+
 
 bool RwaBackend::adjust2UniqueStateNameRecursively(RwaScene *targetScene, RwaState *newState)
 {

@@ -1,42 +1,5 @@
 /****************************************************************************
-**
-** Copyright (C) 2013 Digia Plc and/or its subsidiary(-ies).
-** Contact: http://www.qt-project.org/legal
-**
-** This file is part of the demonstration applications of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and Digia.  For licensing terms and
-** conditions see http://qt.digia.com/licensing.  For further information
-** use the contact form at http://qt.digia.com/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 2.1 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL included in the
-** packaging of this file.  Please review the following information to
-** ensure the GNU Lesser General Public License version 2.1 requirements
-** will be met: http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html.
-**
-** In addition, as a special exception, Digia gives you certain additional
-** rights.  These rights are described in the Digia Qt LGPL Exception
-** version 1.1, included in the file LGPL_EXCEPTION.txt in this package.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 3.0 as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL included in the
-** packaging of this file.  Please review the following information to
-** ensure the GNU General Public License version 3.0 requirements will be
-** met: http://www.gnu.org/copyleft/gpl.html.
-**
-**
-** $QT_END_LICENSE$
-**
+
 ****************************************************************************/
 
 #include "rwatoolbar.h"
@@ -56,7 +19,6 @@
 RwaViewToolbar::RwaViewToolbar(const QString &title, qint32 flags, RwaBackend *backend,  QWidget *parent)
     : QToolBar(parent)
 {
-
     numberOfScenes = 1;
     this->currentScene  = nullptr;
     this->currentState = nullptr;
@@ -88,6 +50,7 @@ RwaViewToolbar::RwaViewToolbar(const QString &title, qint32 flags, RwaBackend *b
         connect (this, SIGNAL(sendRadiiVisible(bool)), backend, SLOT(receiveShowStateRadii(bool)));
         connect (this, SIGNAL(sendStartStopSimulator(bool)), backend, SLOT(startStopSimulator(bool)));
         connect (this, SIGNAL(sendTrashAssets(bool)), backend, SLOT(receiveTrashAssets(bool)));
+        connect (this, SIGNAL(sendHeroFollowsSceneAndState(bool)), backend, SLOT(receiveHeroFollowsSceneAndState(bool)));
         connect (this, SIGNAL(sendCalibrateHeadtracker()), backend, SLOT(calibrateHeadtracker()));
         connect (this, SIGNAL(sendSimulateHeadtrackerStep()), backend->simulator, SLOT(receiveStep()));
         initControls();
@@ -117,6 +80,8 @@ RwaViewToolbar::RwaViewToolbar(const QString &title, qint32 flags, RwaBackend *b
         addWidget(selectSceneMenuButton);
         updateSelectSceneMenu();
         connect (this, SIGNAL(sendSelectedScene(RwaScene *)), backend, SLOT(receiveLastTouchedScene(RwaScene *)));
+        connect (this, SIGNAL(sendMoveHero2CurrentScene()), backend, SLOT(receiveMoveHero2CurrentScene()));
+        connect (this->backend, SIGNAL(updateGame()), this, SLOT(updateSelectSceneMenu()));
    }
 
     if(flags & RWATOOLBAR_SELECTSTATEMENU)
@@ -132,6 +97,7 @@ RwaViewToolbar::RwaViewToolbar(const QString &title, qint32 flags, RwaBackend *b
         addWidget(selectStateMenuButton);
         updateSelectStateMenu();
         connect (this, SIGNAL(sendSelectedState(RwaState *)), backend, SLOT(receiveLastTouchedState(RwaState*)));
+        connect (this, SIGNAL(sendMoveHero2CurrentState()), backend, SLOT(receiveMoveHero2CurrentState()));
    }
 
     if(flags & RWATOOLBAR_SCENEMENU)
@@ -148,7 +114,7 @@ RwaViewToolbar::RwaViewToolbar(const QString &title, qint32 flags, RwaBackend *b
 
         connect (this, SIGNAL(sendAppendScene()), backend, SLOT(appendScene()));
         connect (this, SIGNAL(sendRemoveScene(RwaScene *)), backend, SLOT(removeScene(RwaScene *)));
-        connect (this, SIGNAL(sendDuplicateScene(RwaScene *)), backend, SLOT(duplicateScene(RwaScene *)));
+        connect (this, SIGNAL(sendDuplicateScene()), backend, SLOT(duplicateScene()));
         connect (this, SIGNAL(sendClearScene(RwaScene *)), backend, SLOT(clearScene(RwaScene *)));
         connect (this, SIGNAL(sendNewSceneFromSelectedStates()), backend, SLOT(newSceneFromSelectedStates()));
         connect (this, SIGNAL(sendMoveScene2NewLocation()), backend, SLOT(moveScene2CurrentMapLocation()));
@@ -224,27 +190,25 @@ void RwaViewToolbar::setCurrentState(qint32 stateNumber)
 
 void RwaViewToolbar::setCurrentScene(RwaScene *currentScene)
 {
-    this->currentScene = currentScene;
+    qDebug() ;
 
-    updateSelectSceneMenu();
-    if(!(QObject::sender() == this->backend))
+    if(QObject::sender() == this->backend)
+    {
+        this->currentScene = currentScene;
+        updateSelectSceneMenu();
+        updateSelectStateMenu();
+    }
+    else
     {
         emit sendSelectedScene(currentScene);
-        qDebug();
+        emit sendSelectedState(currentScene->lastTouchedState);
     }
 }
 
 void RwaViewToolbar::setCurrentScene(qint32 sceneNumber)
 {
-    if(sceneNumber <= backend->getNumberOfScenes())
+    if(sceneNumber < backend->getNumberOfScenes())
         setCurrentScene(backend->getSceneAt(sceneNumber));
-
-    updateSelectSceneMenu();
-
-    if(!(QObject::sender() == this->backend))
-    {
-        emit sendSelectedScene(currentScene);
-    }
 }
 
 void RwaViewToolbar::receiveMapCoordinates(double lon, double lat)
@@ -381,6 +345,17 @@ void RwaViewToolbar::initControls()
     simulateHeadtrackerStepButton->setToolTip("Send Step");
     addWidget(simulateHeadtrackerStepButton);
 
+    heroFollowsSceneAndStateButton = new QToolButton(this);
+    heroFollowsSceneAndStateButton->setCheckable(true);
+    heroFollowsSceneAndStateButton->setChecked(false);
+    connect (heroFollowsSceneAndStateButton, SIGNAL(clicked(bool)), this, SLOT(receiveHeroFollowsSceneAndState(bool)));
+    heroFollowsSceneAndStateButton->setObjectName("herofollowssceneandstate");
+    heroFollowsSceneAndStateButton->setIcon(QIcon(path+"images/heroFollowsSceneAndStateButton.png"));
+    heroFollowsSceneAndStateButton->setIconSize(QSize(15,15));
+    heroFollowsSceneAndStateButton->setFixedSize(QSize(20,20));
+    heroFollowsSceneAndStateButton->setToolTip("Hero follows Scene- and State-Menu locations");
+    addWidget(heroFollowsSceneAndStateButton);
+
     trashAssetsButton = new QToolButton(this);
     trashAssetsButton->setCheckable(true);
     trashAssetsButton->setChecked(false);
@@ -437,6 +412,11 @@ void RwaViewToolbar::receiveTrashAssets(bool onOff)
         trashAssetsButton->setIcon(QIcon(path+"images/trashassets.png"));
     else
         trashAssetsButton->setIcon(QIcon(path+"images/donttrashassets.png"));
+}
+
+void RwaViewToolbar::receiveHeroFollowsSceneAndState(bool onOff)
+{
+    emit sendHeroFollowsSceneAndState(onOff);
 }
 
 void RwaViewToolbar::receiveStopSimulator(bool startStopSimulator)
@@ -611,11 +591,21 @@ void RwaViewToolbar::initSceneMenu()
 void RwaViewToolbar::selectScene(qint32 sceneNumber)
 {
     setCurrentScene(sceneNumber);
+    if(heroFollowsSceneAndStateButton->isChecked())
+    {
+        qDebug();
+        emit sendMoveHero2CurrentScene();
+    }
 }
 
 void RwaViewToolbar::selectState(qint32 stateNumber)
 {
     setCurrentState(stateNumber);
+    if(heroFollowsSceneAndStateButton->isChecked())
+    {
+        qDebug();
+        emit sendMoveHero2CurrentState();
+    }
 }
 
 void RwaViewToolbar::receiveCurrentState(RwaState *state)
@@ -629,9 +619,9 @@ void RwaViewToolbar::newStateFromCurrent()
     if(currentState)
     {
         std::string stateName(currentState->objectName() + " copy");
-        RwaState *newState = currentScene->addState(stateName, currentScene->getCoordinates());
+        RwaState *newState = currentScene->addState(stateName, currentState->getCoordinates());
         currentState->copyAttributes(newState);
-        newState->setCoordinates(coordinates);
+        //newState->setCoordinates(coordinates);
         qDebug() << QString::number(coordinates[0], 'f', 8);
         RwaBackend::generateUuidsForClipboardState(newState);
         setCurrentScene(currentScene);
@@ -683,6 +673,7 @@ void RwaViewToolbar::removeScene()
 
 void RwaViewToolbar::duplicateScene()
 {
+    emit sendDuplicateScene();
     qDebug("duplicate Scene");
 }
 

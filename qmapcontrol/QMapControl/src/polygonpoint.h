@@ -48,11 +48,14 @@ namespace qmapcontrol
         int getHeight() const;
         void setHeight(int value);
 
+    public slots:
+        void move(double dx, double dy);
     private:
         int type;
         int width;
         int height;
         std::vector<std::vector<double>> *corners;
+        std::vector<std::vector<double>> corners1;
 
     };
 }

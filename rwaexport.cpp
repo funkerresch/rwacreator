@@ -138,7 +138,7 @@ void RwaExport::writeAssetItem(RwaAsset1 *item)
    xml.writeAttribute("startpositionlat", QString::number(item->getStartPosition()[1]));
    xml.writeAttribute("offset", QString::number(item->getOffset()));
    xml.writeAttribute("reflectioncount", QString::number(item->getReflectionCount()));
-
+   xml.writeAttribute("individualchannelpositions", QString::number(item->individuellChannelPositionsAllowed()));
    xml.writeStartElement("channelpositions");
    for(int i = 0; i < 64; i++)
    {

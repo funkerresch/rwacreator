@@ -35,8 +35,6 @@ public:
 
     RwaState *backgroundState;
     RwaState *lastTouchedState;
-    //RwaState *currentState;
-
     int32_t level;
     bool disableFallback = false;
 
@@ -73,11 +71,12 @@ public:
 
     bool fallbackDisabled() const;
     void setDisableFallback(bool value);
-    RwaState * createFallbackState();
-    RwaState *createBackgroundState();
     void InsertDefaultFallbackState();
     void InsertDefaultBackgroundState();
     void InsertStateAtIndex(RwaState *state, int32_t index);
+    RwaState * createFallbackState();
+    RwaState *createBackgroundState();
+    void copyAttributes(RwaScene *dest);
 };
 
 #endif // AFXSCENE_H

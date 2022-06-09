@@ -29,7 +29,7 @@ public:
     bool mouseDownArea(QPointF myPoint, RwaArea *currentArea);
     void resizeArea(QPointF myPoint, RwaArea *currentArea);
     bool mouseDoubleClickArea(QPointF myPoint, RwaArea *currentArea);
-    void setEntityCoordinates();
+
 
 public slots:
     void updateCurrentState();
@@ -42,6 +42,8 @@ public slots:
     void setEntitiesVisible(bool entitiesVisible);
     void setStatesVisible(bool statesVisible);
     void setStateRadiusVisible(bool radiusVisible);
+    void setEntityCoordinates2CurrentScene();
+    void setEntityCoordinates2CurrentState();
     void setTool(qint32 tool);
     void initNewGame();
 
@@ -66,7 +68,6 @@ public slots:
 
     void movePixmapsOfAssetReflections(double dx, double dy);
     void moveReflectionPixmapsOfCurrentAsset(double dx, double dy);
-
 
 protected:
     void updatePixmaps(QmapPoint *active, GeometryLayer *layer);
@@ -96,28 +97,27 @@ protected:
     QmapPoint *currentPolygonPoint = nullptr;
     QmapPoint *currentAssetReflection = nullptr;
 
-    //QLineEdit *mapName;
     QPushButton *zoomInButton;
     QPushButton *zoomOutButton;
     QPointF mapCoordinates;
 
     void addZoomButtons();
 
-    bool stateLineEditVisible; // allow editing object name via GUI if active (i.e. last touched)
-    bool sceneLineEditVisible;
-    bool entityLineEditVisible;
-    bool assetLineEditVisible;
-    bool onlyAssetsOfCurrentStateVisible;
-    bool entityVisible;
-    bool statesVisible;
-    bool scenesVisible;
-    bool stateRadiusVisible;
-    bool sceneRadiusVisible;
-    bool assetStartPointsVisible;
-    bool assetReflectionsVisible;
+    bool stateLineEditVisible = false; // allow editing object name via GUI if active (i.e. last touched)
+    bool sceneLineEditVisible = false;
+    bool entityLineEditVisible = false;
+    bool assetLineEditVisible = false;
+    bool onlyAssetsOfCurrentStateVisible = false;
+    bool entityVisible = false;
+    bool statesVisible = false;
+    bool scenesVisible = false;
+    bool stateRadiusVisible = false;
+    bool sceneRadiusVisible = false;
+    bool assetStartPointsVisible = false;
+    bool assetReflectionsVisible = false;
 
     bool entityInitialized = false;
-
+    bool heroFollowsSceneAndState = false;
     bool editArea = false;
     bool editAreaWidth = false;
     bool editAreaHeight = false;
@@ -130,7 +130,8 @@ protected:
     QString tmpObjectName;
     RwaState *tmpState = nullptr;
 
- public:
+    void setMap2AreaZoomLevel(RwaArea *area);
+public:
     bool assetsVisible;
 
     void updateReflectionPixmaps();

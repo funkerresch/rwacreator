@@ -29,9 +29,14 @@ namespace qmapcontrol
     PolygonPoint::PolygonPoint(qreal x, qreal y, std::vector<std::vector<double>>*corners, QString name, Alignment alignment)
         : QmapPoint(x, y, name, alignment)
     {
-          this->corners = corners;
+         // this->corners = corners; // I passed the vector from rwalocation here which is deleted on loading new files or undos
           myalignment = Middle;
           size = QSize();
+
+          foreach(std::vector<double> corner, *corners) // so we have to create a real copy of the polygon for drawing
+              corners1.push_back(std::vector<double>(corner));
+
+          this->corners = &corners1;
     }
 
     PolygonPoint::~PolygonPoint()
@@ -77,6 +82,20 @@ namespace qmapcontrol
         mypixmap->fill(Qt::transparent);
         QPainter painter(mypixmap);
         painter.drawRect(this->X, this->Y, width, height);
+    }
+
+    void PolygonPoint::move(double dx, double dy)
+    {
+        uint64_t i = 0;
+        while(i < corners1.size())
+        {
+            corners->at(i)[0] += dx;
+            corners->at(i)[1] += dy;
+            i++;
+        }
+
+        emit(updateRequest(QRectF(X, Y, size.width(), size.height())));
+        emit(positionChanged(this));
     }
 
     void PolygonPoint::draw(QPainter* painter, const MapAdapter* mapadapter, const QRect &viewport, const QPoint offset)

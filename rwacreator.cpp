@@ -47,7 +47,7 @@ RwaCreator::RwaCreator(QWidget *parent, Qt::WindowFlags flags)
     allViewsLoaded = false;
     headtracker = RwaHeadtrackerConnect::getInstance();
 
-   // QObject::connect(backend, SIGNAL(sendSave()), this, SLOT(save()));
+    QObject::connect(this, SIGNAL(sendReadNewGame()), backend, SLOT(receiveReadNewGame()));
     QObject::connect(backend, SIGNAL(sendWriteUndo(QString)), this, SLOT(writeUndo(QString)));
     QObject::connect(backend, SIGNAL(readUndoFile(QString )), this, SLOT(readUndoFile(QString )));
     QObject::connect(QApplication::instance(), SIGNAL(aboutToQuit()),this, SLOT(cleanUpBeforeQuit()));
@@ -55,10 +55,8 @@ RwaCreator::RwaCreator(QWidget *parent, Qt::WindowFlags flags)
     setCentralWidget(backend);   
     createInitFolder();      
     loadDefaultViews();
-    //openInit();
     setupMenuBar();
     loadLayoutAndSettings();
-
 }
 
 /** *************************** logMessages redirects qDebug() to rwalogview ***************************************** */
@@ -268,13 +266,6 @@ void RwaCreator::addHistoryView()
 
 /** ******************************* Save app settings and clean up before quit**************************************** */
 
-void RwaCreator::closeDockWidget(RwaDockWidget *dock)
-{
-    RwaView *myView =  static_cast<RwaView *>(dock->widget()); // somehow this slot is not getting called
-    myView->writeSplitterLayout();                             // doing it for now in cleanupBeforeQuit
-    qDebug();
-}
-
 void RwaCreator::closeEvent(QCloseEvent *event)
 {
     (void) event;
@@ -285,14 +276,6 @@ void RwaCreator::cleanUpBeforeQuit()
 {
     qDebug() << "Clean up and quit!";
     backend->simulator->stopRwaSimulation();
-    RwaView *myView;
-
-    foreach(QDockWidget *dw, rwaDockWidgets)
-    {
-        myView =  static_cast<RwaView *>(dw->widget());
-        myView->writeSplitterLayout();
-    }
-
     maybeSave();
     saveLayoutAndSettings();
     emptyTmpDirectories();
@@ -718,12 +701,11 @@ qint32 RwaCreator::open(QString fileName)
 
     if (!reader.read(&file))
          statusBar()->showMessage(tr("Could not read XML, parser error!"), 2000);
-
     else
     {
         statusBar()->showMessage(tr("File loaded"), 2000);
         undoCounter = 0;
-        emit backend->newGameLoaded();
+        emit sendReadNewGame();
         writeUndo("Init Game");
     }
 
@@ -738,12 +720,9 @@ void RwaCreator::emptyTmpDirectories()
 
 void RwaCreator::clear()
 {
-    qDebug() << "Clear";
-    emptyTmpDirectories();
+    qDebug();
     undoCounter = 0;
-    backend->projectName = QString();
-    backend->completeFilePath = QString();
-    backend->completeProjectPath = QString();
+    emptyTmpDirectories();      
     backend->reset();
     setWindowTitle("Not saved");
     exportProject();
@@ -797,7 +776,6 @@ void RwaCreator::readUndoFile(QString name)
     else
     {
         statusBar()->showMessage(tr("File loaded"), 2000);
-        emit backend->undoGameLoaded();
     }
 }
 

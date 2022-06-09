@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE rwa>
-<rwa version="1.0">
-    <manifest rwascript=""/>
-    <scene name="Scene 0" lon="8.27" lat="50" zoom="13" numberofstates="0"/>
-</rwa>
