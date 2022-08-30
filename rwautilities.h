@@ -22,6 +22,7 @@ class RwaUtilities : public QObject
 public:
     explicit RwaUtilities(QObject *parent = 0);
     static bool checkDataType(QString fullpath);
+    static QString getFileBaseName(QString fullpath);
     static QString getFileName(QString fullpath);
     static QString getPath(QString fullpath);
     static QString getDataType(QString fullpath);
@@ -47,6 +48,7 @@ public:
     static void copyLocationCoordinates2Clipboard(QPointF location);
     static void calculatePolygonOffset1(double offset, QVector<QPointF> *corners, QVector<QPointF> *offsetCorners);
     static double calculateDistance1(std::vector<double> p1, std::vector<double> p2);
+    static int32_t calculateDistanceInMeters(std::vector<double> p1, std::vector<double> p2);
     static std::vector<double> calculateDestination1(std::vector<double> coordinates, double radius, double bearingInDegrees);
     static std::string getFileName(std::string fullpath);
     static double calculateBearing1(std::vector<double> p1, std::vector<double> p2);
@@ -59,6 +61,7 @@ public:
     static bool coordinateWithinPolygon3(std::vector<double> p, std::vector<std::vector<double> > &corners);
     static void debug2Terminal(const std::string file, const std::string func, int32_t line, const std::string message);
     static bool coordinateWithinRectangle1(std::vector<double> p, std::vector<double> corner1, std::vector<double> corner2);
+
 };
 
 #endif // RWAUTILITIES_H

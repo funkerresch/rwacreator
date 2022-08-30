@@ -584,6 +584,9 @@ void RwaCreator::saveAgainForMobileClient()
 
 void RwaCreator::saveForMobileClient()
 {
+    exportZip();
+    return;
+
     qint32 flags = 0;
     flags |= RWAEXPORT_COPYASSETS
            | RWAEXPORT_EXPORTFORMOBILECLIENT;
@@ -601,11 +604,72 @@ void RwaCreator::saveForMobileClient()
 
     qDebug();
     prepareWrite(fullpath, flags);
-    write("Exported for mobile Client", flags, oldAssetPath);
+//    write("Exported for mobile Client", flags, oldAssetPath);
     backend->completeClientExportPath = fullpath;
     backend->completeAssetPath = oldAssetPath;
     backend->completeFilePath = oldFilePath;
     backend->completeProjectPath = oldProjectPath;
+
+    QString zipGame = QString("zip -r -X /Users/harveykeitel/RWACreator/Games/newZion.zip /Users/harveykeitel/RWACreator/Games/newZion");
+    FILE* pipe = popen(zipGame.toStdString().c_str(), "w");
+    if (!pipe)
+    {
+       qDebug() << "Could not zip";
+       return;
+    }
+}
+
+void RwaCreator::exportZip()
+{
+    qint32 flags = 0;
+    flags |= RWAEXPORT_COPYASSETS
+           | RWAEXPORT_EXPORTFORMOBILECLIENT;
+
+    QString oldFilePath = backend->completeFilePath;
+    QString oldProjectPath = backend->completeProjectPath;
+    QString oldAssetPath = backend->completeAssetPath;
+
+    QString directory = QString("%1%2").arg(QDir::homePath()).arg("/RWACreator/Games");
+    if(!QDir(directory).exists())
+        QDir().mkdir(directory);
+
+    QString fileName = RwaUtilities::getFileName(backend->completeFilePath);
+    QString baseName = RwaUtilities::getFileBaseName(backend->completeFilePath);
+    QString fullpath = directory +"/"+fileName;
+    QString fullDirectory = directory +"/"+baseName;
+
+    QDir dir = QDir(fullDirectory);
+    if(dir.exists())
+        dir.removeRecursively();
+
+    prepareWrite(fullpath, flags);
+    write("Export zip for RWA Server", flags, oldAssetPath);
+
+    backend->completeAssetPath = oldAssetPath;
+    backend->completeFilePath = oldFilePath;
+    backend->completeProjectPath = oldProjectPath;
+
+    QFile zipFile(fullDirectory+".zip");
+    if(zipFile.exists())
+        zipFile.remove();
+
+    QString zipGame = QString("cd %1 && zip -r -X %2.zip %3").arg(directory).arg(baseName).arg(baseName);
+    FILE* pipe = popen(zipGame.toStdString().c_str(), "w");
+    if (!pipe)
+    {
+       qDebug() << "Could not zip";
+       return;
+    }
+
+    while(pclose(pipe) != -1)
+        ;
+
+    dir.removeRecursively();
+    QString initFolder = QString("%1%2").arg(QDir::homePath()).arg("/RWACreator");
+    QString createList = QString("cd %1 && ./createfilelist.sh").arg(initFolder);
+    pipe = popen(createList.toStdString().c_str(), "w");
+    while(pclose(pipe) != -1)
+        ;
 }
 
 void RwaCreator::exportProject()

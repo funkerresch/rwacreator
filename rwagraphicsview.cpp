@@ -115,8 +115,13 @@ void RwaGraphicsView::setCurrentState(RwaState *state)
     if(assetsVisible)
         redrawAssets();
 
-    if(stateRadiusVisible)
+    if(stateRadiusVisible && onlyRadiiOfCurrentStateVisible)
+        redrawRadiusOfCurrentState();
+
+    if(stateRadiusVisible && !onlyRadiiOfCurrentStateVisible)
         redrawStateRadii();
+
+
 }
 
 void RwaGraphicsView::setCurrentAsset(RwaAsset1 *asset)
@@ -126,7 +131,7 @@ void RwaGraphicsView::setCurrentAsset(RwaAsset1 *asset)
 
     RwaView::setCurrentAsset(asset);
 
-    //redrawAssets();
+   // redrawAssets();
 
     updateAssetPixmaps();
     updateReflectionPixmaps();
@@ -405,17 +410,13 @@ void RwaGraphicsView::updateAssetPixmaps()
 
 void RwaGraphicsView::updateReflectionPixmaps()
 {
-    assetReflectionLayer->clearGeometries();
-
     for (int i=0; i<assetReflectionLayer->geometries.count(); i++)
     {
         RwaMapItem *point;       
         point = static_cast<RwaMapItem *>(assetReflectionLayer->geometries.at(i));
         RwaAsset1 *asset = static_cast<RwaAsset1 *>(point->data);
-//        qDebug() << QString::fromStdString(asset->objectName());
-//        qDebug() << QString::fromStdString(currentAsset->objectName());
 
- //       if(currentAsset == asset)
+        if(currentAsset == asset)
         {
             if(point->getRwaType() == RWAPOSITIONTYPE_REFLECTIONPOSITION)
             {
@@ -424,11 +425,13 @@ void RwaGraphicsView::updateReflectionPixmaps()
                 else
                     point->setPixmap(assetReflectionLayer->getPassivePixmap());
             }
+            point->setVisible(true);
         }
+        else
+            point->setVisible(false);
     }
 
-    if(assetReflectionLayer->isVisible())
-        assetReflectionLayer->setVisible(true);
+    assetReflectionLayer->updateRequest();
 }
 
 void RwaGraphicsView::updateStatePixmaps()
@@ -511,7 +514,6 @@ void RwaGraphicsView::updatePixmaps(QmapPoint *active, GeometryLayer *layer)
             lineEdit = point->lineEdit();
             point->setLineEditVisible(false);
             point->setLabelVisible(true);
-
         }
     }
 }
@@ -521,40 +523,34 @@ void RwaGraphicsView::resizeArea(QPointF myPoint, RwaArea *currentArea)
     std::vector<double> myPoint1(2, 0.0);
     myPoint1[0] = myPoint.x();
     myPoint1[1] = myPoint.y();
-    double newRadius = RwaUtilities::calculateDistance1(currentArea->getCoordinates(), myPoint1);
+    int32_t newRadius = RwaUtilities::calculateDistanceInMeters(currentArea->getCoordinates(), myPoint1);
     std::vector<double> tmp = currentArea->getCoordinates();
     tmp[1] = (myPoint.y());
-    double newWidth = RwaUtilities::calculateDistance1(tmp, myPoint1);
+    int32_t newWidth = RwaUtilities::calculateDistanceInMeters(tmp, myPoint1);
     tmp = currentArea->getCoordinates();
     tmp[0] = (myPoint.x());
-    double newHeight = RwaUtilities::calculateDistance1(tmp, myPoint1);
+    int32_t newHeight = RwaUtilities::calculateDistanceInMeters(tmp, myPoint1);
 
     if(editAreaRadius)
-    {
-        currentArea->setRadius(newRadius*1000);
-    }
+        currentArea->setRadius(newRadius);
 
     if( (editAreaWidth) && (currentArea->getAreaType() == RWAAREATYPE_SQUARE) )
     {
-        currentArea->setWidth(newWidth*2000);
-        currentArea->setHeight(newWidth*2000);
+        currentArea->setWidth(newWidth*2);
+        currentArea->setHeight(newWidth*2);
     }
 
     if( (editAreaHeight) && (currentArea->getAreaType() == RWAAREATYPE_SQUARE) )
     {
-        currentArea->setWidth(newHeight*2000);
-        currentArea->setHeight(newHeight*2000);
+        currentArea->setWidth(newHeight*2);
+        currentArea->setHeight(newHeight*2);
     }
 
     if( editAreaWidth && (currentArea->getAreaType() == RWAAREATYPE_RECTANGLE) )
-    {
-        currentArea->setWidth(newWidth*2000);
-    }
+        currentArea->setWidth(newWidth*2);
 
     if( editAreaHeight && (currentArea->getAreaType() == RWAAREATYPE_RECTANGLE) )
-    {
-        currentArea->setHeight(newHeight*2000);
-    }
+        currentArea->setHeight(newHeight*2);
 
     if( editAreaCorner && (currentArea->getAreaType() == RWAAREATYPE_POLYGON) )
     {
@@ -926,7 +922,7 @@ void RwaGraphicsView::drawAsset(RwaAsset1 *item, bool isActive)
         }
     }
 
-    if((item->getPlaybackType() == RWAPLAYBACKTYPE_BINAURALSPACE) && isActive)
+    if((item->getPlaybackType() == RWAPLAYBACKTYPE_BINAURALSPACE) && assetReflectionsVisible)
     {
         for(int i = 0;i < item->getReflectionCount(); i++)
         {
@@ -936,6 +932,11 @@ void RwaGraphicsView::drawAsset(RwaAsset1 *item, bool isActive)
                 mapItem = new RwaMapItem(QPointF(item->reflectioncoordinates[i][0], item->reflectioncoordinates[i][1]), item, RWAPOSITIONTYPE_REFLECTIONPOSITION, assetReflectionLayer->getPassivePixmap(), i);
 
             assetReflectionLayer->addGeometry(mapItem);
+
+            if(isActive)
+                mapItem->setVisible(true);
+            else
+                mapItem->setVisible(false);
         }
     }
 }
@@ -1048,7 +1049,7 @@ void RwaGraphicsView::resizeSceneRadii()
 {
     for (int j=0; j<sceneRadiusLayer->geometries.count(); j++)
     {
-        QmapPoint *point1 = (QmapPoint *)statesLayer->geometries.at(j);
+        QmapPoint *point1 = static_cast<QmapPoint *>(statesLayer->geometries.at(j));
         point1->setVisible(true);
     }
 }
@@ -1058,7 +1059,6 @@ void RwaGraphicsView::redrawSceneRadii()
     sceneRadiusLayer->clearGeometries();
     RwaScene *scene;
     int currentLevel = currentScene->getLevel();
-    qDebug();
     foreach (scene, backend->getScenes())
     {
          if(scene->getLevel() == currentLevel)

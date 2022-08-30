@@ -108,6 +108,7 @@ protected:
     bool entityLineEditVisible = false;
     bool assetLineEditVisible = false;
     bool onlyAssetsOfCurrentStateVisible = false;
+    bool onlyRadiiOfCurrentStateVisible = false;
     bool entityVisible = false;
     bool statesVisible = false;
     bool scenesVisible = false;
@@ -126,7 +127,7 @@ protected:
     bool editStateArea = false;
     bool editSceneArea = false;
 
-    int areaCornerIndex2Edit = false;
+    u_int64_t areaCornerIndex2Edit = false;
     QString tmpObjectName;
     RwaState *tmpState = nullptr;
 
@@ -142,7 +143,7 @@ signals:
     void sendMoveCurrentScene();
     void sendMoveCurrentState();
     void sendMoveCurrentState1(double dx, double dy);
-    void sendMoveCurrentAsset1(double dx, double dy);
+    void sendMovePixmapsOfCurrentAsset1(double dx, double dy);
     void sendMoveCurrentAssetChannel(double dx, double dy, int channel);
     void sendMoveCurrentAssetReflection(double dx, double dy, int reflectionNumber);
     void sendMoveCurrentAsset();

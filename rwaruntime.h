@@ -66,18 +66,18 @@ RwaRuntime(QObject *parent, const char *pdpath, const char *assetPath, float sam
 
     bool step = false;
 
-    static pdPatcher binauralStereoPatchers_fabian[RWARUNTIME_MAXNUMBEROFPATCHERS];
+    static pdPatcher binauralStereoPatchers_fabian[RWARUNTIME_MAXNUMBEROFPATCHERS];   
+    static pdPatcher binauralStereoPatchersOgg_fabian[RWARUNTIME_MAXNUMBEROFPATCHERS];
     static pdPatcher binauralMonoPatchers_fabian[RWARUNTIME_MAXNUMBEROFPATCHERS];
+    static pdPatcher binauralMonoPatchersOgg_fabian[RWARUNTIME_MAXNUMBEROFPATCHERS];
     static pdPatcher binaural5channelPatchers_fabian[RWARUNTIME_MAXNUMBEROF5CHANNELPATCHERS];
     static pdPatcher binaural7channelPatchers_fabian[RWARUNTIME_MAXNUMBEROF7CHANNELPATCHERS];
     static pdPatcher stereoPatchers[RWARUNTIME_MAXNUMBEROFPATCHERS];
+    static pdPatcher stereoPatchersOgg[RWARUNTIME_MAXNUMBEROFPATCHERS];
     static pdPatcher monoPatchers[RWARUNTIME_MAXNUMBEROFPATCHERS];
+    static pdPatcher monoPatchersOgg[RWARUNTIME_MAXNUMBEROFPATCHERS];
 
     static std::list<pdPatcher *> dynamicPatchers1;
-
-    static float assetChannelCount;
-    static float assetDuration;
-    static float assetSampleRate;
 
     static void printpd(const char *s);
     static void bangpdHelp(int32_t patcherTag, std::map<string, RwaEntity::AssetMapItem> &assetItemMap);
@@ -89,20 +89,28 @@ RwaRuntime(QObject *parent, const char *pdpath, const char *assetPath, float sam
     static int32_t getBinauralStereoFabianPatcherIndex(int32_t patcherTag);
     static int32_t getBinaural5channelFabianPatcherIndex(int32_t patcherTag);
     static int32_t getBinaural7channelFabianPatcherIndex(int32_t patcherTag);
+    static int32_t getBinauralMonoFabianOggPatcherIndex(int32_t patcherTag);
+    static int32_t getBinauralStereoFabianOggPatcherIndex(int32_t patcherTag);
 
+    static int32_t getStereoPatcherOggIndex(int32_t patcherTag);
     static int32_t getStereoPatcherIndex(int32_t patcherTag);
     static int32_t getMonoPatcherIndex(int32_t patcherTag);
+    static int32_t getMonoPatcherOggIndex(int32_t patcherTag);
     static int32_t getDynamicPatcherIndex(int32_t patcherTag);
 
     void initDynamicPdPatchers(RwaEntity *entitiy);
     void freeDynamicPdPatchers1();
     void *findFreeDynamicPatcher(RwaAsset1 *asset);
     void *findFreeBinauralMonoFabianPatcher();
+    void *findFreeBinauralMonoFabianOggPatcher();
     void *findFreeBinauralStereoFabianPatcher();
+    void *findFreeBinauralStereoFabianOggPatcher();
     void *findFreeBinaural5channelFabianPatcher();
     void *findFreeBinaural7channelFabianPatcher();
     void *findFreeStereoPatcher();
+    void *findFreeStereoOggPatcher();
     void *findFreeMonoPatcher();
+    void *findFreeMonoOggPatcher();
     void freeAllPatchers();
     void endBackgroundState();
 
@@ -130,7 +138,10 @@ RwaRuntime(QObject *parent, const char *pdpath, const char *assetPath, float sam
     void startBackgroundState(RwaEntity *entity);
 
     void createAndBindPlayFinishedReceiver(pdPatcher *patcher);
-    void openFile4MetaData(const char *fileName);
+
+
+
+
 
 signals:
     void sendRedrawAssets();

@@ -27,6 +27,7 @@ RwaSimulator::RwaSimulator(QObject *parent, RwaBackend *backend) :
     gameLoopTimer->setInterval(getSchedulerRate());
     oscServer = new QOscServer(8000, nullptr);
     registerPath = new PathObject("/register", QVariant::List, oscServer);
+    downloadGamesPath = new PathObject("/download", QVariant::List, oscServer);
     headTracker = RwaHeadtrackerConnect::getInstance();
 
     connect (this, SIGNAL(sendSelectedScene(RwaScene *)),
@@ -72,6 +73,7 @@ RwaSimulator::RwaSimulator(QObject *parent, RwaBackend *backend) :
                  this, SLOT(receiveRedrawAssetsFromRuntime()));
 
     QObject::connect(registerPath, SIGNAL(data(QVariant) ), this, SLOT( receiveRegisterMessage(QVariant)) );
+    //QObject::connect(downloadGamesPath, SIGNAL(data(QVariant) ), this, SLOT( receiveDownloadMessage(QVariant)) );
 
     setMainVolume(1.0);
 }
@@ -129,6 +131,18 @@ void RwaSimulator::receiveRegisterMessage(QVariant data)
     qDebug() << "Registered iOS Client " << newDevice->ip;
     devices.append(newDevice);
     devicesRegistered = true;
+}
+
+void RwaSimulator::receiveDownloadMessage(QVariant data)
+{
+    qDebug() << "Start Download GAMES";
+    int onOff = data.toList().at(1).toInt();
+    qDebug() << "OnOff: " << onOff;
+    if(onOff)
+    {
+        qDebug() << "Start Server";
+        backend->StartHttpServer1(8088);
+    }
 }
 
 void RwaSimulator::initGandalf()

@@ -1,5 +1,7 @@
 #include <QtWidgets>
 #include "rwaimport.h"
+#include <tag.h>
+#include <fileref.h>
 
 RwaImport::RwaImport(QList<RwaScene *> *scenes, QString projectPath)
 {
@@ -583,6 +585,8 @@ void RwaImport::readAssets()
     float dampingMax = 1;
     double lon;
     double lat;
+    int channels = 0;
+    int length = 0;
 
     while (!xml.atEnd())
     {
@@ -648,24 +652,29 @@ void RwaImport::readAssets()
                 if(xml.attributes().hasAttribute("alwaysplayfrombeginning"))
                     item->setAlwaysPlayFromBeginning(xml.attributes().value("alwaysplayfrombeginning").toInt());
 
-                if(xml.attributes().hasAttribute("channelcount"))
-                    item->setNumberOfChannels(xml.attributes().value("channelcount").toInt());
                 if(xml.attributes().hasAttribute("individualchannelpositions"))
                     item->allowIndividuellChannelPositions = (xml.attributes().value("individualchannelpositions").toInt());
-                else
+
+                if(type != RWAASSETTYPE_PD)
                 {
-                    if(type != RWAASSETTYPE_PD)
+                    TagLib::FileRef f(path.toStdString().c_str());
+
+                    if(!f.isNull() && f.audioProperties())
                     {
-                        backend->simulator->runtime->openFile4MetaData(path.toLatin1());
-                        item->setNumberOfChannels(RwaRuntime::assetChannelCount);
+                        channels = f.audioProperties()->channels();
+                        length = f.audioProperties()->lengthInMilliseconds();
                     }
                 }
+
+                if(xml.attributes().hasAttribute("channelcount"))
+                    item->setNumberOfChannels(channels);
+
+                if(xml.attributes().hasAttribute("duration"))
+                    item->setDuration(length);
 
                 item->setFadeInTime(xml.attributes().value("fadein").toInt());
                 item->setFadeOutTime(xml.attributes().value("fadeout").toInt());
                 item->setCrossfadeTime(xml.attributes().value("crossfadetime").toInt());
-                item->setDuration(xml.attributes().value("duration").toInt());
-
                 item->setLoop(xml.attributes().value("loop").toInt());
                 item->setMute(xml.attributes().value("mute").toInt());
                 item->setHeadtrackerRelative2Source(xml.attributes().value("headtrackerrelative2source").toInt());

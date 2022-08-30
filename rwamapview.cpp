@@ -18,6 +18,7 @@ RwaMapView::RwaMapView(QWidget* parent, RwaScene *scene, QString name)
     assetsVisible = false;
     stateRadiusVisible = false;
     assetStartPointsVisible = false;
+    assetReflectionsVisible = false;
     sceneRadiusVisible = true;
     statesVisible = true;
     scenesVisible = true;
@@ -56,8 +57,8 @@ RwaMapView::RwaMapView(QWidget* parent, RwaScene *scene, QString name)
     connect(this, SIGNAL(sendStateCoordinate(QPointF)),
               backend, SLOT(receiveStatePosition(QPointF)));
 
-    connect(this, SIGNAL(sendStartStopSimulator(bool)),
-              backend, SLOT(startStopSimulator(bool)));
+//    connect(this, SIGNAL(sendStartStopSimulator(bool)),
+//              backend, SLOT(startStopSimulator(bool)));
 
     connect(this, SIGNAL(sendCurrentState(RwaState*)),
               backend, SLOT(receiveLastTouchedState(RwaState*)));
@@ -74,13 +75,13 @@ RwaMapView::RwaMapView(QWidget* parent, RwaScene *scene, QString name)
     connect(this, SIGNAL(sendSelectedStates(QStringList)),
               backend, SLOT(receiveSelectedStates(QStringList)));
 
-    connect(backend, SIGNAL(sendMoveCurrentAsset1(double, double)),
+    connect(backend, SIGNAL(sendMovePixmapsOfCurrentAsset1(double, double)),
               this, SLOT(movePixmapsOfCurrentAsset(double,double)));
 
     connect(backend, SIGNAL(updateScene(RwaScene *)),
               this, SLOT(setCurrentScene(RwaScene *)));
 
-    connect(backend, SIGNAL(sendMoveCurrentState1(double, double)),
+    connect(backend, SIGNAL(sendMovePixmapsOfCurrentState1(double, double)),
               this, SLOT(movePixmapsOfCurrentState(double,double)));
 
     connect(backend, SIGNAL(sendMoveCurrentAssetChannel(double, double, int)),
@@ -616,11 +617,10 @@ void RwaMapView::receiveUpdateCurrentSceneRadius()
 
 void RwaMapView::setCurrentAsset(RwaAsset1 *asset)
 {
-    if(asset)
-    {
-        currentAsset = asset;
-        updateAssetPixmaps();
-    }
+    if(!asset)
+        return;
+
+    RwaGraphicsView::setCurrentAsset(asset);
 }
 
 void RwaMapView::setCurrentState(qint32 stateNumber)

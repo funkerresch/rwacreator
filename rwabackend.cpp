@@ -1,6 +1,36 @@
 #include "rwabackend.h"
 
+#include <QThread>
+
 RwaBackend *RwaBackend::instance = nullptr;
+
+/**
+ * ****************************** Game Server ******************************
+ *
+ * The Game Server is a static httplib server for downloading games from the client.
+ * It is started manually from the creator application.
+ *
+ */
+
+RwaGamesServer::RwaGamesServer(httplib::Server *svr, int port)
+{
+    this->svr = svr;
+    this->port = port;
+}
+
+void RwaGamesServer::process()
+{
+    using namespace httplib;
+    auto ret = svr->set_mount_point("/", "/Users/harveykeitel/RWACreator/Games");
+
+    if (!ret) {
+        qDebug() << "Directory does not exist!";
+    }
+    else
+        qDebug() << "Started static file server!";
+
+    svr->listen("0.0.0.0", port);
+}
 
 RwaBackend *RwaBackend::getInstance()
 {
@@ -10,13 +40,37 @@ RwaBackend *RwaBackend::getInstance()
     return RwaBackend::instance;
 }
 
+void RwaBackend::StartHttpServer1(qint32 port)
+{
+    serverThread = new QThread();
+    serverThread->setObjectName("RWA Listener");
+    RwaGamesServer* worker = new RwaGamesServer(&svr, port);
+    worker->moveToThread(serverThread);
+    connect( serverThread, &QThread::started, worker, &RwaGamesServer::process);
+    connect( serverThread, &QThread::finished, worker, &QObject::deleteLater);
+    serverThread->start();
+}
+
+void RwaBackend::StopHttpServer1()
+{
+    qDebug() << "Try Stopping";
+    svr.stop(); // according to documentation this should be thread-safe and the only possibility to stop listening
+    serverThread->quit();
+    serverThread->wait();
+}
+
+/** The Python server was used for debugging purposes, might be useful again. */
+
 void RwaBackend::StartHttpServer(qint32 port)
 {
     char buffer[20];
     QString httpServerStart = QString("python3 -m http.server %1 --directory /Users/harveykeitel/RWACreator/Games & echo $!").arg(port);
     FILE* pipe = popen(httpServerStart.toStdString().c_str(), "r");
     if (!pipe)
-       qDebug() << "Could not create http server";
+    {
+       qDebug() << "Could not start http server";
+       return;
+    }
 
     if (fgets(buffer, 128, pipe) != nullptr)
         httpProcessId = getNumberFromQString(QString(buffer));
@@ -30,8 +84,6 @@ RwaBackend::RwaBackend(QWidget *parent) :
     CFURLRef url = (CFURLRef)CFAutorelease((CFURLRef)CFBundleCopyBundleURL(CFBundleGetMainBundle()));
     QString path = QUrl::fromCFURL(url).path();
     httpProcessId = -1;
-    //StartHttpServer(8088);
-
     completeBundlePath = path + "Contents/MacOS/";
     completeProjectPath = QString();
     completeFilePath = QString();
@@ -43,7 +95,6 @@ RwaBackend::RwaBackend(QWidget *parent) :
     simulator = new RwaSimulator(this, this);
     headtracker = RwaHeadtrackerConnect::getInstance();
     clipboardStates = new RwaScene(std::string("ClipboardScene"), std::vector<double>(2, 0.0), 0);
-
     assetStringList = QStringList();
     appendScene();
 }
@@ -447,12 +498,12 @@ void RwaBackend::receiveStatePosition(QPointF position)
 
 void RwaBackend::receiveMoveCurrentState1(double dx, double dy)
 {
-    emit sendMoveCurrentState1(dx, dy);
+    emit sendMovePixmapsOfCurrentState1(dx, dy);
 }
 
 void RwaBackend::receiveMoveCurrentAsset1(double dx, double dy)
 {
-    emit sendMoveCurrentAsset1(dx, dy);
+    emit sendMovePixmapsOfCurrentAsset1(dx, dy);
 }
 
 void RwaBackend::receiveMoveCurrentAssetChannel(double dx, double dy, int channel)
@@ -485,6 +536,14 @@ void RwaBackend::receiveMoveCurrentScene()
 void RwaBackend::receiveTrashAssets(bool onOff)
 {
     trashAsset = onOff;
+}
+
+void RwaBackend::receiveActivateClientSync(bool onOff)
+{
+    if(onOff)
+        StartHttpServer1(8088);
+    else
+        StopHttpServer1();
 }
 
 void RwaBackend::receiveShowStateRadii(bool onOff)

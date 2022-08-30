@@ -60,6 +60,7 @@ public:
 
     PathObject *registerPath;
     PathObject *coordinatesPath;
+    PathObject *downloadGamesPath;
 
     qint32 getSchedulerRate() const;
     void setSchedulerRate(const qint32 &value);
@@ -91,6 +92,7 @@ public slots:
     void clearGame();
     void setCurrentScene(RwaScene *scene);
     void receiveRegisterMessage(QVariant data);
+    void receiveDownloadMessage(QVariant data);
     void receiveAzimuth(float azimuth);
     void receiveElevation(float elevation);
     void receiveZ(float Z);
@@ -100,6 +102,7 @@ public slots:
     void receiveStep();
 
     void receiveUndoGameLoaded();
+
 private:
     qint32 schedulerFrequency;
 

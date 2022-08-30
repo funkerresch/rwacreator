@@ -10,18 +10,21 @@
 * The RwaCreator class is the main window. On startup, it loads all views/editors.
 * It is also responsible for all File I/O.
 *
+*
+*
+*
 * ToDo next:
 *
-* Remove all direct setCurrentState(), setCurrentScene() calls from all views. Instead use
-* sendLastTouchedScene() etc..
 *
 * Make select states in Map GUI working
 *
 * Clean up RwaImport & RwaExport
 *
-* Reflection GUI -> Render only current Asset
+* Add taglib again for reading and writing sound file length etc..
 *
+* Renaming assets and assets with same name in same state need a solution
 *
+* Toolbar in Stateview ??
 *
 */
 
@@ -132,6 +135,7 @@ public slots:
     void selectInputDevice(qint32 index);
     void readUndoFile(QString name);
 
+    void exportZip();
 signals:
     void sendReadNewGame();
 

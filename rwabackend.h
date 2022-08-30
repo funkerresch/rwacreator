@@ -17,8 +17,6 @@
 *
 */
 
-
-
 #ifndef AFXSCENEBACKEND_H
 #define AFXSCENEBACKEND_H
 
@@ -29,11 +27,30 @@
 #include "rwaentity.h"
 #include "rwasimulator.h"
 #include "bluetooth/device.h"
+#include "httplib.h"
 
 #define RWATOOL_ARROW 1
 #define RWATOOL_PEN 2
 #define RWATOOL_RUBBER 3
 #define RWATOOL_MARKEE 4
+
+/** ************************************** Game Server ********************************************** */
+
+class RwaGamesServer : public QObject {
+    Q_OBJECT
+public:
+    RwaGamesServer(httplib::Server *svr, int port);
+    ~RwaGamesServer();
+
+public slots:
+    void process();
+
+private:
+    httplib::Server *svr; // Reference is passed from backend in order to call stop() from main thread
+    int port;
+};
+
+/** **************************************Rwa Backend ********************************************** */
 
 class RwaBackend : public QTextEdit
 {
@@ -45,7 +62,10 @@ public:
     ~RwaBackend();
     static RwaBackend *instance;
     static RwaBackend *getInstance();
+
+    httplib::Server svr;
     void StartHttpServer(qint32 port);
+    void StartHttpServer1(qint32 port);
 
     RwaSimulator *simulator;
     QString projectName;
@@ -87,8 +107,11 @@ private:
     RwaEntity *lastTouchedEntity = nullptr;
     RwaAsset1 *lastTouchedAssetItem = nullptr;
     RwaHeadtrackerConnect *headtracker = nullptr;
+    QThread *serverThread = nullptr;
 
     void updateLastTouchedSceneStateAndAsset();
+
+    void StopHttpServer1();
 public slots:
 
     /** *********************************Undo read and write********************************************** */
@@ -156,6 +179,7 @@ public slots:
     /** ************************* Editor Global Rendering/Functionality ***************************** */
 
     void receiveTrashAssets(bool onOff);
+    void receiveActivateClientSync(bool onOff);
     void receiveShowStateRadii(bool onOff);
     void receiveShowAssets(bool onOff);
     void receiveHeroFollowsSceneAndState(bool onOff);
@@ -255,8 +279,8 @@ signals:
     void sendClearAll();
     void sendNewAsset(RwaState *state, RwaAsset1 *item);
     void sendMoveCurrentScene();
-    void sendMoveCurrentState1(double dx, double dy);
-    void sendMoveCurrentAsset1(double dx, double dy);
+    void sendMovePixmapsOfCurrentState1(double dx, double dy);
+    void sendMovePixmapsOfCurrentAsset1(double dx, double dy);
     void sendMoveCurrentAssetChannel(double dx, double dy, int channel);
     void sendMoveCurrentAssetReflection(double dx, double dy, int channel);
     void sendCurrentStateRadiusEdited();
@@ -268,6 +292,7 @@ signals:
     void sendRedrawAssets();
     void sendEntityPosition(vector<double> position);
     void sendStatePosition(QPointF position);
+    void stopServer(int i);
 };
 
 #endif

@@ -105,6 +105,7 @@ private:
     QToolButton *scanSerialPortsButton = nullptr;
     QToolButton *calibrateHeadtrackerButton = nullptr;
     QToolButton *simulateHeadtrackerStepButton = nullptr;
+    QToolButton *activateClientSyncButton = nullptr;
     QToolButton *heroFollowsSceneAndStateButton = nullptr;
     QToolButton *trashAssetsButton = nullptr;
     QToolButton *startSimulatorButton = nullptr;
@@ -153,6 +154,7 @@ signals:
     void sendStartStopSimulator(bool startStopSimulator);
     void sendCalibrateHeadtracker();
     void sendSimulateHeadtrackerStep();
+    void sendActivateClientSync(bool onOff);
     void sendScanSerialPorts();
     void sendWriteUndo();
     void sendWriteUndo(QString undoAction);
@@ -195,6 +197,7 @@ private slots:
     void moveScene2NewLocation();
     void showFindPlacesDialog();
     void receiveSendHeadtrackerStep(bool onOff);
+    void receiveActivateClientSync(bool onOff);
     void receiveHeroFollowsSceneAndState(bool onOff);
 };
 

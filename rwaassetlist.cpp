@@ -20,6 +20,7 @@ void RwaAssetList::ListWidgetEditEnd(QWidget *editor, QAbstractItemDelegate::End
 {
     (void) hint;
     QString newName = reinterpret_cast<QLineEdit*>(editor)->text();
+
     if(currentAsset->objectName() != newName.toStdString())
     {
         QString path = backend->completeAssetPath;
@@ -29,7 +30,9 @@ void RwaAssetList::ListWidgetEditEnd(QWidget *editor, QAbstractItemDelegate::End
         tmp = newFullPath.split(".");
         QString end = tmp.last();
 
-        if(end != newEnd)
+        if(end != newEnd) // don't allow changes to filetype, not really save but..
+            currentItem()->setText(QString::fromStdString(currentAsset->getFileName()));
+        else if(backend->fileUsedByAnotherAsset(currentAsset))
             currentItem()->setText(QString::fromStdString(currentAsset->getFileName()));
         else
         {
@@ -37,7 +40,6 @@ void RwaAssetList::ListWidgetEditEnd(QWidget *editor, QAbstractItemDelegate::End
             currentAsset->setObjectName(newName.toStdString());
             currentAsset->setFullPath(newFullPath.toStdString());
             currentAsset->setFileName(newName.toStdString());
-
             emit sendCurrentState(currentState);
         }
     }
@@ -96,21 +98,15 @@ void RwaAssetList::setCurrentAsset(RwaAsset1 *asset)
     if(!asset)
         return;
 
-    if(!(QObject::sender() == this->backend))
-        emit sendCurrentAsset(asset);
+    QList<QListWidgetItem *> items = findItems(QString::fromStdString(asset->getFileName()), Qt::MatchExactly);
 
-    else
+    if(!items.empty())
     {
-        QList<QListWidgetItem *> items = findItems(QString::fromStdString(asset->getFileName()), Qt::MatchExactly);
-
-        if(!items.empty())
-        {
-            currentAsset = asset;
-            setCurrentItem(items.at(0));
-            int row = QListWidget::row(currentItem());
-            setCurrentRow(row);
-            emit sendSelectedAssets( getSelectedAssets() );
-        }
+        currentAsset = asset;
+        setCurrentItem(items.at(0));
+        int row = QListWidget::row(currentItem());
+        setCurrentRow(row);
+        emit sendSelectedAssets( getSelectedAssets() );
     }
 }
 
@@ -119,7 +115,7 @@ void RwaAssetList::setCurrentAssetFromCurrentItem()
     if(currentItem())
     {
         RwaAsset1 *asset = currentState->getAsset(currentItem()->text().toStdString());
-        setCurrentAsset(asset);
+        emit sendCurrentAsset(asset);
     }
 }
 
@@ -216,6 +212,16 @@ void RwaAssetList::add2ListAndCopy(QString fullpath)
         if(!fileExists)
             QFile::copy(strippedPath, fullAssetPath);
         emit newAsset(fullAssetPath, RWAASSETTYPE_AIF);
+    }
+
+    else if(!info.completeSuffix().compare("ogg") )
+    {
+        QListWidgetItem *item = new QListWidgetItem(RwaUtilities::getFileName(fullAssetPath), this);
+        item->setFlags( item->flags() | Qt::ItemIsEditable );
+        addItem(item);
+        if(!fileExists)
+            QFile::copy(strippedPath, fullAssetPath);
+        emit newAsset(fullAssetPath, RWAASSETTYPE_OGG);
     }
 
     else

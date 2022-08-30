@@ -89,7 +89,6 @@ void RwaAttributeView::setLineEditSignal2editingFinished(QLineEdit *attrLineEdit
 
 QComboBox *RwaAttributeView::addComboBoxAndLabel(QGridLayout *layout, QString name, QStringList values)
 {
-
     QComboBox *attrComboBox = new QComboBox(this);
     attrComboBox->setObjectName(name);
     QLabel *attrLabel = new QLabel(name, this);

@@ -52,6 +52,7 @@ RwaViewToolbar::RwaViewToolbar(const QString &title, qint32 flags, RwaBackend *b
         connect (this, SIGNAL(sendTrashAssets(bool)), backend, SLOT(receiveTrashAssets(bool)));
         connect (this, SIGNAL(sendHeroFollowsSceneAndState(bool)), backend, SLOT(receiveHeroFollowsSceneAndState(bool)));
         connect (this, SIGNAL(sendCalibrateHeadtracker()), backend, SLOT(calibrateHeadtracker()));
+        connect (this, SIGNAL(sendActivateClientSync(bool)), backend, SLOT(receiveActivateClientSync(bool)));
         connect (this, SIGNAL(sendSimulateHeadtrackerStep()), backend->simulator, SLOT(receiveStep()));
         initControls();
     }
@@ -367,6 +368,17 @@ void RwaViewToolbar::initControls()
     trashAssetsButton->setToolTip("On asset delete: keep/remove Assets on/from Disk.");
     addWidget(trashAssetsButton);
 
+    activateClientSyncButton = new QToolButton(this);
+    activateClientSyncButton->setCheckable(true);
+    activateClientSyncButton->setChecked(false);
+    connect (activateClientSyncButton, SIGNAL(clicked(bool)), this, SLOT(receiveActivateClientSync(bool)));
+    activateClientSyncButton->setObjectName("activateClientSyncButton");
+    activateClientSyncButton->setIcon(QIcon(path+"images/syncwithclients.png"));
+    activateClientSyncButton->setIconSize(QSize(20,20));
+    activateClientSyncButton->setFixedSize(QSize(20,20));
+    activateClientSyncButton->setToolTip("Activate File Server for downloading games from clients");
+    addWidget(activateClientSyncButton);
+
     findButton = new QToolButton(this);
     findButton->setCheckable(false);
     connect(findButton, SIGNAL(clicked(bool)), this, SLOT(showFindPlacesDialog()));
@@ -435,6 +447,12 @@ void RwaViewToolbar::receiveSendHeadtrackerStep(bool onOff)
 {
     simulateHeadtrackerStepButton->setChecked(false);
     emit sendSimulateHeadtrackerStep();
+}
+
+void RwaViewToolbar::receiveActivateClientSync(bool onOff)
+{
+    activateClientSyncButton->setChecked(onOff);
+    emit sendActivateClientSync(onOff);
 }
 
 void RwaViewToolbar::updateSelectSceneMenu()

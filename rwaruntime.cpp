@@ -6,16 +6,16 @@
 std::list <RwaEntity *> RwaRuntime::entities;
 bool RwaRuntime::debug;
 
-float RwaRuntime::assetDuration;
-float RwaRuntime::assetChannelCount;
-float RwaRuntime::assetSampleRate;
-
 pdPatcher RwaRuntime::binauralStereoPatchers_fabian[RWARUNTIME_MAXNUMBEROFPATCHERS];
+pdPatcher RwaRuntime::binauralStereoPatchersOgg_fabian[RWARUNTIME_MAXNUMBEROFPATCHERS];
 pdPatcher RwaRuntime::binauralMonoPatchers_fabian[RWARUNTIME_MAXNUMBEROFPATCHERS];
+pdPatcher RwaRuntime::binauralMonoPatchersOgg_fabian[RWARUNTIME_MAXNUMBEROFPATCHERS];
 pdPatcher RwaRuntime::binaural5channelPatchers_fabian[RWARUNTIME_MAXNUMBEROF5CHANNELPATCHERS];
 pdPatcher RwaRuntime::binaural7channelPatchers_fabian[RWARUNTIME_MAXNUMBEROF7CHANNELPATCHERS];
 pdPatcher RwaRuntime::stereoPatchers[RWARUNTIME_MAXNUMBEROFPATCHERS];
+pdPatcher RwaRuntime::stereoPatchersOgg[RWARUNTIME_MAXNUMBEROFPATCHERS];
 pdPatcher RwaRuntime::monoPatchers[RWARUNTIME_MAXNUMBEROFPATCHERS];
+pdPatcher RwaRuntime::monoPatchersOgg[RWARUNTIME_MAXNUMBEROFPATCHERS];
 
 std::list<pdPatcher *> RwaRuntime::dynamicPatchers1;
 RwaBackend *RwaRuntime::backend;
@@ -54,10 +54,6 @@ RwaRuntime::RwaRuntime(const char *pdpath, const char *assetPath, float sampleRa
     oggread_tilde_setup();
 
     libpd_openfile("stereoout.pd", pdpath);
-    libpd_openfile("rwagetmetadata.pd", pdpath);
-    libpd_bind("duration4metadata");
-    libpd_bind("channels4metadata");
-    libpd_bind("samplerate4metadata");
 
     for(uint32_t i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
     {
@@ -69,10 +65,26 @@ RwaRuntime::RwaRuntime(const char *pdpath, const char *assetPath, float sampleRa
 
     for(uint32_t i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
     {
+        void *d = libpd_openfile("rwaloopplayermonoogg.pd", pdpath);
+        monoPatchersOgg[i].patcherTag = d;
+        monoPatchersOgg[i].isBusy = false;
+        createAndBindPlayFinishedReceiver(&monoPatchersOgg[i]);
+    }
+
+    for(uint32_t i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
+    {
         void *d = libpd_openfile("rwaloopplayerstereo.pd", pdpath);
         stereoPatchers[i].patcherTag = d;
         stereoPatchers[i].isBusy = false;
         createAndBindPlayFinishedReceiver(&stereoPatchers[i]);
+    }
+
+    for(uint32_t i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
+    {
+        void *d = libpd_openfile("rwaloopplayerstereoogg.pd", pdpath);
+        stereoPatchersOgg[i].patcherTag = d;
+        stereoPatchersOgg[i].isBusy = false;
+        createAndBindPlayFinishedReceiver(&stereoPatchersOgg[i]);
     }
 
     for(uint32_t i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
@@ -91,6 +103,22 @@ RwaRuntime::RwaRuntime(const char *pdpath, const char *assetPath, float sampleRa
         createAndBindPlayFinishedReceiver(&binauralMonoPatchers_fabian[i]);
     }
 
+    for(uint32_t i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
+    {
+        void *d = libpd_openfile("rwaplayermonobinauralogg_fabian.pd", pdpath);
+        binauralMonoPatchersOgg_fabian[i].patcherTag = d;
+        binauralMonoPatchersOgg_fabian[i].isBusy = false;
+        createAndBindPlayFinishedReceiver(&binauralMonoPatchersOgg_fabian[i]);
+    }
+
+    for(uint32_t i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
+    {
+        void *d = libpd_openfile("rwaplayerstereobinauralogg_fabian.pd", pdpath);
+        binauralStereoPatchersOgg_fabian[i].patcherTag = d;
+        binauralStereoPatchersOgg_fabian[i].isBusy = false;
+        createAndBindPlayFinishedReceiver(&binauralStereoPatchersOgg_fabian[i]);
+    }
+
     for(uint32_t i=0; i<RWARUNTIME_MAXNUMBEROF5CHANNELPATCHERS; i++)
     {
         void *d = libpd_openfile("rwaplayer5_1channelbinaural_fabian.pd", pdpath);
@@ -106,23 +134,17 @@ RwaRuntime::RwaRuntime(const char *pdpath, const char *assetPath, float sampleRa
         binaural7channelPatchers_fabian[i].isBusy = false;
         createAndBindPlayFinishedReceiver(&binaural7channelPatchers_fabian[i]);
     }
+}
 
-    openFile4MetaData("unitclick.wav"); // first message gets lost somehow, sending an init dummy message
+extern "C" void *RwaRuntime_new(QObject *parent, const char *pdpath, const char *assetPath, float sampleRate, float schedulerRate, mutex *pdMutex, RwaBackend *_backend) // wrapper function
+{
+    RwaRuntime *runtime = new RwaRuntime(parent, pdpath, assetPath, sampleRate, schedulerRate, pdMutex, _backend);
+    return runtime;
 }
 
 RwaRuntime::~RwaRuntime()
 {
 
-}
-
-void RwaRuntime::openFile4MetaData(const char *fileName)
-{
-    pdMutex->lock();
-    libpd_symbol("filename4metadata", fileName);
-#ifdef INIT_LIBPD_QUEUED
-    libpd_queued_receive_pd_messages();
-#endif
-    pdMutex->unlock();
 }
 
 void RwaRuntime::createAndBindPlayFinishedReceiver(pdPatcher *patcher)
@@ -145,15 +167,6 @@ void RwaRuntime::floatpd(const char *source, float value)
 {
     if(!backend)
         return;
-
-     if(!strcmp(source, "duration4metadata"))
-        assetDuration = value;
-
-     if(!strcmp(source, "channels4metadata"))
-        assetChannelCount = value;
-
-     if(!strcmp(source, "samplerate4metadata"))
-        assetSampleRate = value;
 
      if(backend->logPd)
          qDebug() << source << " " << value;
@@ -181,6 +194,30 @@ void RwaRuntime::releasePatcherFromItem(RwaEntity::AssetMapItem item)
         pdPatcher *patcher = findDynamicPatcher(patcherTag);
         if(patcher != nullptr)
             patcher->isBusy = false;
+    }
+
+    else if(asset->type == RWAASSETTYPE_OGG)
+    {
+        switch(playbackType)
+        {
+            case RWAPLAYBACKTYPE_MONO:
+                monoPatchersOgg[getMonoPatcherOggIndex(patcherTag)].isBusy = false;
+                break;
+
+            case RWAPLAYBACKTYPE_STEREO:
+                stereoPatchersOgg[getStereoPatcherOggIndex(patcherTag)].isBusy = false;
+                break;
+
+            case RWAPLAYBACKTYPE_BINAURALMONO_FABIAN:
+                binauralMonoPatchersOgg_fabian[getBinauralMonoFabianOggPatcherIndex(patcherTag)].isBusy = false;
+                break;
+
+            case RWAPLAYBACKTYPE_BINAURALSTEREO_FABIAN:
+                binauralStereoPatchersOgg_fabian[getBinauralStereoFabianOggPatcherIndex(patcherTag)].isBusy = false;
+                break;
+
+            default: break;
+        }
     }
 
     else
@@ -312,11 +349,42 @@ int32_t RwaRuntime::getBinaural7channelFabianPatcherIndex(int32_t patcherTag)
     return RWARUNTIME_INVALIDPATCHERINDEX;
 }
 
+int32_t RwaRuntime::getBinauralMonoFabianOggPatcherIndex(int32_t patcherTag)
+{
+    for(int i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
+    {
+        if(libpd_getdollarzero(binauralMonoPatchersOgg_fabian[i].patcherTag) == patcherTag)
+            return i;
+    }
+    return RWARUNTIME_INVALIDPATCHERINDEX;
+}
+
+int32_t RwaRuntime::getBinauralStereoFabianOggPatcherIndex(int32_t patcherTag)
+{
+    for(int i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
+    {
+        if(libpd_getdollarzero(binauralStereoPatchersOgg_fabian[i].patcherTag) == patcherTag)
+            return i;
+    }
+    return RWARUNTIME_INVALIDPATCHERINDEX;
+}
+
+
 int32_t RwaRuntime::getBinauralMonoFabianPatcherIndex(int32_t patcherTag)
 {
     for(int i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
     {
         if(libpd_getdollarzero(binauralMonoPatchers_fabian[i].patcherTag) == patcherTag)
+            return i;
+    }
+    return RWARUNTIME_INVALIDPATCHERINDEX;
+}
+
+int32_t RwaRuntime::getStereoPatcherOggIndex(int32_t patcherTag)
+{
+    for(int i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
+    {
+        if(libpd_getdollarzero(stereoPatchersOgg[i].patcherTag) == patcherTag)
             return i;
     }
     return RWARUNTIME_INVALIDPATCHERINDEX;
@@ -337,6 +405,16 @@ int32_t RwaRuntime::getMonoPatcherIndex(int32_t patcherTag)
     for(int i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
     {
         if(libpd_getdollarzero(monoPatchers[i].patcherTag) == patcherTag)
+            return i;
+    }
+    return RWARUNTIME_INVALIDPATCHERINDEX;
+}
+
+int32_t RwaRuntime::getMonoPatcherOggIndex(int32_t patcherTag)
+{
+    for(int i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
+    {
+        if(libpd_getdollarzero(monoPatchersOgg[i].patcherTag) == patcherTag)
             return i;
     }
     return RWARUNTIME_INVALIDPATCHERINDEX;
@@ -520,9 +598,33 @@ void *RwaRuntime::findFreeBinauralMonoFabianPatcher()
         if(!binauralMonoPatchers_fabian[i].isBusy)
         {
             binauralMonoPatchers_fabian[i].isBusy = true;
-
             return binauralMonoPatchers_fabian[i].patcherTag;
+        }
+    }
+    return nullptr;
+}
 
+void *RwaRuntime::findFreeBinauralMonoFabianOggPatcher()
+{
+    for(int i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
+    {
+        if(!binauralMonoPatchersOgg_fabian[i].isBusy)
+        {
+            binauralMonoPatchersOgg_fabian[i].isBusy = true;
+            return binauralMonoPatchersOgg_fabian[i].patcherTag;
+        }
+    }
+    return nullptr;
+}
+
+void *RwaRuntime::findFreeBinauralStereoFabianOggPatcher()
+{
+    for(int i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
+    {
+        if(!binauralStereoPatchersOgg_fabian[i].isBusy)
+        {
+            binauralStereoPatchersOgg_fabian[i].isBusy = true;
+            return binauralStereoPatchersOgg_fabian[i].patcherTag;
         }
     }
     return nullptr;
@@ -567,6 +669,19 @@ void *RwaRuntime::findFreeBinaural7channelFabianPatcher()
     return nullptr;
 }
 
+void *RwaRuntime::findFreeStereoOggPatcher()
+{
+    for(int i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
+    {
+        if(!stereoPatchersOgg[i].isBusy)
+        {
+            stereoPatchersOgg[i].isBusy = true;
+            return stereoPatchersOgg[i].patcherTag;
+        }
+    }
+    return nullptr;
+}
+
 void *RwaRuntime::findFreeStereoPatcher()
 {
     for(int i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
@@ -593,10 +708,39 @@ void *RwaRuntime::findFreeMonoPatcher()
     return nullptr;
 }
 
+void *RwaRuntime::findFreeMonoOggPatcher()
+{
+    for(int i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
+    {
+        if(!monoPatchersOgg[i].isBusy)
+        {
+            monoPatchersOgg[i].isBusy = true;
+            return monoPatchersOgg[i].patcherTag;
+        }
+    }
+    return nullptr;
+}
+
 int32_t RwaRuntime::findFreePatcher(RwaAsset1 *asset)
 {
     if(asset->type == RWAASSETTYPE_PD)
         return libpd_getdollarzero(findFreeDynamicPatcher(asset));
+
+    else if (asset->type == RWAASSETTYPE_OGG)
+    {
+        switch(asset->playbackType)
+        {
+            case RWAPLAYBACKTYPE_MONO: return libpd_getdollarzero(findFreeMonoOggPatcher());
+
+            case RWAPLAYBACKTYPE_STEREO: return libpd_getdollarzero(findFreeStereoOggPatcher());
+
+            case RWAPLAYBACKTYPE_BINAURALMONO_FABIAN: return libpd_getdollarzero(findFreeBinauralMonoFabianOggPatcher());
+
+            case RWAPLAYBACKTYPE_BINAURALSTEREO_FABIAN: return libpd_getdollarzero(findFreeBinauralStereoFabianOggPatcher());
+
+            default: return RWARUNTIME_INVALIDPATCHERINDEX;
+        }
+    }
 
     else
     {
@@ -922,6 +1066,7 @@ void RwaRuntime::sendData2Asset(RwaEntity *entity, RwaEntity::AssetMapItem item)
     asset = item.getAssetItem();
 
     intPatcherTag = item.getPatcherTag();
+
     sprintf(gain2pd, "%d-gain", intPatcherTag);
     sprintf(lon2pd, "%d-lon", intPatcherTag);
     sprintf(lat2pd, "%d-lat", intPatcherTag);
@@ -1061,9 +1206,9 @@ void RwaRuntime::sendData2Asset(RwaEntity *entity, RwaEntity::AssetMapItem item)
     {
         asset->playheadPositionWithoutOffset += schedulerRate;
         if(asset->playheadPositionWithoutOffset >= asset->offset)
-            asset->playheadPosition += ((float)schedulerRate/1000. * 44100);
+            asset->playheadPosition += ((float)schedulerRate/1000. * 48000);
 
-        if(asset->playheadPosition >= asset->fadeOutAfter/1000. * 44100)
+        if(asset->playheadPosition >= asset->fadeOutAfter/1000. * 48000)
         {
             asset->playheadPosition = 0;
             if(!asset->getLoop())

@@ -143,9 +143,22 @@ std::vector<double> RwaUtilities::calculateDestination1(std::vector<double> coor
     return destination;
 }
 
-double RwaUtilities::calculateDistance1(std::vector<double> p1, std::vector<double>  p2)
+int32_t RwaUtilities::calculateDistanceInMeters(std::vector<double> p1, std::vector<double> p2) // calculates Distance in km
 {
-    double R = 6373; // Earth Radius
+    double R = 6373000; // Earth Radius in meters
+    double lat1 = degrees2radians(p1[1]);
+    double lat2 = degrees2radians(p2[1]);
+    double dlon = degrees2radians( p2[0] - p1[0]);
+    double dlat = degrees2radians( p2[1] - p1[1]);
+    double a = pow((sin(dlat/2)),2) + cos(lat1) * cos(lat2) * pow((sin(dlon/2)),2) ;
+    double c = 2 * atan2( sqrt(a), sqrt(1-a) ) ;
+    int32_t d = static_cast<int32_t>(R * c);
+    return d;
+}
+
+double RwaUtilities::calculateDistance1(std::vector<double> p1, std::vector<double> p2) // calculates Distance in km
+{
+    double R = 6373; // Earth Radius in km
     double lat1 = degrees2radians(p1[1]);
     double lat2 = degrees2radians(p2[1]);
     double dlon = degrees2radians( p2[0] - p1[0]);
@@ -530,6 +543,13 @@ std::string RwaUtilities::getFileName(std::string fullpath)
     QFileInfo info(QString::fromStdString(fullpath));
     QString fileName = info.fileName();
     return fileName.toStdString();
+}
+
+QString RwaUtilities::getFileBaseName(QString fullpath)
+{
+    QFileInfo info(fullpath);
+    QString fileName = info.baseName();
+    return fileName;
 }
 
 QString RwaUtilities::getFileName(QString fullpath)

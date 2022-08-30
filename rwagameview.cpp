@@ -1,4 +1,4 @@
-#include "RwaGameView.h"
+#include "rwagameview.h"
 
 RwaGameView::RwaGameView(QWidget *parent, RwaScene *scene, QString name) :
     RwaView(parent, scene, name)
@@ -32,11 +32,6 @@ RwaGameView::RwaGameView(QWidget *parent, RwaScene *scene, QString name) :
     readSplitterLayout();
 }
 
-//void RwaGameView::adaptSize(qint32 width, qint32 height)
-//{
-//    (void) width; // silence warnings
-//    (void) height;
-//}
 
 
 

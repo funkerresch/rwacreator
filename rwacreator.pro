@@ -31,6 +31,33 @@ INCLUDEPATH += $$PWD/ofq/libofqf
 INCLUDEPATH += $$PWD/libogg/include/
 INCLUDEPATH += $$PWD/vorbis/include/
 INCLUDEPATH += $$PWD/vorbis/lib/
+INCLUDEPATH += $$PWD/taglib/taglib
+INCLUDEPATH += $$PWD/taglib/3rdparty
+INCLUDEPATH += $$PWD/taglib/taglib/ape
+INCLUDEPATH += $$PWD/taglib/taglib/asf
+INCLUDEPATH += $$PWD/taglib/taglib/flac
+INCLUDEPATH += $$PWD/taglib/taglib/it
+INCLUDEPATH += $$PWD/taglib/taglib/mod
+INCLUDEPATH += $$PWD/taglib/taglib/mp4
+INCLUDEPATH += $$PWD/taglib/taglib/mpc
+INCLUDEPATH += $$PWD/taglib/taglib/mpeg
+INCLUDEPATH += $$PWD/taglib/taglib/mpeg/id3v1
+INCLUDEPATH += $$PWD/taglib/taglib/mpeg/id3v2
+INCLUDEPATH += $$PWD/taglib/taglib/mpeg/id3v2/frames
+INCLUDEPATH += $$PWD/taglib/taglib/ogg
+INCLUDEPATH += $$PWD/taglib/taglib/ogg/flac
+INCLUDEPATH += $$PWD/taglib/taglib/ogg/opus
+INCLUDEPATH += $$PWD/taglib/taglib/ogg/speex
+INCLUDEPATH += $$PWD/taglib/taglib/ogg/vorbis
+INCLUDEPATH += $$PWD/taglib/taglib/riff
+INCLUDEPATH += $$PWD/taglib/taglib/riff/aiff
+INCLUDEPATH += $$PWD/taglib/taglib/riff/wav
+INCLUDEPATH += $$PWD/taglib/taglib/s3m
+INCLUDEPATH += $$PWD/taglib/taglib/toolkit
+INCLUDEPATH += $$PWD/taglib/taglib/trueaudio
+INCLUDEPATH += $$PWD/taglib/taglib/wavpack
+INCLUDEPATH += $$PWD/taglib/taglib/xm
+INCLUDEPATH += $$PWD/cpp-httplib
 
 macx
 {
@@ -160,8 +187,8 @@ HEADERS += \
 SOURCES += main.cpp \
     libogg/src/bitwise.c \
     libogg/src/framing.c \
+    oggread~.c \
     pd-extra/pd/externals/freeverb~/freeverb~.c \
-    pd-extra/pd/externals/pdogg/oggread~.c \
     pd-extra/pd/externals/pdogg/oggwrite~.c \
     rwaasset1.cpp \
     rwaheadtrackerconnect.cpp \
@@ -258,10 +285,14 @@ copydata.commands = $(COPY_DIR) $$PWD/images $$OUT_PWD/rwacreator.app/Contents/M
 && $(COPY_FILE) $$PWD/puredata/fabian_dir256.txt $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/rwaloopplayermono.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/rwaloopplayerstereo.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
+&& $(COPY_FILE) $$PWD/puredata/rwaloopplayerstereoogg.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
+&& $(COPY_FILE) $$PWD/puredata/rwaloopplayermonoogg.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/rwaplayer5_1channelbinaural_fabian.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/rwaplayer5_1channelbinaural.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/rwaplayer7channelbinaural_fabian.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/rwaplayermonobinaural_fabian.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
+&& $(COPY_FILE) $$PWD/puredata/rwaplayermonobinauralogg_fabian.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
+&& $(COPY_FILE) $$PWD/puredata/rwaplayerstereobinauralogg_fabian.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/rwaplayermonobrir1.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/rwaplayermonobinaural.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/rwaplayerstereobinaural_fabian.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
@@ -280,6 +311,9 @@ INSTALLS += target
 
 macx: LIBS += -L$$PWD/portaudio/lib/.libs/ -lportaudio.2
 macx: LIBS += -L$$PWD/libpd/libs/ -lpd
+macx: LIBS += -L$$PWD/taglib/build/taglib -ltag
+
+
 
 
 

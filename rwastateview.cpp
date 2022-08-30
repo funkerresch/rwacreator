@@ -1,10 +1,13 @@
 #include "rwastateview.h"
 #include <QScrollArea>
+#include <tag.h>
+#include <fileref.h>
 
 RwaStateView::RwaStateView(QWidget* parent, RwaScene *scene, QString name)
 : RwaGraphicsView(parent, scene, name)
 {
     setAcceptDrops(true);
+
     setAlignment(Qt::AlignTop);
     windowSplitter = new QSplitter(this);
     connect(windowSplitter, SIGNAL(splitterMoved(int,int)), this, SLOT(handleSplitter(int, int)));
@@ -22,8 +25,9 @@ RwaStateView::RwaStateView(QWidget* parent, RwaScene *scene, QString name)
     assetReflectionsVisible = true;
     assetsVisible = true;
     onlyAssetsOfCurrentStateVisible = true;
+    onlyRadiiOfCurrentStateVisible = true;
 
-    connect(backend, SIGNAL(sendMoveCurrentState1(double, double)),
+    connect(backend, SIGNAL(sendMovePixmapsOfCurrentState1(double, double)),
               this, SLOT(movePixmapsOfCurrentState(double,double)));
 
     connect(backend, SIGNAL(sendMoveCurrentScene()),
@@ -32,10 +36,10 @@ RwaStateView::RwaStateView(QWidget* parent, RwaScene *scene, QString name)
     connect(this, SIGNAL(sendMoveCurrentState1(double, double)),
               backend, SLOT(receiveMoveCurrentState1(double,double)));
 
-    connect(backend, SIGNAL(sendMoveCurrentAsset1(double, double)),
+    connect(backend, SIGNAL(sendMovePixmapsOfCurrentAsset1(double, double)),
               this, SLOT(movePixmapsOfCurrentAsset(double,double)));
 
-    connect(this, SIGNAL(sendMoveCurrentAsset1(double, double)),
+    connect(this, SIGNAL(sendMovePixmapsOfCurrentAsset1(double, double)),
               backend, SLOT(receiveMoveCurrentAsset1(double,double)));
 
     connect(this, SIGNAL(sendMoveCurrentAssetChannel(double, double, int)),
@@ -156,14 +160,6 @@ void RwaStateView::setCurrentAsset(RwaAsset1 *asset)
         return;
 
     RwaGraphicsView::setCurrentAsset(asset);
-
-//    currentAsset = asset;
-//    currentState->setLastTouchedAsset(this->currentAsset);
-//    updateAssetPixmaps();
-//    updateReflectionPixmaps();
-//    if(!(QObject::sender() == backend))
-//        emit sendCurrentAsset(currentAsset);
-
 }
 
 void RwaStateView::redrawStateRadii()
@@ -189,18 +185,16 @@ void RwaStateView::setMapCoordinates(QPointF coordinates)
 
 void RwaStateView::adaptSize(qint32 width, qint32 height)
 {
+    (void) width;
+    (void) height;
     mc->resize(QSize(windowSplitter->sizes().at(2), this->height()));
-//    QSettings settings("Intrinsic Audio", "Rwa Creator");
-//    settings.setValue("stateViewGeometry", windowSplitter->saveGeometry());
-//    settings.setValue("stateViewState", windowSplitter->saveState());
 }
 
 void RwaStateView::handleSplitter(int pos, int index)
 {
-     mc->resize(QSize(windowSplitter->sizes().at(2), this->height()));
-//    QSettings settings("Intrinsic Audio", "Rwa Creator");
-//    settings.setValue("stateViewGeometry", windowSplitter->saveGeometry());
-//    settings.setValue("stateViewState", windowSplitter->saveState());
+    (void) pos;
+    (void) index;
+    mc->resize(QSize(windowSplitter->sizes().at(2), this->height()));
 }
 
 void RwaStateView::receiveMouseMoveEvent(const QMouseEvent*, const QPointF myPoint)
@@ -208,7 +202,7 @@ void RwaStateView::receiveMouseMoveEvent(const QMouseEvent*, const QPointF myPoi
     if(!currentState)
         return;
 
-    RwaMapItem *geo = (RwaMapItem *)currentMapItem;
+    RwaMapItem *geo = static_cast<RwaMapItem *>(currentMapItem);
     QPointF lastCoordinate;
     double dx, dy;
     std::vector<double> tmp(2, 0.0);
@@ -220,79 +214,56 @@ void RwaStateView::receiveMouseMoveEvent(const QMouseEvent*, const QPointF myPoi
     if(backend->isSimulationRunning())
         return;
 
-    if(editStatePosition)
-    {
-        lastCoordinate = QPointF(currentState->getCoordinates()[0], currentState->getCoordinates()[1]) ;
-        tmp[0] = mc->currentCoordinate().x();
-        tmp[1] = mc->currentCoordinate().y();
-        currentState->setCoordinates(tmp);
-        dx = currentState->getCoordinates()[0] - lastCoordinate.x();
-        dy = currentState->getCoordinates()[1] - lastCoordinate.y();
-        if(currentState->childrenDoFollowMe())
-            currentState->moveMyChildren(dx, dy);
-
-        emit sendMoveCurrentState1(dx, dy);
-        setUndoAction("Move State");
-
-        return;
-    }
-
     if(geo)
     {
         if(currentAsset->getLockPosition())
             return;
 
-         if(geo->getRwaType() == RWAPOSITIONTYPE_ASSET)
-         {
+        tmp = {myPoint.x(), myPoint.y()};
+
+        if(geo->getRwaType() == RWAPOSITIONTYPE_ASSET)
+        {
             lastCoordinate = QPointF(currentAsset->getCoordinates()[0], currentAsset->getCoordinates()[1]);
-            tmp[0] = myPoint.x();
-            tmp[1] = myPoint.y();
-            currentAsset->setCoordinates(tmp);
             dx = myPoint.x() - lastCoordinate.x();
             dy = myPoint.y() - lastCoordinate.y();
+            currentAsset->setCoordinates(tmp);
             currentAsset->moveMyChildren(dx, dy);
-            emit sendMoveCurrentAsset1(dx, dy);
+            emit sendMovePixmapsOfCurrentAsset1(dx, dy);
             setUndoAction("Move Asset");
-         }
+        }
 
-         if(geo->getRwaType() == RWAPOSITIONTYPE_ASSETSTARTPOINT)
-         {
-             tmp[0] = myPoint.x();
-             tmp[1] = myPoint.y();
-             currentAsset->setStartPosition(tmp);
-             geo->setCoordinate(myPoint);
-             setUndoAction("Move Asset start location.");
-         }
+        if(geo->getRwaType() == RWAPOSITIONTYPE_ASSETSTARTPOINT)
+        {
+            currentAsset->setStartPosition(tmp);
+            geo->setCoordinate(myPoint);
+            setUndoAction("Move Asset start location.");
+        }
 
-         if(geo->getRwaType() == RWAPOSITIONTYPE_ASSETCHANNEL &&
-                 currentAsset->individuellChannelPositionsAllowed() )
-         {
-             lastCoordinate = QPointF(currentAsset->channelcoordinates[geo->getChannel()][0], currentAsset->channelcoordinates[geo->getChannel()][1]);
-             dx = myPoint.x() - lastCoordinate.x();
-             dy = myPoint.y() - lastCoordinate.y();
-             tmp[0] = myPoint.x();
-             tmp[1] = myPoint.y();
-             currentAsset->setChannelCoordinate(geo->getChannel(), tmp);
-             currentAsset->individuellChannelPosition[geo->getChannel()] = true;
-             geo->setCoordinate(myPoint);
-             emit sendMoveCurrentAssetChannel(dx, dy, geo->getChannel());
-             setUndoAction("Move Asset channel position.");
-         }
+        if(geo->getRwaType() == RWAPOSITIONTYPE_ASSETCHANNEL &&
+             currentAsset->individuellChannelPositionsAllowed() )
+        {
+            lastCoordinate = QPointF(currentAsset->channelcoordinates[geo->getChannel()][0], currentAsset->channelcoordinates[geo->getChannel()][1]);
+            dx = myPoint.x() - lastCoordinate.x();
+            dy = myPoint.y() - lastCoordinate.y();
+            currentAsset->setChannelCoordinate(geo->getChannel(), tmp);
+            currentAsset->individuellChannelPosition[geo->getChannel()] = true;
+            geo->setCoordinate(myPoint);
+            emit sendMoveCurrentAssetChannel(dx, dy, geo->getChannel());
+            setUndoAction("Move Asset channel position.");
+        }
 
-         if(geo->getRwaType() == RWAPOSITIONTYPE_REFLECTIONPOSITION)
-         {
-             lastCoordinate = QPointF(currentAsset->reflectioncoordinates[geo->getChannel()][0], currentAsset->reflectioncoordinates[geo->getChannel()][1]);
-             dx = myPoint.x() - lastCoordinate.x();
-             dy = myPoint.y() - lastCoordinate.y();
-             tmp[0] = myPoint.x();
-             tmp[1] = myPoint.y();
-             currentAsset->setReflectionCoordinate(geo->getChannel(), tmp);
-             geo->setCoordinate(myPoint);
-             emit sendMoveCurrentAssetReflection(dx, dy, geo->getChannel());
-             setUndoAction("Move Asset reflection position.");
-         }
+        if(geo->getRwaType() == RWAPOSITIONTYPE_REFLECTIONPOSITION)
+        {
+            lastCoordinate = QPointF(currentAsset->reflectioncoordinates[geo->getChannel()][0], currentAsset->reflectioncoordinates[geo->getChannel()][1]);
+            dx = myPoint.x() - lastCoordinate.x();
+            dy = myPoint.y() - lastCoordinate.y();
+            currentAsset->setReflectionCoordinate(geo->getChannel(), tmp);
+            geo->setCoordinate(myPoint);
+            emit sendMoveCurrentAssetReflection(dx, dy, geo->getChannel());
+            setUndoAction("Move Asset reflection position.");
+        }
 
-         return;
+        return;
     }
 
     if(editArea)
@@ -375,9 +346,6 @@ void RwaStateView::receiveMouseDownEvent(const QMouseEvent *event, const QPointF
              }
          }
      }
-
-     if(!currentState->positionIsLocked())
-        editStatePosition = true;
 }
 
 void RwaStateView::receiveMouseReleaseEvent()
@@ -402,6 +370,7 @@ void RwaStateView::receiveMouseReleaseEvent()
 
 void RwaStateView::dropEvent(QDropEvent *event)
 {
+    (void) event;
     if(backend->logOther)
         qDebug();
 }
@@ -432,7 +401,6 @@ void RwaStateView::setCurrentState(RwaState *state)
         qDebug();
         emit sendCurrentAsset(state->lastTouchedAsset);
     }
-
 }
 
 void RwaStateView::setCurrentScene(RwaScene *scene)
@@ -461,15 +429,23 @@ void RwaStateView::addAssetItem(const QString &path, qint32 type)
 {
     if(currentState)
     {
+        TagLib::FileRef f(path.toStdString().c_str());
+        int channels = 0;
+        int length = 0;
+
+        if(!f.isNull() && f.audioProperties())
+        {
+            channels = f.audioProperties()->channels();
+            length = f.audioProperties()->lengthInMilliseconds();
+        }
+
         string uid = std::string(QUuid::createUuid().toString().toLatin1());
         RwaAsset1 *newItem = new RwaAsset1(path.toStdString(), currentState->getCoordinates(), type, uid);
-        backend->simulator->runtime->openFile4MetaData(path.toLatin1());
-        newItem->setDuration(((RwaRuntime::assetDuration/RwaRuntime::assetSampleRate)*1000.0));
-        newItem->setNumberOfChannels(RwaRuntime::assetChannelCount);
+        newItem->setDuration(length);
+        newItem->setNumberOfChannels(channels);
         currentState->addAsset(newItem);
         currentState->setLastTouchedAsset(newItem);
         emit sendCurrentState(currentState);
-        //setCurrentState(currentState);
     }
 }
 
