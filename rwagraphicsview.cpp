@@ -692,6 +692,11 @@ bool RwaGraphicsView::mouseDoubleClickArea(QPointF myPoint, RwaArea *currentArea
             }
             lastCorner = &currentArea->corners[i];
         }
+
+        if(currentArea->getLocationType() == RWALOCATIONTYPE_SCENE)
+            editSceneArea = true;
+        else
+            editStateArea = true;
     }
     return false;
 }
@@ -861,9 +866,10 @@ void RwaGraphicsView::drawAsset(RwaAsset1 *item, bool isActive)
             assetLayer->addGeometry(mapItem);
         }
 
-        if(backend->isSimulationRunning())
+        if(backend->isSimulationRunning() && assetMovingPointVisible)
         {
             QPointF tmp = QPointF(item->getCurrentPosition()[0], item->getCurrentPosition()[1]);
+            //qDebug() << tmp.x() << " " << tmp.y();
             mapItem = new RwaMapItem(tmp, item, RWAPOSITIONTYPE_CURRENTASSETPOSITION, assetLayer->getPixmap4());
             mapItem->setAllowTouches(false);
             assetLayer->addGeometry(mapItem);

@@ -27,7 +27,7 @@ private slots:
 
 signals:
     void sendCurrentStateRadiusEdited();
-
+    void sendCurrentSceneWithoutRepositioning(RwaScene *scene);
 private:
    RwaView *mother;
    QStringList selectedStates;

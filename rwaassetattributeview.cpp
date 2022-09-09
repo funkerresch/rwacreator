@@ -50,17 +50,17 @@ RwaAssetAttributeView::RwaAssetAttributeView(QWidget *parent, RwaScene *scene) :
 
     addAttrCheckbox(attributeGridLayout, "Exclusive", RWAASSETATTRIBUTE_ISEXCLUSIVE);
     addAttrCheckbox(attributeGridLayout,"Loop", RWAASSETATTRIBUTE_LOOP);
-    addAttrCheckbox(attributeGridLayout, "Stop Loop at End-Position", RWAASSETATTRIBUTE_LOOPUNTILENDPOSITION);
     addAttrCheckbox(attributeGridLayout, "Raw Sensors 2 Pd", RWAASSETATTRIBUTE_RAWSENSORS2PD);
     addAttrCheckbox(attributeGridLayout, "GPS 2 Pd", RWAASSETATTRIBUTE_GPS2PD);
     addAttrCheckbox(attributeGridLayout, "Play only once", RWAASSETATTRIBUTE_PLAYONCE);
-    addAttrCheckbox(attributeGridLayout, "Rotate", RWAASSETATTRIBUTE_AUTOROTATE);
-    addAttrCheckbox(attributeGridLayout, "Move", RWAASSETATTRIBUTE_AUTOMOVE);
+    addAttrCheckbox(attributeGridLayout, "Rotating asset", RWAASSETATTRIBUTE_AUTOROTATE);
+    addAttrCheckbox(attributeGridLayout, "Moving asset", RWAASSETATTRIBUTE_AUTOMOVE);
+    addAttrCheckbox(attributeGridLayout, "Stop loop at end-position", RWAASSETATTRIBUTE_LOOPUNTILENDPOSITION);
     addAttrCheckbox(attributeGridLayout, "Mute/Disable", RWAASSETATTRIBUTE_MUTE);
     addAttrCheckbox(attributeGridLayout, "Headtracker relative 2 source", RWAASSETATTRIBUTE_HEADTRACKERRELATIVE2SOURCE);
-    addAttrCheckbox(attributeGridLayout, "Lock Position", RWAASSETATTRIBUTE_LOCKPOSITION);
-    addAttrCheckbox(attributeGridLayout, "Allow Channel-Positioning", RWAASSETATTRIBUTE_ALLOWINDIVIDUELLCHANNELPOSITIONS);
-    addAttrCheckbox(attributeGridLayout, "Always play from beginning", RWAASSETATTRIBUTE_ALWAYSPLAYFROMBEGINNING);
+    addAttrCheckbox(attributeGridLayout, "Lock asset position", RWAASSETATTRIBUTE_LOCKPOSITION);
+    addAttrCheckbox(attributeGridLayout, "Enable custom channel-positions", RWAASSETATTRIBUTE_ALLOWINDIVIDUELLCHANNELPOSITIONS);
+    addAttrCheckbox(attributeGridLayout, "Always play from start", RWAASSETATTRIBUTE_ALWAYSPLAYFROMBEGINNING);
 
     connect(this, SIGNAL(sendCurrentState(RwaState*)),
               backend, SLOT(receiveLastTouchedState(RwaState*)));
@@ -70,6 +70,9 @@ RwaAssetAttributeView::RwaAssetAttributeView(QWidget *parent, RwaScene *scene) :
 
     connect(backend, SIGNAL(sendSelectedAssets(QStringList)),
               this, SLOT(receiveSelectedAssets(QStringList)));
+
+    connect(this, SIGNAL(sendCurrentStateWithoutRepositioning(RwaState*)),
+              backend, SLOT(receiveCurrentStateWithouRepositioning(RwaState*)));
 
     this->setMinimumHeight((assetAttrCounter)*18);
     this->setMinimumWidth(20);
@@ -227,7 +230,7 @@ void RwaAssetAttributeView::setCurrentAsset(RwaAsset1 *asset)
     if(attrCheckBox)
         attrCheckBox->setChecked(asset->getLoop());
 
-    attrCheckBox = this->findChild<QCheckBox *>("Stop Loop at End-Position");
+    attrCheckBox = this->findChild<QCheckBox *>("Stop loop at end-position");
     if(attrCheckBox)
         attrCheckBox->setChecked(asset->getLoopUntilEndPosition());
 
@@ -243,11 +246,11 @@ void RwaAssetAttributeView::setCurrentAsset(RwaAsset1 *asset)
     if(attrCheckBox)
         attrCheckBox->setChecked(asset->getPlayOnlyOnce());
 
-    attrCheckBox = this->findChild<QCheckBox *>("Rotate");
+    attrCheckBox = this->findChild<QCheckBox *>("Rotating asset");
     if(attrCheckBox)
         attrCheckBox->setChecked(asset->getAutoRotate());
 
-    attrCheckBox = this->findChild<QCheckBox *>("Move");
+    attrCheckBox = this->findChild<QCheckBox *>("Moving asset");
     if(attrCheckBox)
         attrCheckBox->setChecked(asset->getMoveFromStartPosition());
 
@@ -259,15 +262,15 @@ void RwaAssetAttributeView::setCurrentAsset(RwaAsset1 *asset)
     if(attrCheckBox)
         attrCheckBox->setChecked(asset->getHeadtrackerRelative2Source());
 
-    attrCheckBox = this->findChild<QCheckBox *>("Lock Position");
+    attrCheckBox = this->findChild<QCheckBox *>("Lock asset position");
     if(attrCheckBox)
         attrCheckBox->setChecked(asset->getLockPosition());
 
-    attrCheckBox = this->findChild<QCheckBox *>("Allow Channel-Positioning");
+    attrCheckBox = this->findChild<QCheckBox *>("Enable custom channel-positions");
     if(attrCheckBox)
-        attrCheckBox->setChecked(asset->individuellChannelPositionsAllowed());
+        attrCheckBox->setChecked(asset->customChannelPositionsEnabled());
 
-    attrCheckBox = this->findChild<QCheckBox *>("Always play from beginning");
+    attrCheckBox = this->findChild<QCheckBox *>("Always play from start");
     if(attrCheckBox)
         attrCheckBox->setChecked(asset->getAlwaysPlayFromBeginning());
 }
@@ -291,7 +294,7 @@ void RwaAssetAttributeView::receiveEditingFinished()
 
         lastSenderValue = senderValue;
         lastSenderName = senderName;
-        emit sendCurrentState(currentState);
+        emit sendCurrentStateWithoutRepositioning(currentState);
         setFocus();
     }
 }
@@ -387,11 +390,12 @@ void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
                  asset = currentState->getAsset(assetName.toStdString());
                  if(asset)
                  {
-                    asset->setMoveFromStartPosition(value);
-                    if(QObject::sender() != this->backend)
-                    {
-                        emit sendCurrentState(currentState);
-                    }
+                     asset->setMoveFromStartPosition(value);
+                     if(QObject::sender() != this->backend)
+                     {
+                         emit sendCurrentState(currentState);
+                     }
+
                  }
             }
             break;
@@ -447,7 +451,9 @@ void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
             {
                  asset = currentState->getAsset(assetName.toStdString());
                  if(asset)
-                    asset->setAllowIndividuellChannelPositions(value);
+                 {
+                     asset->enableCustomChannelPositions(value);
+                 }
             }
             break;
         }
@@ -470,7 +476,6 @@ void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
 
 void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id)
 {
-
     bool value = assetAttributeGroup->button(id)->isChecked();
     if(!currentState)
         return;
@@ -560,10 +565,14 @@ void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id)
                  asset = currentState->getAsset(assetName.toStdString());
                  if(asset)
                  {
-                    asset->setMoveFromStartPosition(value);
-                    if(QObject::sender() != this->backend)
+                    if(value)
                     {
-                        emit sendCurrentState(currentState);
+                        asset->resetIndividualChannelPositions(); // This is not a good solution, custom channel positions will be saved in the future.
+                        asset->setMoveFromStartPosition(value);
+                        if(QObject::sender() != this->backend)
+                        {
+                            emit sendCurrentState(currentState);
+                        }
                     }
                  }
             }
@@ -620,7 +629,7 @@ void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id)
             {
                  asset = currentState->getAsset(assetName.toStdString());
                  if(asset)
-                    asset->setAllowIndividuellChannelPositions(value);
+                    asset->enableCustomChannelPositions(value);
             }
             break;
         }

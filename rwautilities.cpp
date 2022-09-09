@@ -566,6 +566,23 @@ QString RwaUtilities::getPath(QString fullpath)
     return path;
 }
 
+QString RwaUtilities::generateAssetsFolderPath(QString projectPath)
+{
+    QString assetsFolderPath = QString("%1").arg(projectPath);
+    return assetsFolderPath;
+}
+
+QString RwaUtilities::generateCompleteAssetPath(QString projectPath, QString fileName)
+{
+    QString absoluteAssetPath = QString("%1/assets/%2").arg(projectPath).arg(fileName);
+    return absoluteAssetPath;
+}
+
+QString RwaUtilities::generateCompleteAssetPath(QString projectPath, std::string fileName)
+{
+    QString absoluteAssetPath = QString("%1/assets/%2").arg(projectPath).arg(QString::fromStdString(fileName));
+    return absoluteAssetPath;
+}
 
 QString RwaUtilities::getDataType(QString fullpath)
 {

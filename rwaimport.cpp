@@ -1,9 +1,9 @@
-#include <QtWidgets>
 #include "rwaimport.h"
 #include <tag.h>
 #include <fileref.h>
 
-RwaImport::RwaImport(QList<RwaScene *> *scenes, QString projectPath)
+RwaImport::RwaImport(QObject *parent, QList<RwaScene *> *scenes, QString projectPath)
+    :QObject(parent)
 {
     this->backend = RwaBackend::getInstance();
     this->currentScene = nullptr;
@@ -11,12 +11,22 @@ RwaImport::RwaImport(QList<RwaScene *> *scenes, QString projectPath)
     this->scenes = scenes;
 }
 
-RwaImport::RwaImport(std::list<RwaScene *> &scenes, QString projectPath)
+RwaImport::RwaImport(QObject *parent, std::list<RwaScene *> *scenes, QString projectPath)
+    :QObject(parent)
 {
     this->backend = RwaBackend::getInstance();
     this->currentScene = nullptr;
     this->projectPath = projectPath;
-    this->scenes = new QList<RwaScene *>(QList<RwaScene *>::fromStdList( scenes));
+    this->scenes = new QList<RwaScene *>(QList<RwaScene *>::fromStdList(*scenes));
+}
+
+RwaImport::RwaImport(QObject *parent, std::list<RwaScene *> &scenes, QString projectPath)
+    :QObject(parent)
+{
+    this->backend = RwaBackend::getInstance();
+    this->currentScene = nullptr;
+    this->projectPath = projectPath;
+    this->scenes = new QList<RwaScene *>(QList<RwaScene *>::fromStdList(scenes));
 }
 
 QString RwaImport::readRwaInit()
@@ -109,9 +119,7 @@ void RwaImport::readRwa()
             if(xml.name() == "game")
             {
                 if(xml.attributes().hasAttribute("currentscene"))
-                {
                     currentSceneName = xml.attributes().value("currentscene").toString();
-                }
             }
 
             if(xml.name() == "scene")
@@ -132,51 +140,33 @@ void RwaImport::readRwa()
                 currentScene = scene;
 
                 if(xml.attributes().hasAttribute("currentstate"))
-                {
                     currentState = xml.attributes().value("currentstate").toString();
-                }
 
                 if(xml.attributes().hasAttribute("areatype"))
-                {
                     areaType = xml.attributes().value("areatype").toInt();
-                }
                 else
                     findSurroundingSceneArea = true;
 
                 if(xml.attributes().hasAttribute("radius"))
-                {
                     scene->setRadius(xml.attributes().value("radius").toInt());
-                }
 
                 if(xml.attributes().hasAttribute("width"))
-                {
                    scene->setWidth(xml.attributes().value("width").toInt());
-                }
 
                 if(xml.attributes().hasAttribute("height"))
-                {
                     scene->setHeight(xml.attributes().value("height").toInt());
-                }
 
                 if(xml.attributes().hasAttribute("exitoffset"))
-                {
                     scene->setExitOffset(xml.attributes().value("exitoffset").toInt());
-                }
 
                 if(xml.attributes().hasAttribute("minstaytime"))
-                {
                     scene->setMinimumStayTime(xml.attributes().value("minstaytime").toFloat());
-                }
 
                 if(xml.attributes().hasAttribute("fallbackdisabled"))
-                {
                     scene->setDisableFallback(xml.attributes().value("fallbackdisabled").toInt());
-                }
 
                 if(xml.attributes().hasAttribute("level"))
-                {
                     scene->setLevel(xml.attributes().value("level").toInt());
-                }
                 else
                     scene->setLevel(backend->getScenes().count()-1);
 
@@ -192,9 +182,7 @@ void RwaImport::readRwa()
                     scene->setAreaType(areaType);
 
                 if(!scene->getStates().empty())
-                {
                     scene->getStates().front()->isGpsState = false;
-                }
 
                 foreach(RwaState *state, scene->getStates())
                 {
@@ -203,15 +191,15 @@ void RwaImport::readRwa()
                     else if(state->objectName() == "BACKGROUND")
                          hasBackground = true;
                 }
+
                 if(!hasFallback)
                     scene->InsertDefaultFallbackState();
+
                 if(!hasBackground)
                     scene->InsertDefaultBackgroundState();
 
                 if(currentState != "")
-                {
                     scene->setCurrentState(currentState.toStdString());
-                }
             }
         }
     }
@@ -322,16 +310,8 @@ void RwaImport::readState()
                     if(!name.compare("FALLBACK"))
                          currentState->setMinimumStayTime(0);
 
-                   /* if(!name.compare("FALLBACK") || !name.compare("BACKGROUND"))
-                    {
-                       // qDebug() << name;
-                        state->setCoordinates(currentScene->getCoordinates());
-                        state->isGpsState = false;
-                    }*/
-
                     readAssets();
-//                    if(xml.attributes().hasAttribute("currentAsset"))
-//                        state->setLastTouchedAsset(state->)
+
                     if(state->objectName() == "FALLBACK" && stateListIndex != 0)
                         currentScene->InsertStateAtIndex(state, 0);
                     else if(state->objectName() == "BACKGROUND" && stateListIndex != 1)
@@ -454,7 +434,7 @@ void RwaImport::readChannelPositions(RwaAsset1 *asset)
                     tmp[0] = lon;
                     tmp[1] = lat;
                     asset->setChannelCoordinate(i, tmp);
-                    asset->individuellChannelPosition[i] = true;
+                    asset->hasCustomChannelPosition[i] = true;
                     //qDebug() << asset->channelcoordinates[i].x();
                     break;
                 }
@@ -519,8 +499,7 @@ void RwaImport::readEnterconditions()
     vector<double> gps(2, 0.0);
     double lon;
     double lat;
-    double enterOffset = -6;
-    double exitOffset = 0;
+    float exitOffset = 0;
 
     while (!xml.atEnd())
     {
@@ -534,29 +513,20 @@ void RwaImport::readEnterconditions()
                 gps[1] = lat;
 
                 currentState->setCoordinates(gps);
-                currentState->setRadius(xml.attributes().value("radius").toDouble());
-                currentState->setWidth(xml.attributes().value("width").toDouble());
-                currentState->setHeight(xml.attributes().value("height").toDouble());
+                currentState->setRadius(xml.attributes().value("radius").toInt());
+                currentState->setWidth(xml.attributes().value("width").toInt());
+                currentState->setHeight(xml.attributes().value("height").toInt());
                 currentState->isGpsState = xml.attributes().value("isgps").toInt();
 
-//                if(xml.attributes().hasAttribute("enteroffset"))
-//                {
-//                    enterOffset = xml.attributes().value("enteroffset").toDouble();
-//                    currentState->setEnterOffset(enterOffset);
-//                }
                 if(xml.attributes().hasAttribute("exitoffset"))
                 {
-                    exitOffset = xml.attributes().value("exitoffset").toDouble();
+                    exitOffset = xml.attributes().value("exitoffset").toFloat();
                     currentState->setExitOffset(exitOffset);
                 }
             }
 
             if (xml.name() == "corners")
-            {
                 readCorners();
-                //currentState->calculateEnterOffsetCorners();
-                //currentState->calculateExitOffsetCorners();
-            }
 
             if (xml.name() == "requiredstates")
                 readRequiredStates();
@@ -576,17 +546,14 @@ void RwaImport::readAssets()
     QString url;
     QString path;
     QString fileName;
-    int type;
     string id;
-    int dampingFunction = 1;
-    float dampingFactor = 30;
-    float dampingTrim = 2;
-    float damingMin = 0;
-    float dampingMax = 1;
+
     double lon;
     double lat;
-    int channels = 0;
-    int length = 0;
+
+    int32_t type;
+    int32_t channels = 0;
+    int32_t length = 0;
 
     while (!xml.atEnd())
     {
@@ -609,13 +576,26 @@ void RwaImport::readAssets()
                 gps[1] = lat;
                 lon = xml.attributes().value("startpositionlon").toDouble();
                 lat = xml.attributes().value("startpositionlat").toDouble();
-                startPosition = QPointF(lon, lat);
+                std::vector<double> tmp(2, 0.0);
+                tmp[0] = lon;
+                tmp[1] = lat;
 
                 path = QString("%1").arg(url);
                 path = QString("%1/%2").arg(backend->completeAssetPath).arg(fileName);
 
                 RwaAsset1 *item = new RwaAsset1(path.toStdString(),gps, type, id);
-                item->setPlaybackType(xml.attributes().value("playbacktype").toInt());
+                item->setStartPosition(tmp);
+
+                int32_t playbackType = 0;
+                if(xml.attributes().hasAttribute("playbacktype"))
+                   playbackType = xml.attributes().value("playbacktype").toInt();
+
+                if(playbackType == RWAPLAYBACKTYPE_BINAURALMONO)
+                    playbackType = RWAPLAYBACKTYPE_BINAURALMONO_FABIAN;
+                if(playbackType == RWAPLAYBACKTYPE_BINAURALSTEREO)
+                    playbackType = RWAPLAYBACKTYPE_BINAURALSTEREO_FABIAN;
+
+                item->setPlaybackType(playbackType);
 
                 if(xml.attributes().hasAttribute("damping"))
                      item->setDampingFunction(xml.attributes().value("damping").toInt());
@@ -629,22 +609,22 @@ void RwaImport::readAssets()
                         item->setReflectionCount(xml.attributes().value("reflectioncount").toInt());
 
                 if(xml.attributes().hasAttribute("dampingfactor"))
-                        item->setDampingFactor(xml.attributes().value("dampingfactor").toDouble());
+                        item->setDampingFactor(xml.attributes().value("dampingfactor").toFloat());
 
                 if(xml.attributes().hasAttribute("dampingtrim"))
-                    item->setDampingTrim(xml.attributes().value("dampingtrim").toDouble());
+                    item->setDampingTrim(xml.attributes().value("dampingtrim").toFloat());
 
                 if(xml.attributes().hasAttribute("dampingmin"))
-                    item->setDampingMin(xml.attributes().value("dampingmin").toDouble());
+                    item->setDampingMin(xml.attributes().value("dampingmin").toFloat());
 
                 if(xml.attributes().hasAttribute("dampingmax"))
-                    item->setDampingMax(xml.attributes().value("dampingmax").toDouble());
+                    item->setDampingMax(xml.attributes().value("dampingmax").toFloat());
 
                 if(xml.attributes().hasAttribute("mindistance"))
-                    item->setMinDistance(xml.attributes().value("mindistance").toDouble());
+                    item->setMinDistance(xml.attributes().value("mindistance").toFloat());
 
                 if(xml.attributes().hasAttribute("offset"))
-                    item->setOffset(xml.attributes().value("offset").toDouble());
+                    item->setOffset(xml.attributes().value("offset").toFloat());
 
                 if(xml.attributes().hasAttribute("lockposition"))
                     item->setLockPosition(xml.attributes().value("lockposition").toInt());
@@ -655,8 +635,72 @@ void RwaImport::readAssets()
                 if(xml.attributes().hasAttribute("individualchannelpositions"))
                     item->allowIndividuellChannelPositions = (xml.attributes().value("individualchannelpositions").toInt());
 
+                if(xml.attributes().hasAttribute("fadein"))
+                    item->setFadeInTime(xml.attributes().value("fadein").toInt());
+
+                if(xml.attributes().hasAttribute("fadeout"))
+                    item->setFadeOutTime(xml.attributes().value("fadeout").toInt());
+
+                if(xml.attributes().hasAttribute("crossfadetime"))
+                    item->setCrossfadeTime(xml.attributes().value("crossfadetime").toInt());
+
+                if(xml.attributes().hasAttribute("loop"))
+                    item->setLoop(xml.attributes().value("loop").toInt());
+
+                if(xml.attributes().hasAttribute("mute"))
+                    item->setMute(xml.attributes().value("mute").toInt());
+
+                if(xml.attributes().hasAttribute("headtrackerrelative2source"))
+                    item->setHeadtrackerRelative2Source(xml.attributes().value("headtrackerrelative2source").toInt());
+
+                if(xml.attributes().hasAttribute("loopuntilendposition"))
+                    item->setLoopUntilEndPosition(xml.attributes().value("loopuntilendposition").toInt());
+
+                if(xml.attributes().hasAttribute("isexclusive"))
+                    item->setIsExclusive(xml.attributes().value("isexclusive").toInt());
+
+                if(xml.attributes().hasAttribute("gps2pd"))
+                    item->setGps2pd(xml.attributes().value("gps2pd").toInt());
+
+                if(xml.attributes().hasAttribute("playonlyonce"))
+                    item->setPlayOnlyOnce(xml.attributes().value("playonlyonce").toInt());
+
+                if(xml.attributes().hasAttribute("rawsensors2pd"))
+                    item->setRawSensors2pd(xml.attributes().value("rawsensors2pd").toInt());
+
+                if(xml.attributes().hasAttribute("gain"))
+                    item->setGain(xml.attributes().value("gain").toFloat());
+
+                if(xml.attributes().hasAttribute("rotate"))
+                    item->setAutoRotate(xml.attributes().value("rotate").toInt());
+
+                if(xml.attributes().hasAttribute("rotateoffset"))
+                    item->setRotateOffset(xml.attributes().value("rotateoffset").toInt());
+
+                if(xml.attributes().hasAttribute("rotatefrequency"))
+                    item->setRotateFrequency(xml.attributes().value("rotatefrequency").toFloat());
+
+                if(xml.attributes().hasAttribute("channelradius"))
+                    item->setChannelRadius(xml.attributes().value("channelradius").toFloat());
+
+                if(xml.attributes().hasAttribute("move"))
+                    item->setMoveFromStartPosition(xml.attributes().value("move").toInt());
+
+                if(xml.attributes().hasAttribute("speed"))
+                    item->setMovementSpeed(xml.attributes().value("speed").toFloat());
+
+                if(xml.attributes().hasAttribute("fixedazimuth"))
+                    item->setFixedAzimuth(xml.attributes().value("fixedazimuth").toInt());
+
+                if(xml.attributes().hasAttribute("fixedelevation"))
+                    item->setFixedElevation(xml.attributes().value("fixedelevation").toInt());
+
+                if(xml.attributes().hasAttribute("fixeddistance"))
+                    item->setFixedDistance(xml.attributes().value("fixeddistance").toInt());
+
                 if(type != RWAASSETTYPE_PD)
                 {
+#ifdef QT_VERSION
                     TagLib::FileRef f(path.toStdString().c_str());
 
                     if(!f.isNull() && f.audioProperties())
@@ -664,40 +708,18 @@ void RwaImport::readAssets()
                         channels = f.audioProperties()->channels();
                         length = f.audioProperties()->lengthInMilliseconds();
                     }
+#else
+                    if(xml.attributes().hasAttribute("channelcount"))
+                        channels = (xml.attributes().value("channels").toInt());
+
+                    if(xml.attributes().hasAttribute("duration"))
+                        length = (xml.attributes().value("duration").tofloat());
+#endif
                 }
 
-                if(xml.attributes().hasAttribute("channelcount"))
-                    item->setNumberOfChannels(channels);
+                item->setNumberOfChannels(channels);
+                item->setDuration(length);
 
-                if(xml.attributes().hasAttribute("duration"))
-                    item->setDuration(length);
-
-                item->setFadeInTime(xml.attributes().value("fadein").toInt());
-                item->setFadeOutTime(xml.attributes().value("fadeout").toInt());
-                item->setCrossfadeTime(xml.attributes().value("crossfadetime").toInt());
-                item->setLoop(xml.attributes().value("loop").toInt());
-                item->setMute(xml.attributes().value("mute").toInt());
-                item->setHeadtrackerRelative2Source(xml.attributes().value("headtrackerrelative2source").toInt());
-                item->setLoopUntilEndPosition(xml.attributes().value("loopuntilendposition").toInt());
-                item->setIsExclusive(xml.attributes().value("isexclusive").toInt());
-                item->setGps2pd(xml.attributes().value("gps2pd").toInt());
-                item->setPlayOnlyOnce(xml.attributes().value("playonlyonce").toInt());
-                item->setRawSensors2pd(xml.attributes().value("rawsensors2pd").toInt());
-                item->setGain(xml.attributes().value("gain").toDouble());
-                item->setAutoRotate(xml.attributes().value("rotate").toInt());
-                item->setRotateOffset(xml.attributes().value("rotateoffset").toDouble());
-                item->setRotateFrequency(xml.attributes().value("rotatefrequency").toDouble());
-                item->setChannelRadius(xml.attributes().value("channelradius").toDouble());
-                item->setMoveFromStartPosition(xml.attributes().value("move").toInt());
-                item->setMovementSpeed(xml.attributes().value("speed").toDouble());
-                item->setFixedAzimuth(xml.attributes().value("fixedazimuth").toInt());
-                item->setFixedElevation(xml.attributes().value("fixedelevation").toInt());
-                item->setFixedDistance(xml.attributes().value("fixeddistance").toInt());
-
-                std::vector<double> tmp(2, 0.0);
-                tmp[0] = startPosition.x();
-                tmp[1] = startPosition.y();
-                item->setStartPosition(tmp);
                 readChannelPositions(item);
                 readReflectionPositions(item);
 

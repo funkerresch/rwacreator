@@ -1,21 +1,20 @@
 /*
-*
-* This file is part of RwaCreator
-* an open-source cross-platform Middleware for creating interactive Soundwalks
-*
-* Copyright (C) 2015 - 2022 Thomas Resch
-*
-* License: MIT
-*
-* The RwaBackend class contains the data model in the form of a linked list of rwaScenes.
-* It is realised a singleton so all views/editors can easily access it.
-* Almost all GUI updates are realised by sending the lastTouched.*.() signals from the
-* corresponding view to the backend which then emits the sendLastTouched.*. signal
-* to synchronize all other views/editors. The only exception are the list views where states, scenes
-* and assets can be deleted vie keyboard using the basic QListWidget event.
-* Otherwise the setCurrent.*.() functions should only be called using Qt's SIGNALS/SLOTS.
-*
-*/
+ * This file is part of the Rwa Creator.
+ * An open-source cross-platform Middleware for creating interactive Soundwalks
+ *
+ * Copyright (C) 2015 - 2022 Thomas Resch
+ *
+ * License: MIT
+ *
+ * The RwaBackend class contains the data model in the form of a linked list of rwaScenes.
+ * It is realised a singleton so all views/editors can easily access it.
+ * Almost all GUI updates are realised by sending the lastTouched.*.() signals from the
+ * corresponding view to the backend which then emits the sendLastTouched.*. signal
+ * to synchronize all other views/editors. The only exception are the list views where states, scenes
+ * and assets can be deleted vie keyboard using the basic QListWidget event.
+ * Otherwise the setCurrent.*.() functions should only be called using Qt's SIGNALS/SLOTS.
+ *
+ */
 
 #ifndef AFXSCENEBACKEND_H
 #define AFXSCENEBACKEND_H
@@ -39,8 +38,7 @@
 class RwaGamesServer : public QObject {
     Q_OBJECT
 public:
-    RwaGamesServer(httplib::Server *svr, int port);
-    ~RwaGamesServer();
+    RwaGamesServer(httplib::Server *svr, int port, std::string mountPoint);
 
 public slots:
     void process();
@@ -48,6 +46,7 @@ public slots:
 private:
     httplib::Server *svr; // Reference is passed from backend in order to call stop() from main thread
     int port;
+    std::string mountPoint;
 };
 
 /** **************************************Rwa Backend ********************************************** */
@@ -76,8 +75,12 @@ public:
     QString completeTmpPath;
     QString completeAssetPath;
     QString completeClientExportPath;
-    QString completeClientProjectExportPath;
+    QString completeClientDownloadPath;
+    QString completeClientDownloadPathWithEscape;
+    QString completeXCodeClientProjectExportPath;
     QString completeClientFileExportPath;
+    QString applicationSupportPath;
+    QString applicationSupportPathWithEscape;
     QString completeClientAssetExportPath;
     QStringList assetStringList;
     QStringList stateStringList;
@@ -250,22 +253,27 @@ public slots:
     void receiveMoveHero2CurrentScene();
     void receiveMoveCurrentScene();
     void receiveReadNewGame();
-public:
+    void receiveCurrentSceneWithouRepositioning(RwaScene *scene);
+    void receiveCurrentStateWithouRepositioning(RwaState *state);
 
+public:
     static void generateUuidsForClipboardState(RwaState *state);
     static void adjust2UniqueStateName(RwaScene *targetScene, RwaState *newState);
     static bool adjust2UniqueStateNameRecursively(RwaScene *targetScene, RwaState *newState);
     static int getStateNameCounter(std::list<RwaState *> &states);
     static int getNumberFromQString(const QString &xString);
 
-    /** ************************************************** Signals ************************************************** */
-
     bool fileUsedByAnotherAsset(RwaAsset1 *asset2Delete);
     bool adjust2UniqueSceneNameRecursively(RwaScene *newScene);
     void adjust2UniqueSceneName(RwaScene *newScene);
+
+    /** ************************************************** Signals ************************************************** */
+
 signals:
     void readUndoFile(QString name);
     void sendWriteUndo(QString undoAction);
+    void sendCurrentSceneWithoutRepositioning(RwaScene * scene);
+    void sendCurrentStateWithoutRepositioning(RwaState * state);
     void sendLastTouchedState(RwaState *state);
     void sendLastTouchedScene(RwaScene *scene);
     void sendLastTouchedAsset(RwaAsset1 *asset);

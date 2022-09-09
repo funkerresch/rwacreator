@@ -78,6 +78,9 @@ RwaStateView::RwaStateView(QWidget* parent, RwaScene *scene, QString name)
     connect(backend, SIGNAL(sendCurrentStateRadiusEdited()),
               this, SLOT(receiveUpdateCurrentStateRadius()));
 
+    connect(backend, SIGNAL(sendCurrentStateWithoutRepositioning(RwaState *)),
+              this, SLOT(setCurrentStateWithoutRepositioning(RwaState *)));
+
     addZoomButtons();
     windowSplitter->addWidget(assetAttributes->scrollArea);
     windowSplitter->addWidget(assetList);
@@ -240,13 +243,14 @@ void RwaStateView::receiveMouseMoveEvent(const QMouseEvent*, const QPointF myPoi
         }
 
         if(geo->getRwaType() == RWAPOSITIONTYPE_ASSETCHANNEL &&
-             currentAsset->individuellChannelPositionsAllowed() )
+             currentAsset->customChannelPositionsEnabled() )
         {
             lastCoordinate = QPointF(currentAsset->channelcoordinates[geo->getChannel()][0], currentAsset->channelcoordinates[geo->getChannel()][1]);
             dx = myPoint.x() - lastCoordinate.x();
             dy = myPoint.y() - lastCoordinate.y();
             currentAsset->setChannelCoordinate(geo->getChannel(), tmp);
-            currentAsset->individuellChannelPosition[geo->getChannel()] = true;
+
+            currentAsset->hasCustomChannelPosition[geo->getChannel()] = true;
             geo->setCoordinate(myPoint);
             emit sendMoveCurrentAssetChannel(dx, dy, geo->getChannel());
             setUndoAction("Move Asset channel position.");
@@ -323,7 +327,7 @@ void RwaStateView::receiveMouseDownEvent(const QMouseEvent *event, const QPointF
                  }
                  else
                  {
-                     if(asset->individuellChannelPositionsAllowed())
+                     if(asset->customChannelPositionsEnabled())
                      {
                          emit sendCurrentAsset(asset);
                          mc->setMouseMode(MapControl::None);
@@ -418,6 +422,19 @@ void RwaStateView::setCurrentScene(RwaScene *scene)
         qDebug();
         emit sendCurrentState(scene->lastTouchedState);
     }
+}
+
+void RwaStateView::setCurrentStateWithoutRepositioning(RwaState *state)
+{
+    if(!state)
+        return;
+
+    QDockWidget *window = static_cast<QDockWidget *>(parent());
+    window->setWindowTitle("State View - "+ QString::fromStdString(state->objectName()));
+    RwaGraphicsView::setCurrentState(state);
+
+    if(QObject::sender() != this->backend)
+        emit sendCurrentAsset(state->lastTouchedAsset);
 }
 
 int RwaStateView::getNumberOfSelectedAssets()

@@ -78,6 +78,9 @@ RwaStateAttributeView::RwaStateAttributeView(QWidget *parent, RwaScene *scene) :
     connect(this, SIGNAL(sendCurrentScene(RwaScene*)),
               backend, SLOT(receiveLastTouchedScene(RwaScene*)));
 
+    connect(this, SIGNAL(sendCurrentSceneWithoutRepositioning(RwaScene*)),
+              backend, SLOT(receiveCurrentSceneWithouRepositioning(RwaScene*)));
+
     connect(backend, SIGNAL(sendSelectedStates(QStringList)),
               this, SLOT(receiveSelectedStates(QStringList)));
 
@@ -102,7 +105,7 @@ void RwaStateAttributeView::receiveEditingFinished()
         lastSenderName = senderName;
         setFocus();
 
-        emit sendCurrentScene(currentScene);
+        emit sendCurrentSceneWithoutRepositioning(currentScene);
     }
 }
 

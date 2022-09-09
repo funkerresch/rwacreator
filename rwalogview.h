@@ -1,3 +1,17 @@
+/*
+ * This file is part of the Rwa Creator.
+ * An open-source cross-platform Middleware for creating interactive Soundwalks
+ *
+ * Copyright (C) 2015 - 2022 Thomas Resch
+ *
+ * License: MIT
+ *
+ * rwalogview.h
+ * by Thomas Resch
+ * Logging window
+ *
+ */
+
 #ifndef RWALOGWRAPPER_H
 #define RWALOGWRAPPER_H
 

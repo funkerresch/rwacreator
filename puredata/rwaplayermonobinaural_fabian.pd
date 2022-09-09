@@ -1,4 +1,4 @@
-#N canvas 334 25 1346 949 16;
+#N canvas 319 80 1346 949 16;
 #X obj 96 914 throw~ out1;
 #X obj 254 914 throw~ out2;
 #X obj 96 879 *~ 0;
@@ -211,7 +211,7 @@
 #X coords 0 382 1 381 200 60 0;
 #X restore 338 394 pd 2x2crossfade;
 #X obj 114 162 r \$0-loop;
-#N canvas 342 159 1130 869 alternategate 0;
+#N canvas 399 194 1130 869 alternategate 0;
 #X obj 315 197 inlet;
 #X obj 286 561 outlet;
 #X obj 445 563 outlet;
@@ -430,7 +430,7 @@
 #X obj 174 744 r \$0-azimuth1;
 #X obj 174 802 + 180;
 #X obj 174 774 expr 360 -$f1 \;;
-#N canvas 850 244 588 407 firstcrossfademetro 0;
+#N canvas 443 81 1156 786 firstcrossfademetro 0;
 #X obj 196 151 r \$0-firstcrossfade;
 #X obj 116 290 metro 3000;
 #X msg 116 169 1;

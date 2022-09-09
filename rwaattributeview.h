@@ -1,8 +1,16 @@
 /*
+ * This file is part of the Rwa Creator.
+ * An open-source cross-platform Middleware for creating interactive Soundwalks
+ *
+ * Copyright (C) 2015 - 2022 Thomas Resch
+ *
+ * License: MIT
+ *
  * rwaattributeview.h
  * by Thomas Resch
- * Base Class for Rwa scene, state and asset attribute view.
-*/
+ * Base class for editors for accessing attributes and values
+ *
+ */
 
 #ifndef RWAATTRIBUTEVIEW_H
 #define RWAATTRIBUTEVIEW_H

@@ -1,33 +1,23 @@
 /*
-*
-* This file is part of RwaCreator
-* an open-source cross-platform Middleware for creating interactive Soundwalks
-*
-* Copyright (C) 2015 - 2022 Thomas Resch
-*
-* License: MIT
-*
-* The RwaCreator class is the main window. On startup, it loads all views/editors.
-* It is also responsible for all File I/O.
-*
-*
-*
-*
-* ToDo next:
-*
-*
-* Make select states in Map GUI working
-*
-* Clean up RwaImport & RwaExport
-*
-* Add taglib again for reading and writing sound file length etc..
-*
-* Renaming assets and assets with same name in same state need a solution
-*
-* Toolbar in Stateview ??
-*
-*/
-
+ * This file is part of the Rwa Creator.
+ * An open-source cross-platform Middleware for creating interactive Soundwalks
+ *
+ * Copyright (C) 2015 - 2022 Thomas Resch
+ *
+ * License: MIT
+ *
+ * The RwaCreator class is the main window. On startup, it loads all views/editors.
+ * It is also responsible for all File I/O.
+ *
+ *
+ *
+ *
+ * ToDo next:
+ * Make select states in Map GUI working
+ * Renaming assets and assets with same name in same state need a solution
+ * Toolbar in Stateview ??
+ *
+ */
 
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
@@ -121,21 +111,19 @@ private slots:
 public slots:
 
     void exportProject();
-    void saveForMobileClient();
-    void saveAgainForMobileClient();
+    void exportToXCodeClientProject();
+    void exportZip();
     void save();
-    void write(QString writeMessage, qint32 flags, QString oldAssetPath);
-    void prepareWrite(QString fullpath, int flags = 0);
     qint32 open(QString fileName = QString(""));
     void writeUndo(QString undoAction);
     void selectOutputDevice(qint32 index);
     void clear();
     void saveAs();
     void enterHtName();
+    void enterFilePathPreferences();
     void selectInputDevice(qint32 index);
     void readUndoFile(QString name);
 
-    void exportZip();
 signals:
     void sendReadNewGame();
 
@@ -169,6 +157,10 @@ private:
     bool maybeSave();
     void initViewMenu1(QMenu *fileMenu);
     void emptyTmpDirectories();
+
+    void prepareWrite1(QString fullpath, int flags);
+    void write1(QString writeMessage, qint32 flags, QString newCompleteFilePath);
+    void checkUndoFolder();
 };
 
 #endif

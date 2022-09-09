@@ -79,6 +79,7 @@ HEADERS += \
     rwaasset1.h \
     rwaheadtrackerconnect.h \
     rwahistory.h \
+    rwainputdialog.h \
     rwalocation1.h \
     rwapdextra~.h \
     rwaruntime.h \
@@ -193,6 +194,7 @@ SOURCES += main.cpp \
     rwaasset1.cpp \
     rwaheadtrackerconnect.cpp \
     rwahistory.cpp \
+    rwainputdialog.cpp \
     rwalocation1.cpp \
     rwaruntime.cpp \
     rwasearchdialog.cpp \

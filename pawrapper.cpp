@@ -133,7 +133,7 @@ void paWrapper::initAudio()
     inputStreamParam.suggestedLatency = suggestedLatency;
     inputStreamParam.hostApiSpecificStreamInfo = NULL;
 
-    sampleRate = 44100.0;
+    sampleRate = 48000.0;
 
     printf("default output device is %d\n",Pa_GetDefaultOutputDevice());
     printf("default input device is %d\n",Pa_GetDefaultInputDevice());

@@ -8,7 +8,6 @@
  */
 
 #include "rwacreator.h"
-
 #include <QAction>
 #include <QMenu>
 #include <QMenuBar>
@@ -26,6 +25,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <qdebug.h>
+#include "rwainputdialog.h"
 
 Q_DECLARE_METATYPE(QDockWidget::DockWidgetFeatures)
 
@@ -67,29 +67,29 @@ void RwaCreator::logMessages(QtMsgType type, const QMessageLogContext &context, 
         logWindow->outputMessage( type, context, msg );
 }
 
-/** ************* Create RWA directory in home director and filelist of RWA games as .txt file *********************** */
+/** ********* Create RWA directory in ~/Library/Applications Support and filelist of RWA games as .txt file ********** */
 
 void RwaCreator::createInitFolder()
 {
-    QString path = QString("%1%2").arg(QDir::homePath()).arg("/RWACreator/");
+    QString path = backend->applicationSupportPath;
     if(!QDir(path).exists())
         QDir().mkdir(path);
 
-    QString filename = path +"createfilelist.sh";
+    QString filename = path + "/" +"createfilelist.sh";
     {
         QFile file(filename);
         if (file.open(QIODevice::ReadWrite))
         {
             QTextStream stream(&file);
             stream << "#!/bin/sh" << endl;
-            stream << "cd $PWD/Games/" << endl;
+            stream << "cd Games/" << endl;
             stream << "ls *.zip > allfiles.txt" << endl;
         }
         file.setPermissions(QFileDevice::ReadUser | QFileDevice::WriteUser | QFileDevice::ExeUser | QFileDevice::ReadOther);
         file.close();
    }
 
-    path = QString("%1%2").arg(QDir::homePath()).arg("/RWACreator/Games");
+    path = QString(backend->completeClientDownloadPath);
     if(!QDir(path).exists())
         QDir().mkdir(path);
 }
@@ -160,6 +160,9 @@ void RwaCreator::saveLayoutAndSettings()
     settings.setValue("geometry", saveGeometry());
     settings.setValue("windowState", saveState());
     settings.setValue("lastgame", backend->completeFilePath);
+    settings.setValue("xcodeclientprojectpath", backend->completeXCodeClientProjectExportPath);
+    settings.setValue("downloadpath", backend->completeClientDownloadPath);
+    settings.setValue("downloadpathwithescape", backend->completeClientDownloadPathWithEscape);
     settings.setValue("headtrackerid", headtracker->getName());
     settings.sync(); // forces to write the settings to storage
 }
@@ -170,6 +173,17 @@ void RwaCreator::loadLayoutAndSettings()
     restoreGeometry(settings.value("geometry").toByteArray());
     restoreState(settings.value("windowState").toByteArray());
     headtracker->setName(settings.value("headtrackerid").toString());
+    backend->completeClientDownloadPath = (settings.value("downloadpath").toString());
+    backend->completeClientDownloadPathWithEscape = (settings.value("downloadpathwithescape").toString());
+    backend->completeXCodeClientProjectExportPath = (settings.value("xcodeclientprojectpath").toString());
+    if(backend->completeXCodeClientProjectExportPath.isEmpty())
+        backend->completeXCodeClientProjectExportPath = QString("%1%2").arg(QDir::homePath()).arg("/Desktop");
+    if(backend->completeClientDownloadPath.isEmpty())
+    {
+        backend->completeClientDownloadPath = QString("%1%2").arg(QDir::homePath()).arg("/Library/Application Support/RWACreator/Games");
+        backend->completeClientDownloadPathWithEscape = QString("%1%2").arg(QDir::homePath()).arg("\"/Library/Application Support/RWACreator/Games\"");
+    }
+
     if(!open(settings.value("lastgame").toString()))
         clear();
 }
@@ -200,7 +214,6 @@ void RwaCreator::addMapView() // qt bug: stylesheet is applied only if widget is
     dw->installEventFilter(this);
     dw->setWindowFlags(Qt::WindowStaysOnTopHint );
     addDockWidget(Qt::TopDockWidgetArea, dw);
-
     rwaDockWidgets.append(dw);
 }
 
@@ -427,7 +440,10 @@ void RwaCreator::initViewMenu1(QMenu *fileMenu)
 
 void RwaCreator::initFileMenu(QMenu *fileMenu)
 {
-    QAction *action = fileMenu->addAction(tr("Clear"));
+    QAction *action = fileMenu->addAction(tr("File Path Preferences"));
+    connect(action, SIGNAL(triggered()), this, SLOT(enterFilePathPreferences()));
+
+    action = fileMenu->addAction(tr("Clear"));
     connect(action, SIGNAL(triggered()), this, SLOT(clear()));
 
     action = fileMenu->addAction(tr("Open"));
@@ -442,11 +458,25 @@ void RwaCreator::initFileMenu(QMenu *fileMenu)
     action = fileMenu->addAction(tr("Export Project"));
     connect(action, SIGNAL(triggered()), this, SLOT(exportProject()));
 
-    action = fileMenu->addAction(tr("Export for Client"));
-    connect(action, SIGNAL(triggered()), this, SLOT(saveForMobileClient()));
+    action = fileMenu->addAction(tr("Export for XCode Client Project"));
+    connect(action, SIGNAL(triggered()), this, SLOT(exportToXCodeClientProject()));
 
-    action = fileMenu->addAction(tr("Export again for Client"));
-    connect(action, SIGNAL(triggered()), this, SLOT(saveAgainForMobileClient()));
+    action = fileMenu->addAction(tr("Export for Server Download"));
+    connect(action, SIGNAL(triggered()), this, SLOT(exportZip()));
+}
+
+void RwaCreator::enterFilePathPreferences()
+{
+    QStringList labels;
+    QStringList values;
+    labels << "Download Path" << "XCode Games Path";
+    values << backend->completeClientDownloadPath << backend->completeXCodeClientProjectExportPath;
+    QStringList list = RwaInputDialog::getStrings(this, labels, values);
+    if (!list.isEmpty()) {
+        backend->completeClientDownloadPath = list[0];
+        backend->completeClientDownloadPathWithEscape = "\""+backend->completeClientDownloadPathWithEscape+"\"";
+        backend->completeXCodeClientProjectExportPath = list[1];
+    }
 }
 
 void RwaCreator::enterHtName()
@@ -455,6 +485,7 @@ void RwaCreator::enterHtName()
     QString text = QInputDialog::getText(this, tr("QInputDialog::getText()"),
                                              tr("Tracker name:"), QLineEdit::Normal,
                                              headtracker->getName(), &ok);
+
     if (ok && !text.isEmpty())
     {
         headtracker->setName(text);
@@ -496,30 +527,22 @@ void RwaCreator::setupMenuBar()
     initHeadtrackerMenu(headtrackerMenu);
 }
 
-void RwaCreator::write(QString writeMessage, qint32 flags, QString oldAssetPath)
+void RwaCreator::write1(QString writeMessage, qint32 flags, QString newCompleteFilePath)
 {
-    QString completeFilePath;
-    QString completeProjectPath;
-
-    completeFilePath = backend->completeFilePath;
-    completeProjectPath = backend->completeProjectPath;
-
-    if (completeFilePath.isEmpty())
-        return;
-
-    QFile file(completeFilePath);
+    QString path = RwaUtilities::getPath(newCompleteFilePath);
+    QFile file(newCompleteFilePath);
     if(file.exists())
         file.remove();
 
     if (!file.open(QFile::WriteOnly | QFile::Text)) {
         QMessageBox::warning(this, tr("QXmlStream Bookmarks"),
                              tr("Cannot write file %1:\n%2.")
-                             .arg(completeFilePath)
+                             .arg(newCompleteFilePath)
                              .arg(file.errorString()));
         return;
     }
 
-    RwaExport writer(backend, oldAssetPath, flags);
+    RwaExport writer(this, backend->completeProjectPath, path, flags);
     if (writer.writeFile(&file))
     {
         if(!writeMessage.isEmpty())
@@ -527,21 +550,20 @@ void RwaCreator::write(QString writeMessage, qint32 flags, QString oldAssetPath)
     }
 }
 
-void RwaCreator::prepareWrite(QString fullpath, int flags)
+void RwaCreator::prepareWrite1(QString fullpath, int flags)  // fullpath is /RWACreator/Games/test/test.rwa
 {
-    QString fileName = RwaUtilities::getFileName(fullpath);
-    QString path = RwaUtilities::getPath(fullpath);
-    QStringList fullName = fileName.split(".rwa");
+    QString fileName = RwaUtilities::getFileName(fullpath);  // test.rwa
+    QString path = RwaUtilities::getPath(fullpath);          // RWACreator/Games/test
+    QStringList fullName = fileName.split(".rwa");           // test
     QString folderName = fullName.first();
     QString completeFilePath = QString("%1/%2/%3").arg(path).arg(folderName).arg(fileName);
     QString completeProjectPath = QString("%1/%2").arg(path).arg(folderName);
-
     QDir dir(path);
     dir.mkdir(folderName);
     QString completeAssetPath = QString("%1/%2/assets").arg(path).arg(folderName);
     dir.mkdir(completeAssetPath);
 
-    if(flags & RWAEXPORT_SAVEAS)
+    if(flags & RWAEXPORT_CREATEFOLDERS)
     {
         QString completeUndoPath = QString("%1/%2/undo").arg(path).arg(folderName);
         QString completeTmpPath = QString("%1/%2/tmp").arg(path).arg(folderName);
@@ -552,108 +574,59 @@ void RwaCreator::prepareWrite(QString fullpath, int flags)
         backend->completeTmpPath = completeTmpPath;
         backend->completeUndoPath = completeUndoPath;
     }
-
-    backend->completeAssetPath = completeAssetPath;
-    backend->completeFilePath = completeFilePath;
-    backend->completeProjectPath = completeProjectPath;
 }
 
-void RwaCreator::saveAgainForMobileClient()
+void RwaCreator::exportToXCodeClientProject()
 {
-    if(backend->completeClientExportPath.isEmpty())
-    {
-        saveForMobileClient();
-        return;
-    }
-
     qint32 flags = 0;
     flags |= RWAEXPORT_COPYASSETS
-           | RWAEXPORT_EXPORTFORMOBILECLIENT;
+          | RWAEXPORT_EXPORTFORMOBILECLIENT;
 
-    QString oldFilePath = backend->completeFilePath;
-    QString oldProjectPath = backend->completeProjectPath;
-    QString oldAssetPath = backend->completeAssetPath;
-    QString fullpath = backend->completeClientExportPath;
-    prepareWrite(fullpath, flags);
-    write("Exported for mobile Client", flags, oldAssetPath);
-    backend->completeClientExportPath = fullpath;
-    backend->completeAssetPath = oldAssetPath;
-    backend->completeFilePath = oldFilePath;
-    backend->completeProjectPath = oldProjectPath;
-}
+    QString directory = backend->completeXCodeClientProjectExportPath;
+    if(!QDir(directory).exists())
+        QDir().mkdir(directory);
 
-void RwaCreator::saveForMobileClient()
-{
-    exportZip();
-    return;
+    QString fileName = RwaUtilities::getFileName(backend->completeFilePath);            // for example test.rwa
+    QString baseName = RwaUtilities::getFileBaseName(backend->completeFilePath);        // test                                          // /RWACreator/Games/test/test.rwa
+    QString fullDirectory = directory +"/"+baseName;
+    QString fullpath = fullDirectory +"/"+fileName;  // /RWACreator/Games/test
 
-    qint32 flags = 0;
-    flags |= RWAEXPORT_COPYASSETS
-           | RWAEXPORT_EXPORTFORMOBILECLIENT;
+    QDir dir = QDir(fullDirectory);
+    if(dir.exists())
+        dir.removeRecursively();
 
-    QString oldFilePath = backend->completeFilePath;
-    QString oldProjectPath = backend->completeProjectPath;
-    QString oldAssetPath = backend->completeAssetPath;
-
-    QString fullpath = QFileDialog::getSaveFileName(this, tr("Save Rwa File"),
-                                         QDir::currentPath(),
-                                         tr("RWA Files (*.rwa *.xml)"));
-
-    if(fullpath.isEmpty())
-        return;
-
-    qDebug();
-    prepareWrite(fullpath, flags);
-//    write("Exported for mobile Client", flags, oldAssetPath);
-    backend->completeClientExportPath = fullpath;
-    backend->completeAssetPath = oldAssetPath;
-    backend->completeFilePath = oldFilePath;
-    backend->completeProjectPath = oldProjectPath;
-
-    QString zipGame = QString("zip -r -X /Users/harveykeitel/RWACreator/Games/newZion.zip /Users/harveykeitel/RWACreator/Games/newZion");
-    FILE* pipe = popen(zipGame.toStdString().c_str(), "w");
-    if (!pipe)
-    {
-       qDebug() << "Could not zip";
-       return;
-    }
+    prepareWrite1(fullDirectory, flags);
+    write1("Export zip for RWA Server", flags, fullpath);
 }
 
 void RwaCreator::exportZip()
 {
     qint32 flags = 0;
     flags |= RWAEXPORT_COPYASSETS
-           | RWAEXPORT_EXPORTFORMOBILECLIENT;
+          | RWAEXPORT_EXPORTFORMOBILECLIENT
+          | RWAEXPORT_ZIP;
 
-    QString oldFilePath = backend->completeFilePath;
-    QString oldProjectPath = backend->completeProjectPath;
-    QString oldAssetPath = backend->completeAssetPath;
-
-    QString directory = QString("%1%2").arg(QDir::homePath()).arg("/RWACreator/Games");
+    QString directory = backend->completeClientDownloadPath;
     if(!QDir(directory).exists())
         QDir().mkdir(directory);
 
-    QString fileName = RwaUtilities::getFileName(backend->completeFilePath);
-    QString baseName = RwaUtilities::getFileBaseName(backend->completeFilePath);
-    QString fullpath = directory +"/"+fileName;
+    QString fileName = RwaUtilities::getFileName(backend->completeFilePath);            // for example test.rwa
+    QString baseName = RwaUtilities::getFileBaseName(backend->completeFilePath);        // test                                          // /RWACreator/Games/test/test.rwa
     QString fullDirectory = directory +"/"+baseName;
+    QString fullpath = fullDirectory +"/"+fileName;  // /RWACreator/Games/test
 
     QDir dir = QDir(fullDirectory);
-    if(dir.exists())
+    if(dir.exists()) // removing old version
         dir.removeRecursively();
 
-    prepareWrite(fullpath, flags);
-    write("Export zip for RWA Server", flags, oldAssetPath);
-
-    backend->completeAssetPath = oldAssetPath;
-    backend->completeFilePath = oldFilePath;
-    backend->completeProjectPath = oldProjectPath;
+    prepareWrite1(fullDirectory, flags);
+    write1("Export zip for RWA Server", flags, fullpath);
 
     QFile zipFile(fullDirectory+".zip");
     if(zipFile.exists())
         zipFile.remove();
 
-    QString zipGame = QString("cd %1 && zip -r -X %2.zip %3").arg(directory).arg(baseName).arg(baseName);
+    QString zipGame = QString("cd %1 && zip -r -X %2.zip %3").arg(backend->completeClientDownloadPathWithEscape).arg(baseName).arg(baseName);
     FILE* pipe = popen(zipGame.toStdString().c_str(), "w");
     if (!pipe)
     {
@@ -664,8 +637,8 @@ void RwaCreator::exportZip()
     while(pclose(pipe) != -1)
         ;
 
-    dir.removeRecursively();
-    QString initFolder = QString("%1%2").arg(QDir::homePath()).arg("/RWACreator");
+    dir.removeRecursively(); // removing new version
+    QString initFolder = backend->applicationSupportPathWithEscape;
     QString createList = QString("cd %1 && ./createfilelist.sh").arg(initFolder);
     pipe = popen(createList.toStdString().c_str(), "w");
     while(pclose(pipe) != -1)
@@ -676,18 +649,34 @@ void RwaCreator::exportProject()
 {
     qint32 flags = 0;
     flags |= RWAEXPORT_COPYASSETS
-           | RWAEXPORT_SAVEAS;
+          | RWAEXPORT_SAVEAS
+          | RWAEXPORT_CREATEFOLDERS;
 
     QString fullpath = QFileDialog::getSaveFileName(this, tr("Save Rwa File"),
                                          QDir::homePath(),
                                          tr("RWA Files (*.rwa *.xml)"));
+
     if(fullpath.isEmpty())
         return;
 
-    QString oldAssetPath = backend->completeAssetPath;
-    prepareWrite(fullpath, flags);
-    write("File saved", flags, oldAssetPath);
+    QString fileName = RwaUtilities::getFileName(fullpath);            // for example test.rwa
+    QString directory = RwaUtilities::getFileBaseName(fileName);        // test
+    QString incompletePath = RwaUtilities::getPath(fullpath);
+    QString fullDirectory = incompletePath +"/"+directory;
+    fullpath = fullDirectory +"/"+fileName;  // /RWACreator/Games/test
+
+    if(!QDir(fullDirectory).exists())
+        QDir().mkdir(fullDirectory);
+
+    prepareWrite1(fullDirectory, flags);
+    write1("Saved full project to new folder", flags, fullpath);
+    QString path = RwaUtilities::getPath(fullpath);
+    backend->completeProjectPath = fullDirectory;
+    backend->completeFilePath = fullpath;
+    backend->projectName = directory;
     setWindowTitle(backend->projectName);
+    undoCounter = 0;
+    emit sendReadNewGame();
     writeUndo("Init Game");
 }
 
@@ -704,7 +693,7 @@ void RwaCreator::saveAs()
         return;
 
     backend->completeFilePath = fullpath;
-    write("File saved", flags, fullpath);
+    write1("File saved", flags, fullpath);
     QString projectName = RwaUtilities::getFileName(fullpath);
     QStringList pieces = projectName.split( "." );
     projectName = pieces.first();
@@ -717,7 +706,13 @@ void RwaCreator::save()
     if(backend->completeFilePath.isEmpty())
         exportProject();
     else
-      write("File saved", 0, "");
+      write1("File saved", 0, backend->completeFilePath);
+}
+
+void RwaCreator::checkUndoFolder()
+{
+
+
 }
 
 qint32 RwaCreator::open(QString fileName)
@@ -742,6 +737,9 @@ qint32 RwaCreator::open(QString fileName)
         return 0;
     }
 
+    // here we could check the undo folder. If it has not been emptied, the application probably crashed,
+    // and we can restore the last saved state from undo
+
     emptyTmpDirectories();
     backend->clearScenes();
     projectName = RwaUtilities::getFileName(fullpath);
@@ -761,7 +759,7 @@ qint32 RwaCreator::open(QString fileName)
     backend->completeTmpPath = (completeTmpPath);
     setWindowTitle(backend->projectName);
 
-    RwaImport reader(&backend->getScenes(), backend->completeProjectPath);
+    RwaImport reader(this, &backend->getScenes(), backend->completeProjectPath);
 
     if (!reader.read(&file))
          statusBar()->showMessage(tr("Could not read XML, parser error!"), 2000);
@@ -810,14 +808,13 @@ void RwaCreator::writeUndo(QString undoAction)
     if (!file.open(QFile::WriteOnly | QFile::Text))
          return;
 
-    RwaExport writer(backend, backend->completeUndoPath,0);
+    RwaExport writer(this, QString(), QString(), 0);
     writer.writeFile(&file);
 }
 
 void RwaCreator::readUndoFile(QString name)
 {
     backend->clearScenes();
-
     QFile file(backend->completeUndoPath +"/"+name);
     if (!file.open(QFile::ReadOnly | QFile::Text))
     {
@@ -828,7 +825,7 @@ void RwaCreator::readUndoFile(QString name)
         return;
     }
 
-    RwaImport reader(&backend->getScenes(), backend->completeProjectPath);
+    RwaImport reader(this, &backend->getScenes(), backend->completeProjectPath);
     if (!reader.read(&file))
     {
         QMessageBox::warning(this, tr("QXmlStream Bookmarks"),

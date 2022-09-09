@@ -1,5 +1,5 @@
 #include "rwabackend.h"
-
+#include <QStandardPaths>
 #include <QThread>
 
 RwaBackend *RwaBackend::instance = nullptr;
@@ -12,16 +12,17 @@ RwaBackend *RwaBackend::instance = nullptr;
  *
  */
 
-RwaGamesServer::RwaGamesServer(httplib::Server *svr, int port)
+RwaGamesServer::RwaGamesServer(httplib::Server *svr, int port, std::string mountPoint)
 {
     this->svr = svr;
     this->port = port;
+    this->mountPoint = mountPoint;
 }
 
 void RwaGamesServer::process()
 {
     using namespace httplib;
-    auto ret = svr->set_mount_point("/", "/Users/harveykeitel/RWACreator/Games");
+    auto ret = svr->set_mount_point("/", mountPoint);
 
     if (!ret) {
         qDebug() << "Directory does not exist!";
@@ -44,7 +45,7 @@ void RwaBackend::StartHttpServer1(qint32 port)
 {
     serverThread = new QThread();
     serverThread->setObjectName("RWA Listener");
-    RwaGamesServer* worker = new RwaGamesServer(&svr, port);
+    RwaGamesServer* worker = new RwaGamesServer(&svr, port, completeClientDownloadPath.toStdString());
     worker->moveToThread(serverThread);
     connect( serverThread, &QThread::started, worker, &RwaGamesServer::process);
     connect( serverThread, &QThread::finished, worker, &QObject::deleteLater);
@@ -59,7 +60,7 @@ void RwaBackend::StopHttpServer1()
     serverThread->wait();
 }
 
-/** The Python server was used for debugging purposes, might be useful again. */
+/** The Python server was used for debugging purposes, might be useful for something later. */
 
 void RwaBackend::StartHttpServer(qint32 port)
 {
@@ -90,6 +91,11 @@ RwaBackend::RwaBackend(QWidget *parent) :
     completeUndoPath = QString();
     completeAssetPath = QString();
     completeTmpPath = QString();
+    completeXCodeClientProjectExportPath = QString("%1%2").arg(QDir::homePath()).arg("/Desktop");
+    completeClientDownloadPath = QString("%1%2").arg(QDir::homePath()).arg("/Library/Application Support/RWACreator/Games");
+    completeClientDownloadPathWithEscape = QString("%1%2").arg(QDir::homePath()).arg("\"/Library/Application Support/RWACreator/Games\"");
+    applicationSupportPath = QString("%1%2").arg(QDir::homePath()).arg("/Library/Application Support/RWACreator");
+    applicationSupportPathWithEscape = QString("%1%2").arg(QDir::homePath()).arg("\"/Library/Application Support/RWACreator\"");
     projectName = QString();
     currentMapCoordinates = QPointF(QPointF(8.27,50));
     simulator = new RwaSimulator(this, this);
@@ -104,7 +110,6 @@ RwaBackend::~RwaBackend()
    // QString killHttp = QString("kill %1").arg(httpProcessId);
    // system(killHttp.toStdString().c_str());
 }
-
 void RwaBackend::updateLastTouchedSceneStateAndAsset()
 {
     emit updateGame();
@@ -196,6 +201,24 @@ void RwaBackend::receiveLastTouchedState(RwaState *state)
         lastTouchedScene->lastTouchedState = state;
 
     emit sendLastTouchedState(state);
+}
+
+void RwaBackend::receiveCurrentSceneWithouRepositioning(RwaScene *scene)
+{
+    if(!scene)
+        return;
+
+    lastTouchedScene = scene;
+    emit sendCurrentSceneWithoutRepositioning(scene);
+}
+
+void RwaBackend::receiveCurrentStateWithouRepositioning(RwaState *state)
+{
+    if(!state)
+        return;
+
+    lastTouchedState = state;
+    emit sendCurrentStateWithoutRepositioning(state);
 }
 
 void RwaBackend::receiveLastTouchedScene(RwaScene *scene)
@@ -488,7 +511,8 @@ void RwaBackend::receiveMoveHero2CurrentScene()
 
 void RwaBackend::receiveEntityPosition(QPointF position)
 {
-    //emit sendEntityPosition(position);
+    vector<double> p = {position.x(), position.y()};
+    emit sendEntityPosition(p);
 }
 
 void RwaBackend::receiveStatePosition(QPointF position)
@@ -587,6 +611,7 @@ void RwaBackend::receiveLogOther(int onOff)
 
 void RwaBackend::startStopSimulator(bool startStop)
 {
+    simulator->runtime->lastP = 0;
     if(startStop)
         simulator->startRwaSimulation();
     else
@@ -703,7 +728,6 @@ bool RwaBackend::fileUsedByAnotherAsset(RwaAsset1 *asset2Delete)
     }
     return false;
 }
-
 
 void RwaBackend::adjust2UniqueStateName(RwaScene *targetScene, RwaState *newState)
 {

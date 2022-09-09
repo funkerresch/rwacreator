@@ -1,3 +1,17 @@
+/*
+ * This file is part of the Rwa Creator.
+ * An open-source cross-platform Middleware for creating interactive Soundwalks
+ *
+ * Copyright (C) 2015 - 2022 Thomas Resch
+ *
+ * License: MIT
+ *
+ * rwaassetlist.h
+ * by Thomas Resch
+ * Editor for asset drag and drop.
+ *
+ */
+
 #ifndef RWAASSETLIST_H
 #define RWAASSETLIST_H
 

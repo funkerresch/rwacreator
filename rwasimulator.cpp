@@ -60,9 +60,6 @@ RwaSimulator::RwaSimulator(QObject *parent, RwaBackend *backend) :
     connect (backend, SIGNAL(sendLastTouchedScene(RwaScene*)),
              this, SLOT(receiveLastTouchedScene(RwaScene*)));
 
-    connect (backend, SIGNAL(sendDisconnectHeadtracker()),
-             this, SLOT(receiveDisconnectHeadtracker()));
-
     connect (runtime, SIGNAL(sendSelectedScene(RwaScene *)),
                  this, SLOT(receiveCurrentSceneFromRuntime(RwaScene *)));
 
@@ -175,11 +172,8 @@ void RwaSimulator::receiveEntityPosition(vector<double> position)
 {
     sendData2Devices();
     RwaEntity *entity;
-    qDebug() << "Entity Coordinates";
     foreach(entity, entities)
-    {
         entity->setCoordinates(position);
-    }
 }
 
 void RwaSimulator::receiveStep()
@@ -211,6 +205,7 @@ void RwaSimulator::receiveAzimuth(float azimuth)
     if(entities.empty())
         return;
 
+    qDebug();
     RwaEntity *entity = entities.front();
     entity->setAzimuth(static_cast<int32_t>(azimuth));
 }
@@ -284,7 +279,7 @@ void RwaSimulator::startRwaSimulation()
         entity->setCurrentState(entity->getCurrentScene()->states.front());
 
     runtime->initDynamicPdPatchers(entity);
-    libpd_init_audio(ap->inputChannelCount() , ap->outputChannelCount(), 44100); // 2 inputs, 2 output
+    libpd_init_audio(ap->inputChannelCount() , ap->outputChannelCount(), 48000); // 2 inputs, 2 output
     libpd_start_message(1);
     libpd_add_float(1.0f);
     libpd_finish_message("pd", "dsp");
@@ -423,5 +418,6 @@ void RwaSimulator::updateRwaGameState()
 {
     RwaEntity *entity = entities.front();
     runtime->update(entity);
+    emit backend->sendRedrawAssets();
 }
 

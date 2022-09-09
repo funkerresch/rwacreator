@@ -1,3 +1,16 @@
+/*
+ * This file is part of the Rwa Creator.
+ * An open-source cross-platform Middleware for creating interactive Soundwalks
+ *
+ * Copyright (C) 2015 - 2022 Thomas Resch
+ *
+ * License: MIT
+ *
+ * rwaruntime.h
+ * by Thomas Resch
+ *
+ */
+
 #ifndef RWARUNTIME_H
 #define RWARUNTIME_H
 
@@ -60,6 +73,7 @@ RwaRuntime(QObject *parent, const char *pdpath, const char *assetPath, float sam
     std::mutex *pdMutex = nullptr;
     float sampleRate = 44.1f;
     float schedulerRate = 0;
+    float lastP = 0;
 
     static bool debug;
     static std::list<RwaEntity *> entities;
@@ -136,12 +150,7 @@ RwaRuntime(QObject *parent, const char *pdpath, const char *assetPath, float sam
     void sendEnd2backgroundAssets(RwaEntity *entity);
     void setEntityStartCoordinates(RwaEntity *entity);
     void startBackgroundState(RwaEntity *entity);
-
     void createAndBindPlayFinishedReceiver(pdPatcher *patcher);
-
-
-
-
 
 signals:
     void sendRedrawAssets();

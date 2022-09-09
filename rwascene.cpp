@@ -98,7 +98,7 @@ RwaState *RwaScene::addState(std::string stateName,  std::vector<double> gpsCoor
     newState->setHeight(100);
     newState->isGpsState = true;
     newState->setType(RWASTATETYPE_GPS);
-    newState->setDefaultPlaybackType(RWAPLAYBACKTYPE_BINAURAL);
+    newState->setDefaultPlaybackType(RWAPLAYBACKTYPE_BINAURAL_FABIAN);
     newState->isImmortal = false;
     states.push_back(newState);
     lastTouchedState = newState;

@@ -1,4 +1,4 @@
-#N canvas 666 316 801 502 12;
+#N canvas 665 575 801 502 12;
 #X obj 27 411 dac~;
 #X floatatom 75 412 8 0 0 0 - - -;
 #X obj 36 343 oggread~;
@@ -37,10 +37,10 @@ Wilkes for Pd version 0.42.;
 #X text 12 145 OUTLET_3 bang;
 #X text 12 5 KEYWORDS signal soundfile;
 #X restore 514 447 pd META;
-#X msg 199 95 open /Users/harveykeitel/Repositories/rwacreator/build/test.ogg
-;
 #X msg 149 317 seek 1.5;
-#X msg 71 170 start 1;
+#X msg 199 95 open /Users/harveykeitel/Desktop/demoaudiorwa/state01binaural48kHz.ogg
+;
+#X msg 71 170 start;
 #X connect 2 0 0 0;
 #X connect 2 1 0 1;
 #X connect 2 2 1 0;

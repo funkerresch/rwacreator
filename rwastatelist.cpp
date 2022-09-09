@@ -11,6 +11,9 @@ RwaStateList::RwaStateList(QWidget* parent, RwaScene *scene) :
 
     connect(backend, SIGNAL(sendSelectedStates(QStringList)),
               this, SLOT(setSelectedStates(QStringList)));
+
+    connect(backend, SIGNAL(sendCurrentSceneWithoutRepositioning(RwaScene *)),
+              this, SLOT(setCurrentScene(RwaScene *)));
 }
 
 void RwaStateList::ListWidgetEditEnd(QWidget *editor, QAbstractItemDelegate::EndEditHint hint)

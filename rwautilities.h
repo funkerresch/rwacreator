@@ -60,8 +60,10 @@ public:
     static bool coordinateWithinRectangle1(std::vector<double> p, std::vector<double> center, double width, double height);
     static bool coordinateWithinPolygon3(std::vector<double> p, std::vector<std::vector<double> > &corners);
     static void debug2Terminal(const std::string file, const std::string func, int32_t line, const std::string message);
-    static bool coordinateWithinRectangle1(std::vector<double> p, std::vector<double> corner1, std::vector<double> corner2);
-
+    static bool coordinateWithinRectangle1(std::vector<double> p, std::vector<double> corner1, std::vector<double> corner2);    
+    static QString generateAssetsFolderPath(QString projectPath);
+    static QString generateCompleteAssetPath(QString projectPath, QString fileName);
+    static QString generateCompleteAssetPath(QString projectPath, std::string fileName);
 };
 
 #endif // RWAUTILITIES_H

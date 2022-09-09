@@ -155,8 +155,11 @@ void Device::scanServices(const QString &address)
     // We need the current device for service discovery.
 
     for (int i = 0; i < devices.size(); i++) {
-        if (((DeviceInfo*)devices.at(i))->getAddress() == address )
+        if (((DeviceInfo*)devices.at(i))->getAddress() == address ) {
             currentDevice.setDevice(((DeviceInfo*)devices.at(i))->getDevice());
+            qDebug();
+        }
+
     }
 
     if (!currentDevice.getDevice().isValid()) {
@@ -180,8 +183,10 @@ void Device::scanServices(const QString &address)
     }
 
     if (!controller) {
+        qDebug();
         // Connecting signals and slots for connecting to LE services.
         controller = new QLowEnergyController(currentDevice.getDevice());
+        qDebug() << controller->remoteName();
         connect(controller, &QLowEnergyController::connected,
                 this, &Device::deviceConnected);
         connect(controller, QOverload<QLowEnergyController::Error>::of(&QLowEnergyController::error),
@@ -198,6 +203,8 @@ void Device::scanServices(const QString &address)
         controller->setRemoteAddressType(QLowEnergyController::RandomAddress);
     else
         controller->setRemoteAddressType(QLowEnergyController::PublicAddress);
+
+    qDebug() <<controller->state();
     controller->connectToDevice();
 
     m_previousAddress = currentDevice.getAddress();
@@ -229,6 +236,7 @@ void Device::serviceScanDone()
 
 void Device::connectToService(const QString &uuid)
 {
+    qDebug();
     QLowEnergyService *service = 0;
     for (int i = 0; i < m_services.size(); i++) {
         ServiceInfo *serviceInfo = (ServiceInfo*)m_services.at(i);
@@ -277,6 +285,7 @@ void Device::deviceConnected()
 {
     connected = true;
     controller->discoverServices();
+    qDebug();
 }
 
 void Device::errorReceived(QLowEnergyController::Error /*error*/)

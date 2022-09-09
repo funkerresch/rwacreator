@@ -1,3 +1,16 @@
+/*
+ * This file is part of the Rwa Creator.
+ * An open-source cross-platform Middleware for creating interactive Soundwalks
+ *
+ * Copyright (C) 2015 - 2022 Thomas Resch
+ *
+ * License: MIT
+ *
+ * rwagraphicsview.h
+ * by Thomas Resch
+ *
+ */
+
 #ifndef RWAGRAPHICSVIEW_H
 #define RWAGRAPHICSVIEW_H
 
@@ -115,6 +128,7 @@ protected:
     bool stateRadiusVisible = false;
     bool sceneRadiusVisible = false;
     bool assetStartPointsVisible = false;
+    bool assetMovingPointVisible = false;
     bool assetReflectionsVisible = false;
 
     bool entityInitialized = false;

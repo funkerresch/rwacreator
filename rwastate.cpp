@@ -85,7 +85,6 @@ void RwaState::copyAttributes(RwaState *dest)
     dest->enterOnlyAfterAssetsFinish = this->getEnterOnlyAfterAssetsFinish();
     dest->enterOnlyOnce =  this->getEnterOnlyOnce();
     dest->isExclusive = this->isExclusive;
-    //dest->enterOffset = this->enterOffset;
     dest->exitOffset = this->exitOffset;
     dest->positionLocked = this->positionLocked;
 }

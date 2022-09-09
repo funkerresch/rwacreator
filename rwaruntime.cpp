@@ -513,8 +513,7 @@ void RwaRuntime::sendEnd2backgroundAssets(RwaEntity *entity)
             if(pdMutex != nullptr)
                 pdMutex->unlock();
 
-            if(backend->logSim)
-                qDebug() <<  "End background asset: "  << QString::fromStdString(assetItem->fileName);
+            qDebug() <<  "End background asset: "  << QString::fromStdString(assetItem->fileName);
 
             ++i;
         }
@@ -804,7 +803,7 @@ void RwaRuntime::sendInitValues2pd(RwaAsset1 *asset, int patcherTag)
         asset->playheadPosition = 0;
     else
     {
-        firstCrossfadeAfter-= (asset->playheadPosition/44.1);
+        firstCrossfadeAfter-= (asset->playheadPosition/48);
 
         if(firstCrossfadeAfter <0)
         {
@@ -815,6 +814,7 @@ void RwaRuntime::sendInitValues2pd(RwaAsset1 *asset, int patcherTag)
 
     if(asset->getMoveFromStartPosition())
     {
+        qDebug() << "SET TO START POSITION:";
         asset->setCurrentPosition(asset->getStartPosition());
         asset->setReachedEndPosition(false);
     }
@@ -992,18 +992,19 @@ void RwaRuntime::calculateChannelBearingAndDistance(RwaEntity *entity, RwaAsset1
     QPointF tmp;
     QPointF tmp2;
 
-    if(!asset->individuellChannelPosition[channel])
+    if(!asset->hasCustomChannelPosition[channel])
     {
         tmp2 = QPointF(asset->getCurrentPosition()[0], asset->getCurrentPosition()[1]);
         tmp = RwaUtilities::calculateDestination(tmp2, asset->getChannelRadius(), (qint32)(offset+asset->currentRotateAngleOffset)%360);
         asset->channelcoordinates[channel][0] = tmp.x();
         asset->channelcoordinates[channel][1] = tmp.y();
     }
+
     if(asset->getFixedDistance() < 0)
     {
-        if(asset->minDistance == -1)
+        if(asset->minDistance < 0)
         {
-            asset->channelDistance[channel] = RwaUtilities::calculateDistance1(entity->getCoordinates(), asset->channelcoordinates[channel])*1000 + asset->minDistance; // we do not want assets moving through us
+            asset->channelDistance[channel] = RwaUtilities::calculateDistanceInMeters(entity->getCoordinates(), asset->channelcoordinates[channel]); // we do not want assets moving through us
         }
         else
         {
@@ -1119,8 +1120,6 @@ void RwaRuntime::sendData2Asset(RwaEntity *entity, RwaEntity::AssetMapItem item)
             sendDistance(0, intPatcherTag, asset->channelDistance[0]);
             sendBearing(0, intPatcherTag, asset->channelBearing[0]);
             sendElevation(0, intPatcherTag, asset->elevation);
-           // qDebug() << "Distance: " << asset->channelDistance[0];
-            //qDebug() << "Bearing for libPd" << headtrackerX;
         }
 
         if(asset->playbackType == RWAPLAYBACKTYPE_BINAURALSTEREO
@@ -1162,12 +1161,14 @@ void RwaRuntime::sendData2Asset(RwaEntity *entity, RwaEntity::AssetMapItem item)
 
     if(!asset->getReachedEndPosition())
     {
+       // qDebug() << "Not Reached End Position";
         if(asset->distanceForMovement > 0)
         {
             asset->distanceForMovement -= asset->getMovingDistancePerTick();
-            //qDebug() << asset->distanceForMovement;
+           // qDebug() << asset->distanceForMovement;
             std::vector<double> tmp = RwaUtilities::calculateDestination1(asset->getCoordinates(), asset->distanceForMovement, asset->bearingForMovement);
-            asset->setCurrentPosition(tmp );
+            asset->setCurrentPosition(tmp);
+           // qDebug() << tmp[0] << " " << tmp[1];
         }
         else
         {
@@ -1204,6 +1205,7 @@ void RwaRuntime::sendData2Asset(RwaEntity *entity, RwaEntity::AssetMapItem item)
 
     if(asset->updatePlayheadPosition)
     {
+
         asset->playheadPositionWithoutOffset += schedulerRate;
         if(asset->playheadPositionWithoutOffset >= asset->offset)
             asset->playheadPosition += ((float)schedulerRate/1000. * 48000);
@@ -1215,7 +1217,13 @@ void RwaRuntime::sendData2Asset(RwaEntity *entity, RwaEntity::AssetMapItem item)
                 asset->updatePlayheadPosition = false;
 
         }
-        //qDebug() << asset->playheadPosition;
+        if(asset->playheadPosition - lastP > 48000)
+        {
+            //qDebug() << asset->playheadPosition / 48000;
+            lastP = asset->playheadPosition;
+        }
+
+
     }
 }
 
@@ -1367,8 +1375,6 @@ void RwaRuntime::startBackgroundState(RwaEntity *entity)
     if(entityState == NULL)
         return;
 
-   // if(backend->getLogSim())
-       // qDebug() << "Enter Background State";
 
     if(entityState->getAssets().empty())
         return;
@@ -1384,7 +1390,7 @@ void RwaRuntime::startBackgroundState(RwaEntity *entity)
              pdMutex->lock();
              libpd_float(gain2pd, asset->gain);
              pdMutex->unlock();
-
+            qDebug() << "Send Values for Background Assets";
              sendInitValues2pd(asset, patcherTag);
              entity->addBackgroundAsset(asset->uniqueId, asset, patcherTag);
            //  if(backend->getLogSim())
@@ -1425,16 +1431,19 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
     bool enterconditionsFulfilled = true;
     std::list<std::string> requiredStates;
 
-    entity->addTimeInCurrentState((float)schedulerRate/1000.);
-    entity->addTimeInCurrentScene((float)schedulerRate/1000.);
+    entity->addTimeInCurrentState(schedulerRate/1000.0f);
+    entity->addTimeInCurrentScene(schedulerRate/1000.0f);
 
-    //qDebug() << entity->getTimeInCurrentState();
+    /** ******************************** If minimum times are not reached, do nothing ************************************** */
 
-    if(entity->getTimeInCurrentState() < entity->getCurrentState()->getMinimumStayTime())
-        return;
+    if(entity->getCurrentState())
+    {
+        if(entity->getTimeInCurrentState() < entity->getCurrentState()->getMinimumStayTime())
+            return;
 
-    if(entity->getTimeInCurrentScene() < entity->getCurrentScene()->getMinimumStayTime())
-        return;
+        if(entity->getTimeInCurrentScene() < entity->getCurrentScene()->getMinimumStayTime())
+            return;
+    }
 
     enterconditionsFulfilled = true;
     exitState = false;
@@ -1444,7 +1453,6 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
 
     if(entityScene)
     {
-        //qDebug() << QString::fromStdString(entityScene->objectName());
         hint = nullptr;
         foreach(state, entityScene->getStates())
         {
@@ -1515,17 +1523,7 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
         }
     }
 
-    state = entity->getCurrentState();
     background = entity->getCurrentScene()->getBackgroundState();
-
-    if(entity->getTimeInCurrentState() > state->getTimeOut() && state->getTimeOut() > 0)
-    {
-        sendEnd2activeAssets(entity);
-        //if(backend->getLogSim())
-            //qDebug() << "Will exit State after timeout.";
-
-        exitState = true;
-    }
 
     if(background)
     {
@@ -1543,38 +1541,55 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
         }
     }
 
-    if(state->getLeaveAfterAssetsFinish() && entity->getTimeInCurrentState() > 0)
+    state = entity->getCurrentState();
+
+    if(state)
     {
-        if(entity->activeAssets.empty() )
+        if(entity->getTimeInCurrentState() > state->getTimeOut() && state->getTimeOut() > 0)
         {
-           //qDebug() << "EXIT STATE AFTER ASSETS FINISH";
+            sendEnd2activeAssets(entity);
+            //if(backend->getLogSim())
+                //qDebug() << "Will exit State after timeout.";
+
             exitState = true;
         }
-    }
 
-    if(entity->getCurrentState()->getType() == RWASTATETYPE_GPS)
-    {
-        distance = RwaUtilities::calculateDistance1( entity->getCoordinates(), state->getCoordinates());
-        if(!entityIsWithinArea(entity, state, RWAAREAOFFSETTYPE_EXIT))
+
+        if(state->getLeaveAfterAssetsFinish() && entity->getTimeInCurrentState() > 0)
         {
-            if( (!state->getLeaveOnlyAfterAssetsFinish() && !entity->getCurrentScene()->fallbackDisabled())
-                 || state->stateWithinState)
+            if(entity->activeAssets.empty() )
             {
-                //qDebug() << "EXIT STATE AFTER LEAVING STATE AREA";
-                sendEnd2activeAssets(entity);
+               //qDebug() << "EXIT STATE AFTER ASSETS FINISH";
                 exitState = true;
             }
-            else
+        }
+
+        if(entity->getCurrentState()->getType() == RWASTATETYPE_GPS)
+        {
+            distance = RwaUtilities::calculateDistance1( entity->getCoordinates(), state->getCoordinates());
+            if(!entityIsWithinArea(entity, state, RWAAREAOFFSETTYPE_EXIT))
             {
-                if(entity->activeAssets.empty())
+                if( (!state->getLeaveOnlyAfterAssetsFinish() && !entity->getCurrentScene()->fallbackDisabled())
+                     || state->stateWithinState)
+                {
+                    //qDebug() << "EXIT STATE AFTER LEAVING STATE AREA";
+                    sendEnd2activeAssets(entity);
                     exitState = true;
+                }
+                else
+                {
+                    if(entity->activeAssets.empty())
+                        exitState = true;
+                }
             }
         }
-    }
-    if(hint)
-    {
-        exitState = true;
-        sendEnd2activeAssets(entity);
+
+
+        if(hint)
+        {
+            exitState = true;
+            sendEnd2activeAssets(entity);
+        }
     }
 
     if(exitState)
@@ -1657,8 +1672,8 @@ void RwaRuntime::endBackgroundState()
 
     foreach(entity, entities)
     {
-        std::map<string, RwaEntity::AssetMapItem>::iterator i = entity->activeAssets.begin();
-        while(i != entity->activeAssets.end())
+        std::map<string, RwaEntity::AssetMapItem>::iterator i = entity->backgroundAssets.begin();
+        while(i != entity->backgroundAssets.end())
         {
             key = i->first;
             item = i->second;
@@ -1685,8 +1700,7 @@ void RwaRuntime::freeAllPatchers()
     RwaEntity::AssetMapItem item;
     string key;
 
-    if(backend->logSim)
-        qDebug() << "Free all Patchers";
+    qDebug() << "Free all Patchers";
 
     foreach(entity, entities)
     {

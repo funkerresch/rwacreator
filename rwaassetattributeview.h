@@ -1,3 +1,17 @@
+/*
+ * This file is part of the Rwa Creator.
+ * An open-source cross-platform Middleware for creating interactive Soundwalks
+ *
+ * Copyright (C) 2015 - 2022 Thomas Resch
+ *
+ * License: MIT
+ *
+ * rwaassetattributeview.h
+ * by Thomas Resch
+ * Editor for accessing asset attributes and values
+ *
+ */
+
 #ifndef RWAASSETATTRIBUTEVIEW_H
 #define RWAASSETATTRIBUTEVIEW_H
 
@@ -25,6 +39,9 @@ private slots:
     void receiveComboBoxAttributeValue(int index);
     void receiveFaderAttributeValue(int id);
     void receiveSelectedAssets(QStringList assets);
+
+signals:
+    void sendCurrentStateWithoutRepositioning(RwaState *state);
 
 private:
    QStringList selectedAssets;

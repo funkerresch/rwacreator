@@ -26,7 +26,6 @@ RwaSceneAttributeView::RwaSceneAttributeView(QWidget *parent, RwaScene *scene) :
     addLineEditAndLabel(attributeGridLayout, "Scene Radius");
     addLineEditAndLabel(attributeGridLayout, "Scene Width");
     addLineEditAndLabel(attributeGridLayout, "Scene Height");
-    addLineEditAndLabel(attributeGridLayout, "Enter Offset");
     addLineEditAndLabel(attributeGridLayout, "Exit Offset");
 
     addAttrCheckbox(attributeGridLayout, "States follow scene", RWASTATEATTRIBUTE_FOLLOWINGASSETS);
@@ -43,11 +42,11 @@ RwaSceneAttributeView::RwaSceneAttributeView(QWidget *parent, RwaScene *scene) :
     this->setMaximumWidth(240);
 }
 
-void RwaSceneAttributeView::setCurrentScene(RwaScene *currentScene)
+void RwaSceneAttributeView::setCurrentScene(RwaScene *scene)
 {
-    this->currentScene = currentScene;
+    this->currentScene = scene;
 
-    if(!currentScene)
+    if(!scene)
         return;
 
     QCheckBox *attrCheckBox = nullptr;
