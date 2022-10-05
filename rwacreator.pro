@@ -1,5 +1,5 @@
 TEMPLATE = app
-QT += widgets network multimedia concurrent serialport bluetooth
+QT += bluetooth widgets network multimedia concurrent serialport
 DEFINES += "PUREDATA"
 DEFINES += "PD"
 
@@ -11,14 +11,22 @@ extralib.depends =
 QMAKE_EXTRA_TARGETS += extralib
 PRE_TARGETDEPS = extra
 
-QMAKE_CC=clang
-QMAKE_CXX=clang++
+#QMAKE_CC=clang
+#QMAKE_CXX=clang++
 
-CONFIG += c++11
+QMAKE_CFLAGS += -Wno-unused-but-set-variable
+QMAKE_CFLAGS += -Wno-unused-variable
+QMAKE_CXXFLAGS += -Wno-unused-but-set-variable
+QMAKE_CXXFLAGS += -Wno-unused-variable
+
+macx: QMAKE_INFO_PLIST = $$PWD/Info.qmake.macos.plist
+
+#CONFIG += c++11
 #CONFIG(release):DEFINES += QT_NO_DEBUG_OUTPUT
 
 QMAKE_RPATHDIR += @executable_path/../Frameworks
-QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.7
+QMAKE_MACOSX_DEPLOYMENT_TARGET = 11.0
+QMAKE_APPLE_DEVICE_ARCHS = x86_64 arm64
 
 INCLUDEPATH += /usr/local/include
 INCLUDEPATH += $$PWD/vas_library/source
@@ -72,6 +80,11 @@ macx
 include($$PWD/qmapcontrol/QMapControl/QMapControl.pri)
 
 HEADERS += \
+    bluetooth1/bluetoothbaseclass.h \
+    bluetooth1/connectionhandler.h \
+    bluetooth1/devicefinder.h \
+    bluetooth1/devicehandler.h \
+    bluetooth1/deviceinfo1.h \
     libogg/include/ogg/config_types.h.in \
     libogg/include/ogg/ogg.h \
     libogg/include/ogg/os_types.h \
@@ -183,14 +196,16 @@ HEADERS += \
     vorbis/lib/smallft.h \
     vorbis/lib/window.h
 
-
-
 SOURCES += main.cpp \
+    bluetooth1/bluetoothbaseclass.cpp \
+    bluetooth1/connectionhandler.cpp \
+    bluetooth1/devicefinder.cpp \
+    bluetooth1/devicehandler.cpp \
+    bluetooth1/deviceinfo1.cpp \
     libogg/src/bitwise.c \
     libogg/src/framing.c \
     oggread~.c \
     pd-extra/pd/externals/freeverb~/freeverb~.c \
-    pd-extra/pd/externals/pdogg/oggwrite~.c \
     rwaasset1.cpp \
     rwaheadtrackerconnect.cpp \
     rwahistory.cpp \
@@ -278,10 +293,19 @@ LIBS += -lcurses
 LIBS += -lncurses
 LIBS += -lz
 
-installs.files += $$PWD/libpd/libs/libpd.dylib
-installs.files += $$PWD/portaudio/lib/.libs/libportaudio.2.dylib
-installs.path = $$OUT_PWD/rwacreator.app/Contents/MacOS
-INSTALLS += installs
+macx: LIBS += -L$$PWD/portaudio/lib/.libs/ -lportaudio.2
+macx: LIBS += -L$$PWD/libpd/libs/ -lpd
+macx: LIBS += -L$$PWD/taglib/build/taglib -ltag
+
+RESFILES.files = $$PWD/libpd/libs/libpd.dylib $$PWD/portaudio/lib/.libs/libportaudio.2.dylib
+RESFILES.path = Contents/Frameworks
+QMAKE_BUNDLE_DATA += RESFILES
+
+#installs.files += $$PWD/libpd/libs/libpd.dylib
+#installs.files += $$PWD/portaudio/lib/.libs/libportaudio.2.dylib
+#installs.files += $$PWD/taglib/lib/build/taglib/libtag.a
+#installs.path = $$OUT_PWD/rwacreator.app/Contents/MacOS
+#INSTALLS += installs
 
 copydata.commands = $(COPY_DIR) $$PWD/images $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/fabian_dir256.txt $$OUT_PWD/rwacreator.app/Contents/MacOS \
@@ -290,30 +314,23 @@ copydata.commands = $(COPY_DIR) $$PWD/images $$OUT_PWD/rwacreator.app/Contents/M
 && $(COPY_FILE) $$PWD/puredata/rwaloopplayerstereoogg.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/rwaloopplayermonoogg.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/rwaplayer5_1channelbinaural_fabian.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
-&& $(COPY_FILE) $$PWD/puredata/rwaplayer5_1channelbinaural.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/rwaplayer7channelbinaural_fabian.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/rwaplayermonobinaural_fabian.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/rwaplayermonobinauralogg_fabian.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/rwaplayerstereobinauralogg_fabian.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/rwaplayermonobrir1.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
-&& $(COPY_FILE) $$PWD/puredata/rwaplayermonobinaural.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
 && $(COPY_FILE) $$PWD/puredata/rwaplayerstereobinaural_fabian.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
-&& $(COPY_FILE) $$PWD/puredata/rwaplayerstereobinaural.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
-&& $(COPY_FILE) $$PWD/puredata/stereoout.pd $$OUT_PWD/rwacreator.app/Contents/MacOS \
-&& $(COPY_FILE) $$PWD/puredata/rwagetmetadata.pd $$OUT_PWD/rwacreator.app/Contents/MacOS
-
+&& $(COPY_FILE) $$PWD/puredata/stereoout.pd $$OUT_PWD/rwacreator.app/Contents/MacOS
 first.depends = $(first) copydata
 export(first.depends)
 export(copydata.commands)
 
 QMAKE_EXTRA_TARGETS += first copydata
 
-target.path = $$PWD/build
+target.path = $$PWD/rwabuild
 INSTALLS += target
 
-macx: LIBS += -L$$PWD/portaudio/lib/.libs/ -lportaudio.2
-macx: LIBS += -L$$PWD/libpd/libs/ -lpd
-macx: LIBS += -L$$PWD/taglib/build/taglib -ltag
+
 
 
 

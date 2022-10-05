@@ -233,7 +233,7 @@ void RwaAssetList::add2ListAndCopy(QString fullpath)
 void RwaAssetList::dropEvent(QDropEvent *event)
 {
     QString str = event->mimeData()->text();
-    QStringList newItems = str.split( "\n", QString::SkipEmptyParts );
+    QStringList newItems = str.split( "\n", Qt::SkipEmptyParts );
 
     foreach( const QString fullpath, newItems )
         add2ListAndCopy(fullpath);

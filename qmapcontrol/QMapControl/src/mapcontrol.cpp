@@ -296,7 +296,7 @@ namespace qmapcontrol
 
         // emit(mouseEvent(evnt));
         //emit(mouseEventCoordinate(evnt, clickToWorldCoordinate(evnt->pos())));
-        emit(sendMouseDownEvent(evnt, clickToWorldCoordinate(evnt->pos())));
+        emit sendMouseDownEvent(evnt, clickToWorldCoordinate(evnt->pos()));
     }
 
     void MapControl::mouseReleaseEvent(QMouseEvent* evnt)

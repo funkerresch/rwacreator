@@ -52,6 +52,19 @@ void RwaBackend::StartHttpServer1(qint32 port)
     serverThread->start();
 }
 
+qint32 RwaBackend::getSampleRate() const
+{
+    return sampleRate;
+}
+
+void RwaBackend::setSampleRate(qint32 newSampleRate)
+{
+    if(newSampleRate == 44100 || newSampleRate == 48000)
+        sampleRate = newSampleRate;
+    else
+        sampleRate = 48000;
+}
+
 void RwaBackend::StopHttpServer1()
 {
     qDebug() << "Try Stopping";
@@ -102,6 +115,7 @@ RwaBackend::RwaBackend(QWidget *parent) :
     headtracker = RwaHeadtrackerConnect::getInstance();
     clipboardStates = new RwaScene(std::string("ClipboardScene"), std::vector<double>(2, 0.0), 0);
     assetStringList = QStringList();
+    sampleRate = 48000;
     appendScene();
 }
 
@@ -214,6 +228,7 @@ void RwaBackend::receiveCurrentSceneWithouRepositioning(RwaScene *scene)
 
 void RwaBackend::receiveCurrentStateWithouRepositioning(RwaState *state)
 {
+    qDebug();
     if(!state)
         return;
 
@@ -227,7 +242,7 @@ void RwaBackend::receiveLastTouchedScene(RwaScene *scene)
         return;
 
     lastTouchedScene = scene;
-    currentMapCoordinates = QPointF(scene->getCoordinates()[0], scene->getCoordinates()[1]);
+    //currentMapCoordinates = QPointF(scene->getCoordinates()[0], scene->getCoordinates()[1]);
     emit sendLastTouchedScene(scene);
 }
 
@@ -448,14 +463,11 @@ void RwaBackend::moveScene2CurrentMapLocation()
     std::vector<double> tmp(2, 0.0);
     tmp[0] = currentMapCoordinates.x();
     tmp[1] = currentMapCoordinates.y();
+    lastTouchedScene->currentViewCoordinates = tmp;
 
     if(lastTouchedScene)
         lastTouchedScene->moveScene2NewLocation(tmp);
 
-    qDebug() << "Move Scene";
-
-//    emit sendEntityPosition(tmp);
-//    emit sendHeroPositionEdited();
     emit sendLastTouchedScene(lastTouchedScene);
     emit sendMoveHero2CurrentScene();
 }
@@ -617,7 +629,7 @@ void RwaBackend::startStopSimulator(bool startStop)
     else
         simulator->stopRwaSimulation();
 
-    emit updateScene(lastTouchedScene);
+    //emit updateScene(lastTouchedScene);
 }
 
 void RwaBackend::setMainVolume(int volume)
@@ -742,11 +754,12 @@ void RwaBackend::generateUuidsForClipboardState(RwaState *state)
 
 int RwaBackend::getNumberFromQString(const QString &xString)
 {
-    QRegExp xRegExp("(-?\\d+(?:[\\.,]\\d+(?:e\\d+)?)?)");
-    xRegExp.indexIn(xString);
-    QStringList xList = xRegExp.capturedTexts();
-    if (true == xList.empty())
-        return 0;
+//    QRegExp xRegExp("(-?\\d+(?:[\\.,]\\d+(?:e\\d+)?)?)");
+//    xRegExp.indexIn(xString);
+//    QStringList xList = xRegExp.capturedTexts();
+//    if (true == xList.empty())
+//        return 0;
 
-    return xList.begin()->toInt();
+//    return xList.begin()->toInt();
+    return 0;
 }

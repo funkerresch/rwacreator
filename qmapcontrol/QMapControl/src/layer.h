@@ -39,6 +39,7 @@
 #include "wmsmapadapter.h"
 #include "tilemapadapter.h"
 #include "imagemapadapter.h"
+#include "imagemanager.h"
 
 namespace qmapcontrol
 {
@@ -84,7 +85,10 @@ namespace qmapcontrol
          * @param takeevents Should the Layer receive MouseEvents? This is set to true by default. Setting it to false could
          * be something like a "speed up hint"
          */
-        Layer(QString layername, MapAdapter* mapadapter, enum LayerType layertype, bool takeevents=true);
+
+        Layer();
+        Layer(QString layername, MapAdapter* mapadapter = nullptr, enum LayerType layertype = LayerType::MapLayer, bool takeevents=true);
+
         virtual ~Layer();
 
         //! returns the layer's name
@@ -138,7 +142,7 @@ namespace qmapcontrol
         void setMapAdapter(MapAdapter* mapadapter);
 
         Layer& operator=(const Layer& rhs);
-        Layer(const Layer& old);
+        Layer(const Layer& old) = default;
 
         void setActivePixmap(QPixmap activePixmap);
         void setPassivePixmap(QPixmap passivePixmap);
@@ -203,4 +207,6 @@ namespace qmapcontrol
 
     };
 }
+
+Q_DECLARE_METATYPE(qmapcontrol::Layer)
 #endif

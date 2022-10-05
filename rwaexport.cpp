@@ -72,6 +72,7 @@ void RwaExport::writeAssetItem1(RwaAsset1 *item)
    xml.writeAttribute("uuid", QString::fromStdString(item->getUniqueId()));
    xml.writeAttribute("type", QString::number(item->getType()));
    xml.writeAttribute("gain", QString::number(static_cast<double>(item->getGain())));
+   xml.writeAttribute("elevation", QString::number(static_cast<double>(item->getElevation())));
    xml.writeAttribute("lon", QString::number(item->getCoordinates()[0], 'f', 8));
    xml.writeAttribute("lat", QString::number(item->getCoordinates()[1], 'f', 8));
    xml.writeAttribute("playbacktype", QString::number(item->getPlaybackType()));
@@ -80,6 +81,7 @@ void RwaExport::writeAssetItem1(RwaAsset1 *item)
    xml.writeAttribute("dampingtrim", QString::number(static_cast<double>(item->getDampingTrim())));
    xml.writeAttribute("dampingmin", QString::number(static_cast<double>(item->getDampingMin())));
    xml.writeAttribute("dampingmax", QString::number(static_cast<double>(item->getDampingMax())));
+   xml.writeAttribute("smoothdist", QString::number(static_cast<double>(item->getSmoothDist())));
    xml.writeAttribute("mindistance", QString::number(static_cast<double>(item->getMinDistance())));
    xml.writeAttribute("fadein", QString::number(item->getFadeInTime()));
    xml.writeAttribute("fadeout", QString::number(item->getFadeOutTime()));

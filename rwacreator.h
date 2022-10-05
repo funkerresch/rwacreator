@@ -66,7 +66,7 @@ class RwaCreator : public QMainWindow
     Q_OBJECT
 
 public:
-    RwaCreator(QWidget *parent = nullptr, Qt::WindowFlags flags = nullptr);
+    RwaCreator(QWidget *parent = nullptr);
     //~RwaCreator();
 
 public slots:
@@ -94,8 +94,9 @@ private:
 /** ********************************************* Add default views ************************************************** */
 
 private slots:
-
+    void deleteUnusedAssetFiles();
     void loadDefaultViews();
+    void gatherViews();
     void addMapView();
     void addSceneView();
     void addGameView();
@@ -107,9 +108,9 @@ private slots:
 
     void closeEvent(QCloseEvent *event);
     void cleanUpBeforeQuit();
+    void selectSampleRate(qint32 index);
 
 public slots:
-
     void exportProject();
     void exportToXCodeClientProject();
     void exportZip();
@@ -123,7 +124,6 @@ public slots:
     void enterFilePathPreferences();
     void selectInputDevice(qint32 index);
     void readUndoFile(QString name);
-
 signals:
     void sendReadNewGame();
 
@@ -140,6 +140,7 @@ private:
     QAction *createDockWidgetAction = nullptr;
     QAction *defaultViewWidgetAction = nullptr;
     QAction *selectAudioDeviceAction = nullptr;
+    QAction *selectSampleRateAction = nullptr;
     QAction *selectHeadtrackerAction = nullptr;
     QString headtrackerSerialPort = QString();
     qint32 headtrackerSerialPortIndex = -1;
@@ -161,6 +162,7 @@ private:
     void prepareWrite1(QString fullpath, int flags);
     void write1(QString writeMessage, qint32 flags, QString newCompleteFilePath);
     void checkUndoFolder();
+    void audioPrefsSRHelper(int i, qint32 &sr_int, QString &sr);
 };
 
 #endif

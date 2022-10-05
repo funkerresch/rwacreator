@@ -35,40 +35,37 @@ public:
 
     RwaRuntime *runtime;
     RwaHeadtrackerConnect *headTracker;
-
     RwaEntity *getEntity(QString name);
+    qint32 getSchedulerRate() const;
+
     void newEntity(QString name, qint32 type);
     void appendEntityAttribute(QString entityName, QString attributeName, double floatValue);
     void appendEntityAttribute(QString entityName, QString attributeName, QString stringValue);
     void renderEntities();
     void setEntityState();
     void sendData2Devices();
+    void setSchedulerRate(const qint32 &value);
+    void sendSelectedScene2Devices();
+    void clearEntities();
+    void initGandalf();
 
     static QList<RwaEntity *> entities;
     audioProcessor *ap;
     QTimer *gameLoopTimer;
     QTimer *entityTimer;
-    qint32 entityUpdateInterval;
-    bool simulationIsRunning;
+    qint32 entityUpdateInterval;   
     RwaBackend *backend;
 
     bool step = false;
     bool devicesRegistered;
+    bool simulationIsRunning;
 
     QList<oscDevice *> devices;
     QOscServer* oscServer;
-
     PathObject *registerPath;
     PathObject *coordinatesPath;
     PathObject *downloadGamesPath;
-
-    qint32 getSchedulerRate() const;
-    void setSchedulerRate(const qint32 &value);
-
-    void sendSelectedScene2Devices();
-
-    void clearEntities();
-    void initGandalf();
+    PathObject *positionPath;
 
 signals:
     void updateScene();
@@ -77,11 +74,9 @@ signals:
     void sendSelectedState(RwaState *state);
 
 public slots:
-
     void receiveRedrawAssetsFromRuntime();
     void receiveCurrentSceneFromRuntime(RwaScene *scene);
     void receiveCurrentStateFromRuntime(RwaState *state);
-
     void receiveNewGameSignal();
     void updateRwaGameState();
     void setMainVolume(float volume);
@@ -97,19 +92,13 @@ public slots:
     void receiveElevation(float elevation);
     void receiveZ(float Z);
     void receiveLastTouchedScene(RwaScene *scene);
-//    void receiveEntityPosition(QPointF position);
     void receiveEntityPosition(vector<double> position);
     void receiveStep();
-
     void receiveUndoGameLoaded();
+    void receivePositionMessage(QVariant data);
 
 private:
     qint32 schedulerFrequency;
-
-
- public:
-
-    float getChannelCount(QString absoluteAssetPath);
 };
 
 #endif // RWASIMULATOR_H

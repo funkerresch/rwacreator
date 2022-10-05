@@ -1,4 +1,5 @@
 #include "rwahistory.h"
+#include "QtGui/qevent.h"
 
 RwaHistory::RwaHistory(QWidget *parent):
     QListView(parent)
@@ -25,7 +26,8 @@ void RwaHistory::receiveNewGameSignal()
 void RwaHistory::mousePressEvent(QMouseEvent *event)
 {
     QListView::mousePressEvent(event);
-    emit readUndoFile(this->currentIndex().data( Qt::DisplayRole ).toString());
+    if(!this->currentIndex().data( Qt::DisplayRole ).toString().isEmpty())
+        emit readUndoFile(this->currentIndex().data( Qt::DisplayRole ).toString());
 }
 
 void RwaHistory::update()

@@ -24,6 +24,9 @@
 */
 
 #include "layermanager.h"
+#include "mapnetwork.h"
+#include "layer.h"
+#include "mapcontrol.h"
 namespace qmapcontrol
 {
     LayerManager::LayerManager(MapControl* mapcontrol, QSize size)

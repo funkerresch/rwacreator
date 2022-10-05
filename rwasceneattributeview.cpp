@@ -54,6 +54,9 @@ void RwaSceneAttributeView::setCurrentScene(RwaScene *scene)
     QLineEdit *attrLineEdit = nullptr;
 
     updateSceneArea();
+    attrComboBox = this->findChild<QComboBox *>("Next Scene");
+    updateSceneComboBox(attrComboBox);
+    updateSceneAttr(attrComboBox, QString::fromStdString(currentScene->getNextScene()));
 
     attrLineEdit = this->findChild<QLineEdit *>("Required States");
     if(attrLineEdit)
@@ -69,10 +72,6 @@ void RwaSceneAttributeView::setCurrentScene(RwaScene *scene)
     attrLineEdit = this->findChild<QLineEdit *>("Level");
     if(attrLineEdit)
         attrLineEdit->setText(QString::number(currentScene->getLevel()));
-
-//    attrLineEdit = this->findChild<QLineEdit *>("Enter Offset");
-//    if(attrLineEdit)
-//        attrLineEdit->setText(QString::number(currentScene->getEnterOffset()));
 
     attrLineEdit = this->findChild<QLineEdit *>("Exit Offset");
     if(attrLineEdit)
@@ -132,14 +131,14 @@ void RwaSceneAttributeView::updateSceneComboBox(QComboBox *attrComboBox)
 
     RwaScene *scene;
 
-    disconnect(attrComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(receiveComboBoxAttributeValue(QString)));
+    //disconnect(attrComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(receiveComboBoxAttributeValue(QString)));
     attrComboBox->clear();
     attrComboBox->addItem("None");
 
     foreach(scene, backend->getScenes())
         attrComboBox->addItem(QString::fromStdString(scene->objectName()));
 
-    connect(attrComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(receiveComboBoxAttributeValue(QString)));
+    //connect(attrComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(receiveComboBoxAttributeValue(QString)));
 }
 
 void RwaSceneAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
@@ -184,7 +183,7 @@ void RwaSceneAttributeView::receiveLineEditAttributeValue()
     if(!QObject::sender()->objectName().compare("Required Scenes"))
     {
         QLineEdit *attrLineEdit = (QLineEdit *)QObject::sender();
-        QStringList requiredScenes = attrLineEdit->text().split(",",QString::SkipEmptyParts);
+        QStringList requiredScenes = attrLineEdit->text().split(",",Qt::SkipEmptyParts);
 
         currentScene->requiredScenes.clear();
         QString requiredScene;
@@ -322,7 +321,6 @@ void RwaSceneAttributeView::receiveComboBoxAttributeValue(QString value)
         return;
 
     QComboBox *attrComboBox = nullptr;
-
 
     if(!QObject::sender()->objectName().compare("Area Type"))
     {

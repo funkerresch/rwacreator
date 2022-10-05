@@ -13,6 +13,7 @@
 #include <QStyle>
 #include <stdlib.h>
 #include <QToolButton>
+#include "QtGui/qactiongroup.h"
 #include "qoscclient.h"
 #include "qosctypes.h"
 
@@ -272,7 +273,7 @@ void RwaViewToolbar::initToolButtonGroup()
 //    addWidget(markee);
 //    selectTool->setExclusive(true);
 
-    connect(selectTool, SIGNAL(buttonClicked(int)), this, SLOT(receiveClickedTool(int)));
+    connect(selectTool, SIGNAL(idClicked(int)), this, SLOT(receiveClickedTool(int)));
 }
 
 void RwaViewToolbar::receiveClickedTool(int tool)
@@ -480,7 +481,7 @@ void RwaViewToolbar::updateSelectSceneMenu()
             selectSceneAction->setChecked(true);
     }
 
-    connect (signalMapper, SIGNAL(mapped(int)), this, SLOT(selectScene(qint32))) ;
+    connect (signalMapper, SIGNAL(mappedInt(int)), this, SLOT(selectScene(qint32))) ;
 }
 
 void RwaViewToolbar::updateSelectStateMenu()
@@ -522,7 +523,7 @@ void RwaViewToolbar::updateSelectStateMenu()
             selectStateAction->setChecked(true);
     }
     selectStateGroup->setExclusive(true);
-    connect (signalMapper, SIGNAL(mapped(int)), this, SLOT(selectState(qint32))) ;
+    connect (signalMapper, SIGNAL(mappedInt(int)), this, SLOT(selectState(qint32))) ;
 }
 
 void RwaViewToolbar::updateAll()

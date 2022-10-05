@@ -60,16 +60,30 @@
 #include <QList>
 #include <QTimer>
 
+/*Device::Device()
+{
+    //! [les-devicediscovery-1]
+    discoveryAgent = new QBluetoothDeviceDiscoveryAgent();
+    discoveryAgent->setLowEnergyDiscoveryTimeout(25000);
+    connect(discoveryAgent, &QBluetoothDeviceDiscoveryAgent::deviceDiscovered,
+            this, &Device::addDevice);
+    connect(discoveryAgent, &QBluetoothDeviceDiscoveryAgent::errorOccurred, this,
+            &Device::deviceScanError);
+    connect(discoveryAgent, &QBluetoothDeviceDiscoveryAgent::finished, this, &Device::deviceScanFinished);
+    //! [les-devicediscovery-1]
+
+    setUpdate("Search");
+}*/
+
 Device::Device():
     connected(false), controller(0), m_deviceScanState(false), randomAddress(false)
 {
-    discoveryAgent = new QBluetoothDeviceDiscoveryAgent();
-
+    discoveryAgent = new QBluetoothDeviceDiscoveryAgent(this);
     discoveryAgent->setLowEnergyDiscoveryTimeout(20000);
 
     connect(discoveryAgent, &QBluetoothDeviceDiscoveryAgent::deviceDiscovered,
             this, &Device::addDevice);
-    connect(discoveryAgent, QOverload<QBluetoothDeviceDiscoveryAgent::Error>::of(&QBluetoothDeviceDiscoveryAgent::error),
+    connect(discoveryAgent, &QBluetoothDeviceDiscoveryAgent::errorOccurred,
             this, &Device::deviceScanError);
     connect(discoveryAgent, &QBluetoothDeviceDiscoveryAgent::finished, this, &Device::deviceScanFinished);
 }
@@ -96,7 +110,9 @@ void Device::startDeviceDiscovery(QString name)
 
     discoveryAgent->start(QBluetoothDeviceDiscoveryAgent::LowEnergyMethod);
 
+
     if (discoveryAgent->isActive()) {
+        qDebug();
         m_deviceScanState = true;
         Q_EMIT stateChanged();
     }
@@ -185,11 +201,12 @@ void Device::scanServices(const QString &address)
     if (!controller) {
         qDebug();
         // Connecting signals and slots for connecting to LE services.
-        controller = new QLowEnergyController(currentDevice.getDevice());
+        //controller = new QLowEnergyController(currentDevice.getDevice());
+        controller = QLowEnergyController::createCentral(currentDevice.getDevice(), this);
         qDebug() << controller->remoteName();
         connect(controller, &QLowEnergyController::connected,
                 this, &Device::deviceConnected);
-        connect(controller, QOverload<QLowEnergyController::Error>::of(&QLowEnergyController::error),
+        connect(controller, &QLowEnergyController::errorOccurred,
                 this, &Device::errorReceived);
         connect(controller, &QLowEnergyController::disconnected,
                 this, &Device::deviceDisconnected);
@@ -320,7 +337,7 @@ void Device::serviceDetailsDiscovered(QLowEnergyService::ServiceState newState)
         // in case the service discovery failed
         // We have to queue the signal up to give UI time to even enter
         // the above mode
-        if (newState != QLowEnergyService::DiscoveringServices) {
+        if (newState != QLowEnergyService::DiscoveringService) {
             QMetaObject::invokeMethod(this, "characteristicsUpdated",
                                       Qt::QueuedConnection);
         }
@@ -346,7 +363,7 @@ void Device::serviceDetailsDiscovered(QLowEnergyService::ServiceState newState)
             qDebug() << "Register for changes";
 
         QLowEnergyDescriptor notification = ch.descriptor(
-            QBluetoothUuid::ClientCharacteristicConfiguration);
+            QBluetoothUuid::DescriptorType::ClientCharacteristicConfiguration);
 
         if (!notification.isValid()) {
           qDebug() << "QLowEnergyDescriptor not valid";

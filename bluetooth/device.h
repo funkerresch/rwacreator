@@ -69,7 +69,13 @@ QT_FORWARD_DECLARE_CLASS (QBluetoothServiceInfo)
 class Device: public QObject
 {
     Q_OBJECT
-
+    Q_PROPERTY(QVariant devicesList READ getDevices NOTIFY devicesUpdated)
+    Q_PROPERTY(QVariant servicesList READ getServices NOTIFY servicesUpdated)
+    Q_PROPERTY(QVariant characteristicList READ getCharacteristics NOTIFY characteristicsUpdated)
+    Q_PROPERTY(QString update READ getUpdate WRITE setUpdate NOTIFY updateChanged)
+    Q_PROPERTY(bool useRandomAddress READ isRandomAddress WRITE setRandomAddress NOTIFY randomAddressChanged)
+    Q_PROPERTY(bool state READ state NOTIFY stateChanged)
+    Q_PROPERTY(bool controllerError READ hasControllerError)
 public:
     Device();
     ~Device();
@@ -90,7 +96,6 @@ public slots:
     void connectToService(const QString &uuid);
     void disconnectFromDevice();
 
-    void on_characteristicChanged(QLowEnergyCharacteristic c, QByteArray a);
 private slots:
     // QBluetoothDeviceDiscoveryAgent related
     void addDevice(const QBluetoothDeviceInfo&);
@@ -103,6 +108,8 @@ private slots:
     void errorReceived(QLowEnergyController::Error);
     void serviceScanDone();
     void deviceDisconnected();
+    void on_characteristicChanged(QLowEnergyCharacteristic c, QByteArray a);
+    void setUpdate(QString message);
 
     // QLowEnergyService related
     void serviceDetailsDiscovered(QLowEnergyService::ServiceState newState);
@@ -115,22 +122,24 @@ Q_SIGNALS:
     void stateChanged();
     void disconnected();
     void randomAddressChanged();
-    void sendHeadtrackerData(QString);
+    void sendHeadtrackerData(QString );
+
+
 
 private:
-    void setUpdate(QString message);
+    //void setUpdate(const QString &message);
     QBluetoothDeviceDiscoveryAgent *discoveryAgent;
     DeviceInfo currentDevice;
-    QList<QObject*> devices;
-    QList<QObject*> m_services;
-    QList<QObject*> m_characteristics;
+    QList<QObject *> devices;
+    QList<QObject *> m_services;
+    QList<QObject *> m_characteristics;
     QString m_previousAddress;
     QString m_message;
+    bool connected = false;
+    QLowEnergyController *controller = nullptr;
+    bool m_deviceScanState = false;
+    bool randomAddress = false;
     QString headtrackerName;
-    bool connected;
-    QLowEnergyController *controller;
-    bool m_deviceScanState;
-    bool randomAddress;
 };
 
 #endif // DEVICE_H

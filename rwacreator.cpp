@@ -31,8 +31,8 @@ Q_DECLARE_METATYPE(QDockWidget::DockWidgetFeatures)
 
 RwaLogWindow *RwaCreator::logWindow;
 
-RwaCreator::RwaCreator(QWidget *parent, Qt::WindowFlags flags)
-    : QMainWindow(parent, flags)
+RwaCreator::RwaCreator(QWidget *parent)
+    : QMainWindow(parent)
 {
     setObjectName("RWA Creator");
     setDockNestingEnabled(true);
@@ -55,8 +55,11 @@ RwaCreator::RwaCreator(QWidget *parent, Qt::WindowFlags flags)
     setCentralWidget(backend);   
     createInitFolder();      
     loadDefaultViews();
-    setupMenuBar();
     loadLayoutAndSettings();
+    setupMenuBar();    
+
+    QShortcut *shortcut = new QShortcut(QKeySequence(tr("Ctrl+s", "Save")), this);
+    connect(shortcut, &QShortcut::activated, this, &RwaCreator::save);
 }
 
 /** *************************** logMessages redirects qDebug() to rwalogview ***************************************** */
@@ -81,13 +84,13 @@ void RwaCreator::createInitFolder()
         if (file.open(QIODevice::ReadWrite))
         {
             QTextStream stream(&file);
-            stream << "#!/bin/sh" << endl;
-            stream << "cd Games/" << endl;
-            stream << "ls *.zip > allfiles.txt" << endl;
+            stream << "#!/bin/sh" << "\n";
+            stream << "cd Games/" << "\n";
+            stream << "ls *.zip > allfiles.txt" << "\n";
         }
         file.setPermissions(QFileDevice::ReadUser | QFileDevice::WriteUser | QFileDevice::ExeUser | QFileDevice::ReadOther);
         file.close();
-   }
+    }
 
     path = QString(backend->completeClientDownloadPath);
     if(!QDir(path).exists())
@@ -136,14 +139,14 @@ void RwaCreator::writeInit()
     if (file.open(QIODevice::WriteOnly | QIODevice::Text))
     {
         QTextStream stream(&file);
-        stream << backend->completeFilePath << endl;
-        stream << headtracker->getName() << endl;
+        stream << backend->completeFilePath << "\n";
+        stream << headtracker->getName() << "\n";
         if(backend->showStateRadii)
-            stream << "1" << endl;
+            stream << "1" << "\n";
         else
-            stream << "0" << endl;
+            stream << "0" << "\n";
         if(backend->showAssets)
-            stream << "1" << endl;
+            stream << "1" << "\n";
         else
             stream << "0";
         file.close();
@@ -164,6 +167,7 @@ void RwaCreator::saveLayoutAndSettings()
     settings.setValue("downloadpath", backend->completeClientDownloadPath);
     settings.setValue("downloadpathwithescape", backend->completeClientDownloadPathWithEscape);
     settings.setValue("headtrackerid", headtracker->getName());
+    settings.setValue("samplerate", backend->sampleRate);
     settings.sync(); // forces to write the settings to storage
 }
 
@@ -172,17 +176,31 @@ void RwaCreator::loadLayoutAndSettings()
     QSettings settings("Intrinsic Audio", "Rwa Creator");
     restoreGeometry(settings.value("geometry").toByteArray());
     restoreState(settings.value("windowState").toByteArray());
-    headtracker->setName(settings.value("headtrackerid").toString());
-    backend->completeClientDownloadPath = (settings.value("downloadpath").toString());
-    backend->completeClientDownloadPathWithEscape = (settings.value("downloadpathwithescape").toString());
-    backend->completeXCodeClientProjectExportPath = (settings.value("xcodeclientprojectpath").toString());
-    if(backend->completeXCodeClientProjectExportPath.isEmpty())
+
+    if(settings.contains("headtrackerid"))
+        headtracker->setName(settings.value("headtrackerid").toString());
+    else
+        headtracker->setName("rwaht00");
+
+    if(settings.contains("samplerate"))
+        backend->setSampleRate(settings.value("samplerate").toInt());
+    else
+        backend->setSampleRate(48000);
+
+    if(settings.contains("xcodeclientprojectpath"))
+        backend->completeXCodeClientProjectExportPath = (settings.value("xcodeclientprojectpath").toString());
+    else
         backend->completeXCodeClientProjectExportPath = QString("%1%2").arg(QDir::homePath()).arg("/Desktop");
-    if(backend->completeClientDownloadPath.isEmpty())
-    {
+
+    if(settings.contains("downloadpath"))
+        backend->completeClientDownloadPath = (settings.value("downloadpath").toString());
+    else
         backend->completeClientDownloadPath = QString("%1%2").arg(QDir::homePath()).arg("/Library/Application Support/RWACreator/Games");
-        backend->completeClientDownloadPathWithEscape = QString("%1%2").arg(QDir::homePath()).arg("\"/Library/Application Support/RWACreator/Games\"");
-    }
+
+    if(settings.contains("downloadpathwithescape"))
+        backend->completeClientDownloadPathWithEscape = (settings.value("downloadpathwithescape").toString());
+    else
+        backend->completeClientDownloadPathWithEscape = QString("%1%2").arg(QDir::homePath()).arg("'/Library/Application Support/RWACreator/Games\'");
 
     if(!open(settings.value("lastgame").toString()))
         clear();
@@ -191,7 +209,7 @@ void RwaCreator::loadLayoutAndSettings()
 /** ********************************************* Add default views ************************************************** */
 
 void RwaCreator::loadDefaultViews()
-{
+{   
     addMapView();
     addStateView();
     addSceneView();
@@ -203,10 +221,8 @@ void RwaCreator::loadDefaultViews()
 
 void RwaCreator::addMapView() // qt bug: stylesheet is applied only if widget is docked:(
 {
-    RwaDockWidget *dw = new RwaDockWidget(this);
     mapView = new RwaMapView(this, backend->getFirstScene(), "MapView");
-    //dw->setStyleSheet("QDockWidget { background-color:lightgrey; font-size: 20px; color: black}");
-    //dw->setStyleSheet("QDockWidget { font: bold }");
+    RwaDockWidget *dw = new RwaDockWidget(this);
     dw->setObjectName(tr("Map View"));
     dw->setWindowTitle(tr("Map View"));
     dw->setGeometry(0,0,1000,300);
@@ -352,12 +368,72 @@ void RwaCreator::selectInputDevice(qint32 index)
     backend->simulator->ap->setInputDevice(index);
 }
 
+void RwaCreator::selectSampleRate(qint32 index)
+{
+    QSettings settings("Intrinsic Audio", "Rwa Creator");
+
+    if(index == 0)
+        backend->sampleRate = 44100;
+    if(index == 1)
+        backend->sampleRate = 48000;
+
+    qDebug() << backend->sampleRate;
+
+    settings.setValue("samplerate", backend->sampleRate);
+    settings.sync(); // forces to write the settings to storage
+}
+
+void RwaCreator::audioPrefsSRHelper(int i, qint32 &sr_int, QString &sr)
+{
+    if(i == 0)
+    {
+        sr = QString("44100");
+        sr_int = 44100;
+    }
+
+    if(i == 1)
+    {
+        sr = QString("48000");
+        sr_int = 48000;
+    }
+}
+
 void RwaCreator::initAudioPreferencesMenu(QMenu *audioDeviceMenu)
 {
+    QActionGroup *selectSampleRateGroup = new QActionGroup(audioDeviceMenu);
     QActionGroup *selectAudioOutputDeviceGroup = new QActionGroup(audioDeviceMenu);
     QActionGroup *selectAudioInputDeviceGroup = new QActionGroup(audioDeviceMenu);
+    QSignalMapper* sampleRateSignalMapper = new QSignalMapper(audioDeviceMenu);
     QSignalMapper* outputDeviceSignalMapper = new QSignalMapper(audioDeviceMenu);
     QSignalMapper* inputDeviceSignalMapper = new QSignalMapper(audioDeviceMenu);
+
+    QAction *sampleRateLabel = new QAction(audioDeviceMenu);
+    sampleRateLabel->setCheckable(false);
+    sampleRateLabel->setText(QString("Target Sample Rate"));
+    sampleRateLabel->setEnabled(false);
+    audioDeviceMenu->addAction(sampleRateLabel );
+    audioDeviceMenu->addSeparator();
+
+    QString sr;
+    qint32 sr_int;
+
+    for(int i = 0; i < 2; i++)
+    {
+        audioPrefsSRHelper(i, sr_int, sr);
+        selectSampleRateAction = new QAction(audioDeviceMenu);
+        selectSampleRateAction->setCheckable(true);
+        selectSampleRateAction->setText(sr);
+        connect (selectSampleRateAction, SIGNAL(triggered()), sampleRateSignalMapper, SLOT(map())) ;
+        sampleRateSignalMapper->setMapping (selectSampleRateAction, i) ;
+        audioDeviceMenu->addAction(selectSampleRateAction );
+        selectSampleRateGroup->addAction(selectSampleRateAction);
+        if(backend->sampleRate == sr_int)
+            selectSampleRateAction->setChecked(true);
+    }
+
+    selectSampleRateGroup->setExclusive(true);
+    connect (sampleRateSignalMapper, SIGNAL(mappedInt(int)), this, SLOT(selectSampleRate(qint32))) ;
+    audioDeviceMenu->addSeparator();
 
     QAction *outputDeviceLabel = new QAction(audioDeviceMenu);
     outputDeviceLabel->setCheckable(false);
@@ -383,8 +459,9 @@ void RwaCreator::initAudioPreferencesMenu(QMenu *audioDeviceMenu)
                 selectAudioDeviceAction->setChecked(true);
         }
     }
+
     selectAudioOutputDeviceGroup->setExclusive(true);
-    connect (outputDeviceSignalMapper, SIGNAL(mapped(int)), this, SLOT(selectOutputDevice(qint32))) ;
+    connect (outputDeviceSignalMapper, SIGNAL(mappedInt(int)), this, SLOT(selectOutputDevice(qint32))) ;
 
     audioDeviceMenu->addSeparator();
     QAction *inputDeviceLabel = new QAction(audioDeviceMenu);
@@ -411,13 +488,25 @@ void RwaCreator::initAudioPreferencesMenu(QMenu *audioDeviceMenu)
         }
     }
     selectAudioInputDeviceGroup->setExclusive(true);
-    connect (inputDeviceSignalMapper, SIGNAL(mapped(int)), this, SLOT(selectInputDevice(qint32))) ;
+    connect (inputDeviceSignalMapper, SIGNAL(mappedInt(int)), this, SLOT(selectInputDevice(qint32))) ;
+}
+
+void RwaCreator::gatherViews()
+{
+    foreach(RwaDockWidget *widget, rwaDockWidgets)
+    {
+        if(!widget->isVisible())
+            widget->setVisible(true);
+    }
 }
 
 void RwaCreator::initViewMenu1(QMenu *fileMenu)
 {
-    QAction *action = fileMenu->addAction(tr("Default Views"));
-    connect(action, SIGNAL(triggered()), this, SLOT(loadDefaultViews()));
+//    QAction *action = fileMenu->addAction(tr("Default Views"));
+//    connect(action, SIGNAL(triggered()), this, SLOT(loadDefaultViews()));
+
+    QAction *action = fileMenu->addAction(tr("Gather Views"));
+    connect(action, SIGNAL(triggered()), this, SLOT(gatherViews()));
 
     action = fileMenu->addAction(tr("Map View"));
     connect(action, SIGNAL(triggered()), this, SLOT(addMapView()));
@@ -442,6 +531,9 @@ void RwaCreator::initFileMenu(QMenu *fileMenu)
 {
     QAction *action = fileMenu->addAction(tr("File Path Preferences"));
     connect(action, SIGNAL(triggered()), this, SLOT(enterFilePathPreferences()));
+
+    action = fileMenu->addAction(tr("Remove unused files from disk"));
+    connect(action, SIGNAL(triggered()), this, SLOT(deleteUnusedAssetFiles()));
 
     action = fileMenu->addAction(tr("Clear"));
     connect(action, SIGNAL(triggered()), this, SLOT(clear()));
@@ -474,7 +566,7 @@ void RwaCreator::enterFilePathPreferences()
     QStringList list = RwaInputDialog::getStrings(this, labels, values);
     if (!list.isEmpty()) {
         backend->completeClientDownloadPath = list[0];
-        backend->completeClientDownloadPathWithEscape = "\""+backend->completeClientDownloadPathWithEscape+"\"";
+        backend->completeClientDownloadPathWithEscape = "'"+backend->completeClientDownloadPath+"'";
         backend->completeXCodeClientProjectExportPath = list[1];
     }
 }
@@ -514,7 +606,7 @@ void RwaCreator::initHeadtrackerMenu(QMenu *headtrackerMenu)
 
 void RwaCreator::setupMenuBar()
 {
-    QMenu *selectAudioDevice = menuBar()->addMenu(tr("&Select Audio Device"));
+    QMenu *selectAudioDevice = menuBar()->addMenu(tr("&Audio Preferences"));
     initAudioPreferencesMenu(selectAudioDevice);
 
     QMenu *viewMenu = menuBar()->addMenu(tr("&View"));
@@ -597,6 +689,9 @@ void RwaCreator::exportToXCodeClientProject()
 
     prepareWrite1(fullDirectory, flags);
     write1("Export zip for RWA Server", flags, fullpath);
+
+    setWindowTitle(backend->projectName + " Successfully exported for XCode iOS build");
+    QTimer::singleShot(2000, [this]{setWindowTitle(backend->projectName);});
 }
 
 void RwaCreator::exportZip()
@@ -643,6 +738,9 @@ void RwaCreator::exportZip()
     pipe = popen(createList.toStdString().c_str(), "w");
     while(pclose(pipe) != -1)
         ;
+
+    setWindowTitle(backend->projectName + " Successfully exported zip");
+    QTimer::singleShot(2000, [this]{setWindowTitle(backend->projectName);});
 }
 
 void RwaCreator::exportProject()
@@ -707,6 +805,9 @@ void RwaCreator::save()
         exportProject();
     else
       write1("File saved", 0, backend->completeFilePath);
+
+    setWindowTitle(backend->projectName + " Successfully saved");
+    QTimer::singleShot(2000, [this]{setWindowTitle(backend->projectName);});
 }
 
 void RwaCreator::checkUndoFolder()
@@ -843,6 +944,37 @@ void RwaCreator::readUndoFile(QString name)
 void RwaCreator::showEvent(QShowEvent *event)
 {
     QMainWindow::showEvent(event);
+}
+
+void RwaCreator::deleteUnusedAssetFiles()
+{
+    bool isInUse = false;
+    QDir dir(backend->completeAssetPath);
+    for (const QFileInfo &file : dir.entryInfoList(QDir::Files))
+    {
+        isInUse = false;
+        foreach(RwaScene *scene, backend->getScenes())
+        {
+            foreach(RwaState *state, scene->getStates())
+            {
+                foreach(RwaAsset1 *asset, state->getAssets())
+                {
+                    if(asset->getFileName() == file.fileName().toStdString())
+                    {
+                        isInUse = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if(!isInUse)
+        {
+            QString completeFilePath(file.absoluteFilePath());
+            QFile::remove(completeFilePath);
+            qDebug() << "Removed "<< completeFilePath << " from Disk.";
+        }
+    }
 }
 
 

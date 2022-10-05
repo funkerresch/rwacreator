@@ -1,6 +1,6 @@
-#N canvas 665 575 801 502 12;
+#N canvas 556 324 801 502 12;
 #X obj 27 411 dac~;
-#X floatatom 75 412 8 0 0 0 - - -;
+#X floatatom 75 412 8 0 0 0 - - - 0;
 #X obj 36 343 oggread~;
 #X msg 110 226 stop;
 #X msg 118 287 resume;
@@ -17,8 +17,8 @@
 #X msg 126 250 0;
 #X msg 95 195 1;
 #X text 230 318 set new playing position (in seconds);
-#X obj 95 375 bng 15 250 50 0 empty empty empty 0 -6 0 8 -262144 -1
--1;
+#X obj 95 375 bng 15 250 50 0 empty empty empty 0 -6 0 8 #fcfcfc #000000
+#000000;
 #X text 121 375 bang at end of file;
 #X text 186 67 http://www.akustische-kunst.org/puredata/;
 #X obj 55 102 openpanel;
@@ -38,9 +38,10 @@ Wilkes for Pd version 0.42.;
 #X text 12 5 KEYWORDS signal soundfile;
 #X restore 514 447 pd META;
 #X msg 149 317 seek 1.5;
-#X msg 199 95 open /Users/harveykeitel/Desktop/demoaudiorwa/state01binaural48kHz.ogg
-;
 #X msg 71 170 start;
+#X msg 331 134 open alligator.ogg;
+#X msg 199 95 open /Users/admin/Repositories/rwacreator/build/test.ogg
+;
 #X connect 2 0 0 0;
 #X connect 2 1 0 1;
 #X connect 2 2 1 0;
@@ -56,3 +57,4 @@ Wilkes for Pd version 0.42.;
 #X connect 25 0 2 0;
 #X connect 26 0 2 0;
 #X connect 27 0 2 0;
+#X connect 28 0 2 0;

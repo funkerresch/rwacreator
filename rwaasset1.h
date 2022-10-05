@@ -291,6 +291,12 @@ public:
     int32_t getReflectionCount() const;
     void setReflectionCount(const int32_t &value);
 
+    float getElevation() const;
+    void setElevation(float newElevation);
+
+    float getSmoothDist() const;
+    void setSmoothDist(float newSmoothdist);
+
     bool getHasCoordinates() const;
 private:
     friend class RwaRuntime;
@@ -307,6 +313,7 @@ private:
     float dampingTrim = 2;
     float dampingMin = 0;
     float dampingMax = 1;
+    float smoothdist = 10;
     float playheadPosition = 0;
     float playheadPositionWithoutOffset = 0;
     float followEntityThreshhold = 4;  // at what distance to entiy start following
@@ -346,6 +353,7 @@ private:
     bool isAlive = true;     // can be activated (in principle)
     bool loop = false;        // start again automatically while within state radius
     bool blocked = false;     // blocked, can't be activated; for example: blocked by another client..
+    bool blockedForever = false;
     bool headtrackerRelative2Source = true;
     bool lockPosition = false;
     bool rawSensors2pd = false;
@@ -364,6 +372,9 @@ private:
 
 public:
     bool allowIndividuellChannelPositions = false;
+
+    bool getBlockedForever() const;
+    void setBlockedForever(bool newBlockedForever);
 };
 
 #endif // RWAASSETITEM_H

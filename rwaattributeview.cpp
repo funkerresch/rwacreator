@@ -12,8 +12,8 @@ RwaAttributeView::RwaAttributeView(QWidget* parent, RwaScene *scene)
     assetAttributeGroup = new QButtonGroup(this);
     attributeFont = QFont("Arial", 10, QFont::StyleNormal,false);
     dynamicAddButtonFont = QFont("Courier", 10, QFont::StyleOblique,true);
-    connect(assetAttributeGroup, SIGNAL(buttonToggled(int, bool)), this, SLOT(receiveCheckBoxAttributeValue(int, bool)));
-    connect(assetAttributeGroup, SIGNAL(buttonReleased(int)), this, SLOT(receiveEditingFinished()));
+    connect(assetAttributeGroup, SIGNAL(idToggled(int, bool)), this, SLOT(receiveCheckBoxAttributeValue(int, bool)));
+    connect(assetAttributeGroup, SIGNAL(idReleased(int)), this, SLOT(receiveEditingFinished()));
     assetAttributeGroup->setExclusive(false);   
     scrollArea = new QScrollArea(parent);
     scrollArea->setWidget(this);
@@ -124,7 +124,7 @@ QComboBox *RwaAttributeView::addComboBoxAndLabel(QGridLayout *layout, QString na
         attrComboBox->addItem(string);
 
     connect(attrComboBox, SIGNAL(activated(int)), this, SLOT(receiveComboBoxAttributeValue(int)));
-    connect(attrComboBox, SIGNAL(activated(QString)), this, SLOT(receiveEditingFinished()));
+    connect(attrComboBox, SIGNAL(textActivated(QString)), this, SLOT(receiveEditingFinished()));
 
     assetAttrCounter++;
 //    assetAttrCounter++;
@@ -161,7 +161,7 @@ void RwaAttributeView::addComboBoxAndLabel(QGridLayout *layout, QString name, QS
         (*attrComboBox)->addItem(string);
 
     connect((*attrComboBox), SIGNAL(activated(int)), this, SLOT(receiveComboBoxAttributeValue(int)));
-    connect(*attrComboBox, SIGNAL(activated(QString)), this, SLOT(receiveEditingFinished()));
+    connect(*attrComboBox, SIGNAL(textActivated(QString)), this, SLOT(receiveEditingFinished()));
 
     assetAttrCounter++;
 }

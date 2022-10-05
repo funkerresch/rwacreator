@@ -29,10 +29,12 @@
 #include <QObject>
 #include <QMap>
 #include <QListIterator>
-#include "layer.h"
-#include "mapadapter.h"
-#include "mapcontrol.h"
+//#include "layer.h"
+//#include "mapadapter.h"
+//#include "mapcontrol.h"
 
+#include <QMouseEvent>
+#include <QPainter>
 namespace qmapcontrol
 {
     class Layer;

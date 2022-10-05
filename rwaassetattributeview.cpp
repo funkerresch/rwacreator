@@ -33,11 +33,13 @@ RwaAssetAttributeView::RwaAssetAttributeView(QWidget *parent, RwaScene *scene) :
     editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Damping Trim");
     editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Damping Min");
     editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Damping Max");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Smooth Distance");
     editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Fade-In Time");
     editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Fade-Out Time");
     editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Crossfade Time");
     editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Offset Time");
     editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Gain");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Altitude");
     editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Channel Radius");
     editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Rotate Offset");
     editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Rotate Frequency");
@@ -164,6 +166,10 @@ void RwaAssetAttributeView::setCurrentAsset(RwaAsset1 *asset)
     if(attrLineEdit)
         attrLineEdit->setText(QString().setNum(asset->getDampingMax()));
 
+    attrLineEdit = this->findChild<QLineEdit *>("Smooth Distance");
+    if(attrLineEdit)
+        attrLineEdit->setText(QString().setNum(asset->getSmoothDist()));
+
     attrLineEdit = this->findChild<QLineEdit *>("Fade-In Time");
     if(attrLineEdit)
         attrLineEdit->setText(QString().setNum(asset->getFadeInTime()));
@@ -183,6 +189,10 @@ void RwaAssetAttributeView::setCurrentAsset(RwaAsset1 *asset)
     attrLineEdit = this->findChild<QLineEdit *>("Gain");
     if(attrLineEdit)
         attrLineEdit->setText(QString().setNum(asset->getGain()));
+
+    attrLineEdit = this->findChild<QLineEdit *>("Altitude");
+    if(attrLineEdit)
+        attrLineEdit->setText(QString().setNum(asset->getElevation()));
 
     attrLineEdit = this->findChild<QLineEdit *>("Channel Radius");
     if(attrLineEdit)
@@ -418,7 +428,13 @@ void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
             {
                  asset = currentState->getAsset(assetName.toStdString());
                  if(asset)
+                 {
                     asset->setMute(value);
+                    if(QObject::sender() != this->backend)
+                    {
+                        emit sendCurrentState(currentState);
+                    }
+                 }
              }
             break;
         }
@@ -707,6 +723,16 @@ void RwaAssetAttributeView::receiveLineEditAttributeValue(const QString &text)
        }
     }
 
+    if(!QObject::sender()->objectName().compare("Smooth Distance"))
+    {
+       foreach(QString assetName, selectedAssets)
+       {
+            asset = currentState->getAsset(assetName.toStdString());
+            if(asset)
+                asset->setSmoothDist(text.toFloat());
+       }
+    }
+
     if(!QObject::sender()->objectName().compare("Fade-In Time"))
     {
        foreach(QString assetName, selectedAssets)
@@ -756,6 +782,17 @@ void RwaAssetAttributeView::receiveLineEditAttributeValue(const QString &text)
                 asset->setGain(text.toFloat());
        }
     }
+
+    if(!QObject::sender()->objectName().compare("Altitude"))
+    {
+       foreach(QString assetName, selectedAssets)
+       {
+            asset = currentState->getAsset(assetName.toStdString());
+            if(asset)
+                asset->setElevation(text.toFloat());
+       }
+    }
+
     if(!QObject::sender()->objectName().compare("Channel Radius"))
     {
        foreach(QString assetName, selectedAssets)

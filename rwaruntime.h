@@ -125,6 +125,7 @@ RwaRuntime(QObject *parent, const char *pdpath, const char *assetPath, float sam
     void *findFreeStereoOggPatcher();
     void *findFreeMonoPatcher();
     void *findFreeMonoOggPatcher();
+    void resetPatcher(int intPatcherTag);
     void freeAllPatchers();
     void endBackgroundState();
 
@@ -151,11 +152,14 @@ RwaRuntime(QObject *parent, const char *pdpath, const char *assetPath, float sam
     void setEntityStartCoordinates(RwaEntity *entity);
     void startBackgroundState(RwaEntity *entity);
     void createAndBindPlayFinishedReceiver(pdPatcher *patcher);
-
+    void setScene(RwaEntity *entity, RwaScene *scene);
+    
+    void emptyPdMessageQueue();
 signals:
     void sendRedrawAssets();
     void sendSelectedScene(RwaScene *scene);
     void sendSelectedState(RwaState *state);
+
 };
 
 #endif // RWARUNTIME_H

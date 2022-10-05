@@ -210,15 +210,15 @@ void RwaSuggestPlaces::handleNetworkData(QNetworkReply *networkReply)
             xml.readNext();
             if (xml.tokenType() == QXmlStreamReader::StartElement)
             {
-                if (xml.name() == "place")
+                if (xml.name().toString() == "place")
                 {
-                    QStringRef str = xml.attributes().value("display_name");
+                    auto str = xml.attributes().value("display_name");
                     choices << str.toString();
 
-                    QStringRef latitude = xml.attributes().value("lat");
+                    auto latitude = xml.attributes().value("lat");
                     lat << latitude.toString();
 
-                    QStringRef longitude = xml.attributes().value("lon");
+                    auto longitude = xml.attributes().value("lon");
                     lon << longitude.toString();
                 }
             }

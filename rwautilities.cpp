@@ -156,6 +156,12 @@ int32_t RwaUtilities::calculateDistanceInMeters(std::vector<double> p1, std::vec
     return d;
 }
 
+double RwaUtilities::calculateDistanceWithAltitude(double hDist, double vDist) // calculates Distance in km
+{
+    return sqrt(pow(hDist,2) + pow(vDist, 2));
+}
+
+
 double RwaUtilities::calculateDistance1(std::vector<double> p1, std::vector<double> p2) // calculates Distance in km
 {
     double R = 6373; // Earth Radius in km
@@ -244,9 +250,18 @@ double RwaUtilities::calculateBearing1(std::vector<double> p1, std::vector<doubl
     return (((int)degrees+180) % 360); // offset for working correctly with the earplug~ in pd
 }
 
+double RwaUtilities::calculateElevationEasy(std::vector<double> p1, std::vector<double> p2, double elevation, qint32 headDirection)
+{
+    double d = static_cast<double>(calculateDistanceInMeters(p1, p2));
+    double vd = elevation;
+    double relativeElevation = atan(vd/d);
+    relativeElevation = radians2degrees(relativeElevation);
+    relativeElevation -= headDirection;
+    return relativeElevation;
+}
+
 QRectF RwaUtilities::calculateRectCorners(QPointF center, double width, double height)
 {
-
     QPointF w = calculateDestination(center, width/2, 90);
     QPointF e = calculateDestination(center, width/2, 270);
     QPointF nw = ( calculateDestination(w, height/2, 0) );
@@ -254,7 +269,6 @@ QRectF RwaUtilities::calculateRectCorners(QPointF center, double width, double h
     //QPointF ne = (calculateDestination(e, height/2, 0) );
     QPointF se = (calculateDestination(e, height/2, 180) );
     return QRectF(nw, se);
-
 }
 
 QPointF RwaUtilities::calculateNorthWest(QPointF center, double width, double height)

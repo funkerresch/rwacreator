@@ -1,6 +1,7 @@
 #include "rwaheadtrackerconnect.h"
 #include <QTimer>
 
+
 RwaHeadtrackerConnect *RwaHeadtrackerConnect::instance = nullptr;
 
 RwaHeadtrackerConnect *RwaHeadtrackerConnect::getInstance()
@@ -20,7 +21,10 @@ float RwaHeadtrackerConnect::getAzimuth()
 
 RwaHeadtrackerConnect::RwaHeadtrackerConnect(QObject *parent) : QObject(parent)
 {   
-    rwaBluetooth = new Device();
+
+     // deviceHandler = new DeviceHandler();
+      rwaBluetooth = new Device();
+
     headTrackerOrientation = std::vector<float>(3, 0.0);
     headTrackerOffset = std::vector<float>(3, 0.0);
 }
@@ -28,6 +32,7 @@ RwaHeadtrackerConnect::RwaHeadtrackerConnect(QObject *parent) : QObject(parent)
 void RwaHeadtrackerConnect::startBluetoothScanning()
 {
     qDebug() << "Start Headtracker Discovery";
+    //rwaBluetooth->startDeviceDiscovery(name);
     rwaBluetooth->startDeviceDiscovery(name);
     connect (rwaBluetooth, SIGNAL(sendHeadtrackerData(QString)),
              this, SLOT(receiveHeadtrackerData(QString)));
@@ -140,15 +145,15 @@ void RwaHeadtrackerConnect::receiveHeadtrackerData(const QString &data)
     if(data.isEmpty())
         return;
 
-    QStringList list = data.split(QRegExp("\\s+"), QString::SkipEmptyParts);
-
+   // QStringList list = data.split(QRegExp("\\s+"), Qt::SkipEmptyParts);
+    QStringList list = data.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
     if(list.empty())
         return;
 
     if(list.length() >= 1)
         receivedOrientation[0] = list.at(0).toFloat();
 
-    qDebug() << receivedOrientation[0];
+    //qDebug() << receivedOrientation[0];
 
     if(list.length() >= 2)
        receivedOrientation[1] = list.at(1).toFloat();

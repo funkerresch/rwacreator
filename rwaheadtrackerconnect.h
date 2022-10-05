@@ -15,7 +15,10 @@
 #define RWAHEADTRACKERCONNECT_H
 
 #include <QObject>
+#include <QRegularExpression>
 #include "bluetooth/device.h"
+#include "bluetooth1/devicefinder.h"
+#include "bluetooth1/devicehandler.h"
 
 class RwaHeadtrackerConnect : public QObject
 {
@@ -34,6 +37,7 @@ public slots:
     void calibrateHeadtracker();
 
 private:
+    DeviceHandler *deviceHandler;
     Device *rwaBluetooth;
     QString name = "rwaht84";
     std::vector<float> headTrackerOrientation;

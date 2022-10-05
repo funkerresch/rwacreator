@@ -25,6 +25,7 @@ class RwaMapView : public RwaGraphicsView
 public:
 
     explicit RwaMapView(QWidget* parent = nullptr, RwaScene *scene = nullptr, QString name = "");
+    ~RwaMapView();
 
     void mouseDownArrow(const QMouseEvent *event, const QPointF myPoint);
     void mouseDownRubber(const QMouseEvent *event, const QPointF myPoint);

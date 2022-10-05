@@ -44,6 +44,7 @@
 #include <QtWidgets>
 #include <QtNetwork>
 #include <QObject>
+#include <QString>
 
 QT_BEGIN_NAMESPACE
 class QLineEdit;

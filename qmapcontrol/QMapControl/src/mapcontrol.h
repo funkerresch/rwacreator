@@ -29,10 +29,10 @@
 #include <QtGui>
 
 #include <QWidget>
-#include "layermanager.h"
+//#include "layermanager.h"
 #include "layer.h"
-#include "mapadapter.h"
-#include "geometry.h"
+//#include "mapadapter.h"
+//#include "geometry.h"
 #include "imagemanager.h"
 
 

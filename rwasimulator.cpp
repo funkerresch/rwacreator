@@ -22,11 +22,12 @@ RwaSimulator::RwaSimulator(QObject *parent, RwaBackend *backend) :
     devicesRegistered = false;
     ap = new audioProcessor(1024);
     runtime = new RwaRuntime(this, path.toStdString().c_str(), assetPath.toStdString().c_str(), ap->getSampleRate(), 25, &ap->pdMutex, backend);
-    runtime->entities = entities.toStdList();
+    runtime->entities = std::list(entities.begin(), entities.end());
     simulationIsRunning = 0;
     gameLoopTimer->setInterval(getSchedulerRate());
     oscServer = new QOscServer(8000, nullptr);
     registerPath = new PathObject("/register", QVariant::List, oscServer);
+    positionPath = new PathObject("/position", QVariant::List, oscServer);
     downloadGamesPath = new PathObject("/download", QVariant::List, oscServer);
     headTracker = RwaHeadtrackerConnect::getInstance();
 
@@ -70,7 +71,7 @@ RwaSimulator::RwaSimulator(QObject *parent, RwaBackend *backend) :
                  this, SLOT(receiveRedrawAssetsFromRuntime()));
 
     QObject::connect(registerPath, SIGNAL(data(QVariant) ), this, SLOT( receiveRegisterMessage(QVariant)) );
-    //QObject::connect(downloadGamesPath, SIGNAL(data(QVariant) ), this, SLOT( receiveDownloadMessage(QVariant)) );
+    QObject::connect(positionPath, SIGNAL(data(QVariant) ), this, SLOT( receivePositionMessage(QVariant)) );
 
     setMainVolume(1.0);
 }
@@ -91,7 +92,6 @@ void RwaSimulator::receiveRedrawAssetsFromRuntime()
 void RwaSimulator::receiveCurrentSceneFromRuntime(RwaScene *scene)
 {
     emit sendSelectedScene(scene);
-    //sendSelectedScene2Devices();
 }
 
 void RwaSimulator::receiveCurrentStateFromRuntime(RwaState *state)
@@ -99,23 +99,34 @@ void RwaSimulator::receiveCurrentStateFromRuntime(RwaState *state)
     emit sendSelectedState(state);
 }
 
-float RwaSimulator::getChannelCount(QString absoluteAssetPath)
-{
-    libpd_symbol("filename4metadata", absoluteAssetPath.toLatin1());
-}
-
 void RwaSimulator::receiveLastTouchedScene(RwaScene *scene)
 {
     RwaEntity *entity;
     foreach(entity, entities)
     {
-       // sendEnd2backgroundAssets(entity);
         entity->setCurrentScene(scene);
         entity->setTimeInCurrentScene(0);
-        if(simulationIsRunning)
-            runtime->setEntityStartCoordinates(entity);
-
         sendSelectedScene2Devices();
+    }
+}
+
+void RwaSimulator::receivePositionMessage(QVariant data)
+{
+    qDebug() << data;
+    double lon = data.toList().at(0).toDouble();
+    double lat = data.toList().at(1).toDouble();
+    std::vector pos = std::vector<double>(2,0);
+    pos[0] = lon;
+    pos[1] = lat;
+
+    if(simulationIsRunning)
+    {
+        RwaEntity *entity;
+        foreach(entity, entities)
+        {
+            entity->setCoordinates(pos);
+            emit backend->sendHeroPositionEdited();
+        }
     }
 }
 
@@ -152,7 +163,7 @@ void RwaSimulator::initGandalf()
 void RwaSimulator::receiveUndoGameLoaded()
 {
     qDebug() << "SIMULATOR: received undo signal";
-    runtime->entities.front()->scenes = backend->getScenes().toStdList();
+    runtime->entities.front()->scenes = std::list(backend->getScenes().begin(), backend->getScenes().end());
 }
 
 void RwaSimulator::receiveNewGameSignal()
@@ -163,8 +174,9 @@ void RwaSimulator::receiveNewGameSignal()
 
     clearEntities();
     initGandalf();
-    runtime->entities = entities.toStdList();
-    runtime->entities.front()->scenes = backend->getScenes().toStdList();
+    //runtime->entities = entities.toStdList();
+    runtime->entities = std::list(entities.begin(), entities.end());
+    runtime->entities.front()->scenes = std::list(backend->getScenes().begin(), backend->getScenes().end());
     runtime->assetPath = path.str();
 }
 
@@ -205,7 +217,7 @@ void RwaSimulator::receiveAzimuth(float azimuth)
     if(entities.empty())
         return;
 
-    qDebug();
+    qDebug() << azimuth;
     RwaEntity *entity = entities.front();
     entity->setAzimuth(static_cast<int32_t>(azimuth));
 }
@@ -267,34 +279,29 @@ void RwaSimulator::clearGame()
 void RwaSimulator::startRwaSimulation()
 {
     RwaEntity *entity = entities.front();
+    RwaScene *startScene = backend->getLastTouchedScene();
+    if(!startScene)
+        startScene = backend->getScenes().front();
+
     runtime->unblockStates(entity);
-    runtime->entities.front()->scenes = backend->getScenes().toStdList();
-
-    if(backend->getLastTouchedScene())
-        entity->setCurrentScene(backend->getLastTouchedScene());
-    else
-        entity->setCurrentScene(backend->getScenes().front());
-
-    if(!entity->getCurrentScene()->fallbackDisabled())
-        entity->setCurrentState(entity->getCurrentScene()->states.front());
-
+    runtime->entities.front()->scenes = std::list(backend->getScenes().begin(), backend->getScenes().end());
     runtime->initDynamicPdPatchers(entity);
-    libpd_init_audio(ap->inputChannelCount() , ap->outputChannelCount(), 48000); // 2 inputs, 2 output
+    runtime->setScene(entity, startScene);
+
+    libpd_init_audio(ap->inputChannelCount() , ap->outputChannelCount(), backend->sampleRate); // 2 inputs, 2 output
     libpd_start_message(1);
     libpd_add_float(1.0f);
     libpd_finish_message("pd", "dsp");
+
     ap->startAudio();
     gameLoopTimer->start();
     simulationIsRunning = true;
     sendSelectedScene2Devices();
-    runtime->setEntityStartCoordinates(entity);
 }
 
 void RwaSimulator::stopRwaSimulation()
 {
-    RwaEntity *entity = entities.front();
     runtime->freeAllPatchers();
-
     libpd_start_message(1);
     libpd_add_float(0.0f);
     libpd_finish_message("pd", "dsp");
@@ -302,9 +309,8 @@ void RwaSimulator::stopRwaSimulation()
     simulationIsRunning = false;
     runtime->freeDynamicPdPatchers1();
     clearGame();
-    ap->stopAudio();
-
-    emit updateScene();
+    ap->stopAudio();   
+    QTimer::singleShot(100, [this]{ runtime->emptyPdMessageQueue();});
 }
 
 void RwaSimulator::setMainVolume(float volume)

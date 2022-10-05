@@ -33,7 +33,7 @@
 #include <QFile>
 #include <QBuffer>
 #include <QDir>
-#include "mapnetwork.h"
+//#include "mapnetwork.h"
 
 namespace qmapcontrol
 {

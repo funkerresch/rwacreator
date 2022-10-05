@@ -347,7 +347,6 @@ int32_t RwaState::getDefaultPlaybackType() const
 
 void RwaState::setDefaultPlaybackType(const int32_t &value)
 {
-    qDebug() << "Set Default Playback Type";
     defaultPlaybackType = value;
 }
 

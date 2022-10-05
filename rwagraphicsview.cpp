@@ -783,6 +783,9 @@ void RwaGraphicsView::drawArea(RwaArea *area, GeometryLayer *layer, bool isActiv
 
 void RwaGraphicsView::drawScene(RwaScene *scene, bool isActive)
 {
+    if(!scene)
+        return;
+
     QmapPoint* newPlace;
 
     if(isActive)
@@ -795,6 +798,9 @@ void RwaGraphicsView::drawScene(RwaScene *scene, bool isActive)
 
 void RwaGraphicsView::drawState(RwaState *state, bool isActive)
 {
+    if(!state)
+        return;
+
     QmapPoint* newPlace;
 
     if(isActive)
@@ -816,9 +822,7 @@ void RwaGraphicsView::drawState(RwaState *state, bool isActive)
     newPlace->addLabelWidget(stateNameLabel);
 
     connect(stateName, SIGNAL(textEdited(QString)), this, SLOT(receiveStateName(QString)));
-   // connect(stateName, SIGNAL(editingFinished()), this, SLOT(updateCurrentState())); // This crashes somwhow, cannot remember why..
     connect(stateName, SIGNAL(editingFinished()), this, SLOT(workAroundLineEditBug()));
-    //connect(stateName, SIGNAL(returnPressed()), this, SLOT(updateCurrentState()));
 
     if(isActive && stateLineEditVisible && !backend->isSimulationRunning())
          newPlace->setLineEditVisible(true);
@@ -841,6 +845,9 @@ void RwaGraphicsView::drawState(RwaState *state, bool isActive)
 
 void RwaGraphicsView::drawAsset(RwaAsset1 *item, bool isActive)
 {
+    if(!item)
+        return;
+
     RwaMapItem *mapItem;
 
     if(item->getMute())

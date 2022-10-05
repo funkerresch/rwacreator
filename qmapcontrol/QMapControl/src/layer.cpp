@@ -24,6 +24,8 @@
 */
 
 #include "layer.h"
+
+
 namespace qmapcontrol
 {
     Layer::Layer(QString layername, MapAdapter* mapadapter, enum LayerType layertype, bool takeevents)
@@ -33,6 +35,11 @@ namespace qmapcontrol
         selectRect.setY(0);
         selectRect.setWidth(0);
         selectRect.setHeight(0);
+    }
+    Layer::Layer()
+    {
+        mylayername = "";
+
     }
 
     Layer::~Layer()
@@ -115,7 +122,7 @@ namespace qmapcontrol
     void Layer::setVisible(bool visible)
     {
         this->visible = visible;
-        emit(updateRequest());
+        emit updateRequest();
     }
 
     void Layer::addGeometry(Geometry* geom)
@@ -124,7 +131,7 @@ namespace qmapcontrol
 
        // geometries.append(QSharedPointer<Geometry>(geom));
         geometries.append(geom);
-        emit(updateRequest(geom->boundingBox()));
+        emit updateRequest(geom->boundingBox());
         //a geometry can request a redraw, e.g. when its position has been changed
         connect(geom, SIGNAL(updateRequest(QRectF)),
                 this, SIGNAL(updateRequest(QRectF)));

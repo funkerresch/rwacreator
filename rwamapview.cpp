@@ -136,6 +136,11 @@ RwaMapView::RwaMapView(QWidget* parent, RwaScene *scene, QString name)
     readSettings();
 }
 
+RwaMapView::~RwaMapView()
+{
+    writeSettings();
+}
+
 void RwaMapView::readSettings()
 {
     QSettings settings("Intrinsic Audio", "Rwa Creator");
@@ -329,6 +334,8 @@ void RwaMapView::receiveMouseMoveEvent(const QMouseEvent*, const QPointF myPoint
 
     emit sendMapPosition(mc->currentCoordinate());
     emit sendMapCoordinates(mc->currentCoordinate().x(), mc->currentCoordinate().y());
+    currentScene->currentViewCoordinates[0] = mc->currentCoordinate().x();
+    currentScene->currentViewCoordinates[1] = mc->currentCoordinate().y();
     RwaUtilities::copyLocationCoordinates2Clipboard(mc->currentCoordinate());
 
     if(backend->logCoordinates)
@@ -676,7 +683,7 @@ void RwaMapView::setCurrentScene(RwaScene *scene)
 
     if(!backend->isSimulationRunning())
     {
-        setMapCoordinates(scene->getCoordinates()[0], scene->getCoordinates()[1]);
+        setMapCoordinates(scene->currentViewCoordinates[0], scene->currentViewCoordinates[1]);
         setMap2AreaZoomLevel(scene);
     }
 

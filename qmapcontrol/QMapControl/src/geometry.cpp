@@ -69,7 +69,7 @@ namespace qmapcontrol
     void Geometry::setVisible(bool visible)
     {
         this->visible = visible;
-        emit(updateRequest(boundingBox()));
+        emit updateRequest (boundingBox()) ;
     }
 
     void Geometry::setName(QString name)

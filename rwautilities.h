@@ -64,6 +64,8 @@ public:
     static QString generateAssetsFolderPath(QString projectPath);
     static QString generateCompleteAssetPath(QString projectPath, QString fileName);
     static QString generateCompleteAssetPath(QString projectPath, std::string fileName);
+    static double calculateElevationEasy(std::vector<double> p1, std::vector<double> p2, double elevation, qint32 headDirection);
+    static double calculateDistanceWithAltitude(double hDist, double vDist);
 };
 
 #endif // RWAUTILITIES_H

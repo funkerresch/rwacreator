@@ -104,6 +104,7 @@ void RwaAsset1::copyAttributes(RwaAsset1 *dest)
     dest->dampingTrim = this->dampingTrim;
     dest->dampingMin = this->dampingMin;
     dest->dampingMax = this->dampingMax;
+    dest->smoothdist = this->smoothdist;
     dest->fadeOutAfter = this->fadeOutAfter;
     dest->channelRadius = this->channelRadius;
     dest->playOnlyOnce = this->playOnlyOnce;
@@ -459,9 +460,6 @@ float RwaAsset1::getFixedDistance() const
 
 void RwaAsset1::setFixedDistance(float value)
 {
-    if(value <= 0)
-        return;
-
     fixedDistance = value;
 }
 
@@ -472,11 +470,6 @@ float RwaAsset1::getFixedAzimuth() const
 
 void RwaAsset1::setFixedAzimuth(float value)
 {
-    if(value < 0)
-        return;
-    if(value >= 360)
-        return;
-
     fixedAzimuth = value;
 }
 
@@ -503,6 +496,36 @@ void RwaAsset1::setHeadtrackerRelative2Source(bool value)
 bool RwaAsset1::getHasCoordinates() const
 {
     return hasCoordinates;
+}
+
+bool RwaAsset1::getBlockedForever() const
+{
+    return blockedForever;
+}
+
+void RwaAsset1::setBlockedForever(bool newBlockedForever)
+{
+    blockedForever = newBlockedForever;
+}
+
+float RwaAsset1::getSmoothDist() const
+{
+    return smoothdist;
+}
+
+void RwaAsset1::setSmoothDist(float newSmoothdist)
+{
+    smoothdist = newSmoothdist;
+}
+
+float RwaAsset1::getElevation() const
+{
+    return elevation;
+}
+
+void RwaAsset1::setElevation(float newElevation)
+{
+    elevation = newElevation;
 }
 
 int32_t RwaAsset1::getType() const

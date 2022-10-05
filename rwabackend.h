@@ -49,7 +49,7 @@ private:
     std::string mountPoint;
 };
 
-/** **************************************Rwa Backend ********************************************** */
+/** ************************************** Rwa Backend ********************************************** */
 
 class RwaBackend : public QTextEdit
 {
@@ -78,15 +78,14 @@ public:
     QString completeClientDownloadPath;
     QString completeClientDownloadPathWithEscape;
     QString completeXCodeClientProjectExportPath;
-    QString completeClientFileExportPath;
     QString applicationSupportPath;
     QString applicationSupportPathWithEscape;
-    QString completeClientAssetExportPath;
     QStringList assetStringList;
     QStringList stateStringList;
     QStringList currentlySelectedAssets;
     QStringList currentlySelectedStates;
     qint32 httpProcessId;
+    qint32 sampleRate;
 
     bool trashAsset = false;
     bool showStateRadii = false;
@@ -268,6 +267,9 @@ public:
     void adjust2UniqueSceneName(RwaScene *newScene);
 
     /** ************************************************** Signals ************************************************** */
+
+    qint32 getSampleRate() const;
+    void setSampleRate(qint32 newSampleRate);
 
 signals:
     void readUndoFile(QString name);

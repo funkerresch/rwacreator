@@ -14,7 +14,7 @@ then echo "Found libpd"
  echo "compiling libpd"
  cd libpd
  make clean
- make EXTRA=true
+ make EXTRA=true FAT_LIB=true
  cd ..
  fi
  
