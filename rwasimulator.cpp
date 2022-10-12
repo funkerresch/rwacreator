@@ -6,6 +6,8 @@
 #include "rwaimport.h"
 #include "rwa_binauralsimple~.h"
 
+extern vas_fir_list IRs;
+
 QList <RwaEntity *> RwaSimulator::entities;
 
 RwaSimulator::RwaSimulator(QObject *parent, RwaBackend *backend) :
@@ -301,6 +303,7 @@ void RwaSimulator::startRwaSimulation()
 
 void RwaSimulator::stopRwaSimulation()
 {
+    vas_fir_list_clear(&IRs);
     runtime->freeAllPatchers();
     libpd_start_message(1);
     libpd_add_float(0.0f);

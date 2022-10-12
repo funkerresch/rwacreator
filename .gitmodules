@@ -1,9 +1,6 @@
 [submodule "vas_library"]
 	path = vas_library
 	url = https://github.com/funkerresch/vas_library.git
-[submodule "libpd"]
-	path = libpd
-	url = https://github.com/libpd/libpd.git
 [submodule "portaudio"]
 	path = portaudio
 	url = https://github.com/PortAudio/portaudio.git
@@ -25,3 +22,6 @@
 [submodule "cpp-httplib"]
 	path = cpp-httplib
 	url = https://github.com/yhirose/cpp-httplib.git
+[submodule "libpd"]
+	path = libpd
+	url = https://github.com/libpd/libpd.git
