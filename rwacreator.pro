@@ -22,11 +22,11 @@ QMAKE_CXXFLAGS += -Wno-unused-variable
 macx: QMAKE_INFO_PLIST = $$PWD/Info.qmake.macos.plist
 
 #CONFIG += c++11
-#CONFIG(release):DEFINES += QT_NO_DEBUG_OUTPUT
+#CONFIG(release):DEFINES += QT_NO_DEBUxG_OUTPUT
 
 QMAKE_RPATHDIR += @executable_path/../Frameworks
 QMAKE_MACOSX_DEPLOYMENT_TARGET = 11.0
-QMAKE_APPLE_DEVICE_ARCHS = x86_64 arm64
+//QMAKE_APPLE_DEVICE_ARCHS = x86_64 arm64
 
 INCLUDEPATH += /usr/local/include
 INCLUDEPATH += $$PWD/vas_library/source

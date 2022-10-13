@@ -5,5 +5,3 @@ Around 2015 I started with the development of the Real World Audio (RWA) environ
 
 ![RwaScreenshot](https://user-images.githubusercontent.com/10684202/161531985-9940b234-253b-4754-8ad6-8750f697cc78.png)
 
-    Tutorial 00 - Introduction
-    (https://thomasresch.net/video/RWA_TUTORIAL_00 - Introduction.mp4)

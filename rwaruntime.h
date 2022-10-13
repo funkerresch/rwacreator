@@ -99,6 +99,7 @@ RwaRuntime(QObject *parent, const char *pdpath, const char *assetPath, float sam
     static void floatpd(const char *source, float value);
     static void releasePatcherFromItem(RwaEntity::AssetMapItem item);
 
+    static int32_t getPatcherIndex(int32_t patcherTag, pdPatcher *patcherArray, qint32 size);
     static int32_t getBinauralMonoFabianPatcherIndex(int32_t patcherTag);
     static int32_t getBinauralStereoFabianPatcherIndex(int32_t patcherTag);
     static int32_t getBinaural5channelFabianPatcherIndex(int32_t patcherTag);
@@ -155,6 +156,7 @@ RwaRuntime(QObject *parent, const char *pdpath, const char *assetPath, float sam
     void setScene(RwaEntity *entity, RwaScene *scene);
     
     void emptyPdMessageQueue();
+
 signals:
     void sendRedrawAssets();
     void sendSelectedScene(RwaScene *scene);
