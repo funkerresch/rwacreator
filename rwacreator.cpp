@@ -97,64 +97,6 @@ void RwaCreator::createInitFolder()
         QDir().mkdir(path);
 }
 
-/** ******************************* Open and write rwainit.txt for global app settings ********************************** */
-
-void RwaCreator::openInit()
-{
-    int lineNumber = 0;
-    QString filename = QString("%1%2%3").arg(QDir::homePath()).arg("/RWACreator/").arg("rwainit.txt");
-    QFile file(filename);
-
-    if(!file.open(QIODevice::ReadOnly))
-    {
-        clear();
-        return;
-    }
-
-    QTextStream in(&file);
-
-    while(!in.atEnd())
-    {
-        QString line = in.readLine();
-
-        if(lineNumber == 0)
-        {
-            if(!open(line))
-                clear();
-        }
-
-        if(lineNumber == 1)
-            headtracker->setName(line);
-
-        lineNumber++;
-    }
-
-    file.close();
- }
-
-void RwaCreator::writeInit()
-{
-    QString filename = QString("%1%2%3").arg(QDir::homePath()).arg("/RWACreator/").arg("rwainit.txt");
-    QFile file(filename);
-    if (file.open(QIODevice::WriteOnly | QIODevice::Text))
-    {
-        QTextStream stream(&file);
-        stream << backend->completeFilePath << "\n";
-        stream << headtracker->getName() << "\n";
-        if(backend->showStateRadii)
-            stream << "1" << "\n";
-        else
-            stream << "0" << "\n";
-        if(backend->showAssets)
-            stream << "1" << "\n";
-        else
-            stream << "0";
-        file.close();
-    }
-    else
-        qDebug() << "Error writing init";
-}
-
 /** ******************************** Save and load main window layout and settings ********************************** */
 
 void RwaCreator::saveLayoutAndSettings()
@@ -202,8 +144,11 @@ void RwaCreator::loadLayoutAndSettings()
     else
         backend->completeClientDownloadPathWithEscape = QString("%1%2").arg(QDir::homePath()).arg("'/Library/Application Support/RWACreator/Games\'");
 
-    if(!open(settings.value("lastgame").toString()))
+    if(!open(settings.value("lastgame").toString(), false))
+    {
+        qDebug("Last game does not exist.");
         clear();
+    }
 }
 
 /** ********************************************* Add default views ************************************************** */
@@ -311,6 +256,8 @@ void RwaCreator::cleanUpBeforeQuit()
     backend->clearScenes();
 }
 
+/** *************************** Currently maybeSave is always called on quitting RWA ********************************* */
+
 bool RwaCreator::maybeSave()
 {
     const QMessageBox::StandardButton ret
@@ -330,7 +277,7 @@ bool RwaCreator::maybeSave()
     return true;
 }
 
-/** ***************************** Event filter calls resize events to the graphic views ********************************** */
+/** ***************************** Event filter calls resize events to the graphic views ******************************** */
 
 bool RwaCreator::eventFilter(QObject *obj, QEvent *event)
 {
@@ -351,6 +298,8 @@ bool RwaCreator::eventFilter(QObject *obj, QEvent *event)
 
     return QWidget::eventFilter(obj, event);
 }
+
+/** *********************************** Select Input/Output Device and Sample Rate ************************************** */
 
 void RwaCreator::selectOutputDevice(qint32 index)
 {
@@ -385,18 +334,20 @@ void RwaCreator::selectSampleRate(qint32 index)
 
 void RwaCreator::audioPrefsSRHelper(int i, qint32 &sr_int, QString &sr)
 {
-    if(i == 0)
+    if(i == RWA_SR_44100)
     {
         sr = QString("44100");
         sr_int = 44100;
     }
 
-    if(i == 1)
+    if(i == RWA_SR_48000)
     {
         sr = QString("48000");
         sr_int = 48000;
     }
 }
+
+/** ******************************************* Init Audio Preferences Menu ********************************************* */
 
 void RwaCreator::initAudioPreferencesMenu(QMenu *audioDeviceMenu)
 {
@@ -491,6 +442,8 @@ void RwaCreator::initAudioPreferencesMenu(QMenu *audioDeviceMenu)
     connect (inputDeviceSignalMapper, SIGNAL(mappedInt(int)), this, SLOT(selectInputDevice(qint32))) ;
 }
 
+/** ******************************** Set visiblity of closed RWA Views to true again ********************************** */
+
 void RwaCreator::gatherViews()
 {
     foreach(RwaDockWidget *widget, rwaDockWidgets)
@@ -500,11 +453,10 @@ void RwaCreator::gatherViews()
     }
 }
 
+/** ********************************************** Init RWA View Menu ************************************************* */
+
 void RwaCreator::initViewMenu1(QMenu *fileMenu)
 {
-//    QAction *action = fileMenu->addAction(tr("Default Views"));
-//    connect(action, SIGNAL(triggered()), this, SLOT(loadDefaultViews()));
-
     QAction *action = fileMenu->addAction(tr("Gather Views"));
     connect(action, SIGNAL(triggered()), this, SLOT(gatherViews()));
 
@@ -526,6 +478,8 @@ void RwaCreator::initViewMenu1(QMenu *fileMenu)
     action = fileMenu->addAction(tr("Log Window"));
     connect(action, SIGNAL(triggered()), this, SLOT(addLogView()));
 }
+
+/** ************************************************ Init RWA File Menu *********************************************** */
 
 void RwaCreator::initFileMenu(QMenu *fileMenu)
 {
@@ -557,11 +511,13 @@ void RwaCreator::initFileMenu(QMenu *fileMenu)
     connect(action, SIGNAL(triggered()), this, SLOT(exportZip()));
 }
 
+/** ******************************************** File path preferences pop-up ****************************************** */
+
 void RwaCreator::enterFilePathPreferences()
 {
     QStringList labels;
     QStringList values;
-    labels << "Download Path" << "XCode Games Path";
+    labels << "Download Path" << "Export Games Path";
     values << backend->completeClientDownloadPath << backend->completeXCodeClientProjectExportPath;
     QStringList list = RwaInputDialog::getStrings(this, labels, values);
     if (!list.isEmpty()) {
@@ -570,6 +526,8 @@ void RwaCreator::enterFilePathPreferences()
         backend->completeXCodeClientProjectExportPath = list[1];
     }
 }
+
+/** ******************************************** Head tracker name pop-up ********************************************* */
 
 void RwaCreator::enterHtName()
 {
@@ -586,6 +544,8 @@ void RwaCreator::enterHtName()
         enterHtName->setText(menuString);
     }
 }
+
+/** ******************************************** Init head tracker menu *********************************************** */
 
 void RwaCreator::initHeadtrackerMenu(QMenu *headtrackerMenu)
 {
@@ -604,6 +564,8 @@ void RwaCreator::initHeadtrackerMenu(QMenu *headtrackerMenu)
     connect(btactionDisconnect, SIGNAL(triggered()), headtracker, SLOT(disconnectHeadtracker()));
 }
 
+/** *********************************************** Setup menu bar *************************************************** */
+
 void RwaCreator::setupMenuBar()
 {
     QMenu *selectAudioDevice = menuBar()->addMenu(tr("&Audio Preferences"));
@@ -618,6 +580,8 @@ void RwaCreator::setupMenuBar()
     headtrackerMenu = menuBar()->addMenu(tr("&Headtracker"));
     initHeadtrackerMenu(headtrackerMenu);
 }
+
+/** ************************************ Writing and export functionality ******************************************** */
 
 void RwaCreator::write1(QString writeMessage, qint32 flags, QString newCompleteFilePath)
 {
@@ -665,6 +629,7 @@ void RwaCreator::prepareWrite1(QString fullpath, int flags)  // fullpath is /RWA
         backend->projectName = pieces.first();
         backend->completeTmpPath = completeTmpPath;
         backend->completeUndoPath = completeUndoPath;
+        backend->completeAssetPath = completeAssetPath;
     }
 }
 
@@ -816,7 +781,9 @@ void RwaCreator::checkUndoFolder()
 
 }
 
-qint32 RwaCreator::open(QString fileName)
+/** ************************************************ Open Rwa game **************************************************** */
+
+qint32 RwaCreator::open(QString fileName, bool throwDialogue)
 {
     QString fullpath;
     QString projectName;
@@ -825,16 +792,20 @@ qint32 RwaCreator::open(QString fileName)
     if(!fileName.isEmpty())
         fullpath = fileName;
     else
-        fullpath = QFileDialog::getOpenFileName(this, tr("Open Bookmark File"), QDir::currentPath(),tr("RWA Files (*.rwa *.xml)"));
+    {
+        if(throwDialogue)
+            fullpath = QFileDialog::getOpenFileName(this, tr("Open Bookmark File"), QDir::currentPath(),tr("RWA Files (*.rwa *.xml)"));
+    }
 
-    if (fullpath.isEmpty())
-        clear();
+    if (fullpath.isEmpty() || fullpath.isNull())
+        return 0;
 
     QFile file(fullpath);
 
     if (!file.open(QFile::ReadOnly | QFile::Text))
     {
         statusBar()->showMessage(tr("Could not open file"), 2000);
+        qDebug() << "Could not open File";
         return 0;
     }
 
@@ -890,6 +861,8 @@ void RwaCreator::clear()
     setWindowTitle("Not saved");
     exportProject();
 }
+
+/** *********************************************** Undo functionality *********************************************** */
 
 void RwaCreator::writeUndo(QString undoAction)
 {

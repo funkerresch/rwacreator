@@ -24,6 +24,9 @@
 
 #define RWA_UNDETERMINED 0
 
+#define RWA_SR_44100 0
+#define RWA_SR_48000 1
+
 #define RWAASSETTYPE_WAV 1
 #define RWAASSETTYPE_AIF 2
 #define RWAASSETTYPE_PD 3

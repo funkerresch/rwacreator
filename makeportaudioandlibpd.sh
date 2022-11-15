@@ -4,7 +4,8 @@ cd "$(dirname "$0")"
  else
  cd portaudio
  make clean
- ./configure && make
+ ./configure
+ make CFLAGS='-Wall -Wno-error' CXXFLAGS='-Wall -Wno-error'
  cd ..
  fi
 

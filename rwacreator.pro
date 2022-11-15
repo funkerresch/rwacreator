@@ -26,7 +26,7 @@ macx: QMAKE_INFO_PLIST = $$PWD/Info.qmake.macos.plist
 
 QMAKE_RPATHDIR += @executable_path/../Frameworks
 QMAKE_MACOSX_DEPLOYMENT_TARGET = 11.0
-//QMAKE_APPLE_DEVICE_ARCHS = x86_64 arm64
+QMAKE_APPLE_DEVICE_ARCHS = x86_64 arm64
 
 INCLUDEPATH += /usr/local/include
 INCLUDEPATH += $$PWD/vas_library/source
