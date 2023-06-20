@@ -73,7 +73,7 @@ void RwaBackend::StopHttpServer1()
     serverThread->wait();
 }
 
-/** The Python server was used for debugging purposes, might be useful for something later. */
+/** The Python server was used for debugging purposes, might still be useful for something. */
 
 void RwaBackend::StartHttpServer(qint32 port)
 {

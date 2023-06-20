@@ -25,6 +25,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <qdebug.h>
+#include <unistd.h>
 #include "rwainputdialog.h"
 
 Q_DECLARE_METATYPE(QDockWidget::DockWidgetFeatures)

@@ -832,6 +832,16 @@ void RwaRuntime::sendInitValues2pd(RwaAsset1 *asset, int patcherTag)
      asset->rotateOffsetPerTick = asset->rotateFrequency * 360 * schedulerRate/1000;
      asset->setCurrentRotateAngleOffset(0);
 
+     sprintf(pdReceiver, "%d-assetlon", patcherTag);
+     pdMutex->lock();
+     libpd_float(pdReceiver, asset->getCoordinates()[0]);
+     pdMutex->unlock();
+
+     sprintf(pdReceiver, "%d-assetlat", patcherTag);
+     pdMutex->lock();
+     libpd_float(pdReceiver, asset->getCoordinates()[1]);
+     pdMutex->unlock();
+
      sprintf (pdReceiver, "%d-samplerate", patcherTag);
      pdMutex->lock();
      libpd_float(pdReceiver, backend->sampleRate);
@@ -1108,7 +1118,9 @@ void RwaRuntime::sendData2Asset(RwaEntity *entity, RwaEntity::AssetMapItem item)
     if(asset->type == RWAASSETTYPE_PD)
     {
         calculateChannelBearingAndDistance(entity, asset, 0);
-        sendDistance(0, intPatcherTag, asset->channelDistance[0]);
+        double elevation = RwaUtilities::calculateElevationEasy(entity->getCoordinates(), asset->channelcoordinates[0], asset->getElevation(), entity->elevation());
+        double totalDistance = RwaUtilities::calculateDistanceWithAltitude(asset->channelDistance[0], asset->getElevation());
+        sendDistance(0, intPatcherTag, totalDistance);
 
         if(step)
         {
@@ -1120,8 +1132,7 @@ void RwaRuntime::sendData2Asset(RwaEntity *entity, RwaEntity::AssetMapItem item)
         if(asset->headtrackerRelative2Source)
         {
             sendBearing(0, intPatcherTag, asset->channelBearing[0]);
-            sendElevation(0, intPatcherTag, asset->elevation);
-
+            sendElevation(0, intPatcherTag, elevation);
         }
         else
         {
