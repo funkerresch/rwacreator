@@ -244,6 +244,7 @@ void RwaCreator::addHistoryView()
 void RwaCreator::closeEvent(QCloseEvent *event)
 {
     (void) event;
+    maybeSave();
     qDebug();
 }
 
@@ -251,7 +252,6 @@ void RwaCreator::cleanUpBeforeQuit()
 {
     qDebug() << "Clean up and quit!";
     backend->simulator->stopRwaSimulation();
-    maybeSave();
     saveLayoutAndSettings();
     emptyTmpDirectories();
     backend->clearScenes();

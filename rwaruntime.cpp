@@ -1021,8 +1021,6 @@ void RwaRuntime::calculateChannelBearingAndDistance(RwaEntity *entity, RwaAsset1
 {
     int offset = getOffsetForChannel(channel, asset->getPlaybackType());
     offset += (360-asset->getRotateOffset()) % 360;
-    QPointF tmp;
-    QPointF tmp2;
 
     if(!asset->hasCustomChannelPosition[channel])
     {
@@ -1030,10 +1028,8 @@ void RwaRuntime::calculateChannelBearingAndDistance(RwaEntity *entity, RwaAsset1
         if(asset->playbackType == RWAPLAYBACKTYPE_MONO || asset->playbackType == RWAPLAYBACKTYPE_STEREO)
             channelRadius = 0;
 
-        tmp2 = QPointF(asset->getCurrentPosition()[0], asset->getCurrentPosition()[1]);
-        tmp = RwaUtilities::calculateDestination(tmp2, channelRadius, (qint32)(offset+asset->currentRotateAngleOffset)%360);
-        asset->channelcoordinates[channel][0] = tmp.x();
-        asset->channelcoordinates[channel][1] = tmp.y();
+        std::vector<double> destination = RwaUtilities::calculateDestination1(asset->getCurrentPosition(), channelRadius, (qint32)(offset+asset->currentRotateAngleOffset)%360);
+        asset->channelcoordinates[channel] = destination;
     }
 
     if(asset->getFixedDistance() < 0)
@@ -1115,19 +1111,19 @@ void RwaRuntime::sendData2Asset(RwaEntity *entity, RwaEntity::AssetMapItem item)
     libpd_float(lat2pd, entity->getCoordinates()[1]);
     pdMutex->unlock();
 
+    if(step)
+    {
+        pdMutex->lock();
+        libpd_bang(step2pd);
+        pdMutex->unlock();
+    }
+
     if(asset->type == RWAASSETTYPE_PD)
     {
         calculateChannelBearingAndDistance(entity, asset, 0);
         double elevation = RwaUtilities::calculateElevationEasy(entity->getCoordinates(), asset->channelcoordinates[0], asset->getElevation(), entity->elevation());
         double totalDistance = RwaUtilities::calculateDistanceWithAltitude(asset->channelDistance[0], asset->getElevation());
         sendDistance(0, intPatcherTag, totalDistance);
-
-        if(step)
-        {
-            pdMutex->lock();
-            libpd_bang(step2pd);
-            pdMutex->unlock();
-        }
 
         if(asset->headtrackerRelative2Source)
         {

@@ -64,6 +64,7 @@ protected:
     QLineEdit *addLineEditAndLabel(QGridLayout *layout, QString name);
     QComboBox *addComboBoxAndLabel(QGridLayout *layout, QString name, QStringList values);
 
+    float calculate_window_height();
 protected slots:
     virtual void receiveCheckBoxAttributeValue(int id, bool) = 0;
     virtual void receiveLineEditAttributeValue(const QString &text) = 0;

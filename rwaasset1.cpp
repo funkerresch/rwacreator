@@ -22,7 +22,7 @@ RwaAsset1::RwaAsset1(const std::string &data, std::vector<double> gps, qint32 ty
     this->startPosition = gps;
     this->fullPath = data;
     this->type = type;
-    this->fileName = RwaUtilities::getFileName(data);
+    this->fileName = RwaUtilities::getFileName1(data);
     this->gpsLocation = gps;
     this->uniqueId = uid;
 

@@ -15,7 +15,7 @@
 #define XBELWRITER_H
 
 #include <QXmlStreamWriter>
-#include <rwabackend.h>
+#include "rwabackend.h"
 
 #define RWAEXPORT_COPYASSETS 1 << 0
 #define RWAEXPORT_SAVEAS 1 << 1
