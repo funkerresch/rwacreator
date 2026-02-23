@@ -6,7 +6,7 @@
 	url = https://github.com/PortAudio/portaudio.git
 [submodule "ofq"]
 	path = ofq
-	url = https://github.com/kampfschlaefer/ofq.git
+	url = git@github.com:funkerresch/ofq.git
 [submodule "pd-extra/pd"]
 	path = pd-extra/pd
 	url = https://github.com/pd-l2ork/pd.git
