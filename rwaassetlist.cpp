@@ -150,6 +150,7 @@ void RwaAssetList::keyPressEvent(QKeyEvent *event)
         case 16777219:
           qDebug() << "ITEM TEXT" << currentItem()->text();
           emit deleteAsset(currentItem()->text());
+          emit sendWriteUndo("Delete Asset");
           takeItem(getSelectedIndex());
           break;
         case 16777237:

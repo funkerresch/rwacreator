@@ -152,6 +152,7 @@ RwaScene *RwaEntity::getCurrentScene()
 {
     return currentScene;
 }
+
 RwaState *RwaEntity::getCurrentState()
 {
     return currentState;
@@ -161,7 +162,6 @@ void RwaEntity::setCurrentScene(RwaScene *currentScene)
 {
     this->currentScene = currentScene;
     this->currentState = nullptr;
-
 }
 void RwaEntity::setCurrentState(RwaState *currentState)
 {    

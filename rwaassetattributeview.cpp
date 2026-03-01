@@ -3,7 +3,7 @@
 RwaAssetAttributeView::RwaAssetAttributeView(QWidget *parent, RwaScene *scene) :
     RwaAttributeView(parent, scene)
 {
-    setAlignment(Qt::AlignTop);
+    //setAlignment(Qt::AlignTop);
     QStringList playbackTypes;
     playbackTypes << "Undetermined" << "Mono" << "Stereo" << "Auto" << "Binaural-Mono (Legacy)" << "Binaural-Stereo (Legacy)" \
                   << "Binaural-5Channel (Legacy)" << "Binaural-7Channel (Legacy)"<< "Binaural-Mono" << "Binaural-Stereo" << "Binaural-Auto" \
@@ -27,28 +27,26 @@ RwaAssetAttributeView::RwaAssetAttributeView(QWidget *parent, RwaScene *scene) :
     dampingFunction << "None" << "Exponential" << "Linear";
     addComboBoxAndLabel(attributeGridLayout, "Damping", dampingFunction);
 
-    QLineEdit *editingFinishedLineEdit;
-
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Damping Factor");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Damping Trim");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Damping Min");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Damping Max");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Smooth Distance");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Fade-In Time");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Fade-Out Time");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Crossfade Time");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Offset Time");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Gain");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Altitude");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Channel Radius");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Rotate Offset");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Rotate Frequency");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Moving Speed");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Fixed Orientation");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Fixed Elevation");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Fixed Distance");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Min Distance");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "libPd Receiver");
+    addLineEditAndLabel(attributeGridLayout, "Damping Factor");
+    addLineEditAndLabel(attributeGridLayout, "Damping Trim");
+    addLineEditAndLabel(attributeGridLayout, "Damping Min");
+    addLineEditAndLabel(attributeGridLayout, "Damping Max");
+    addLineEditAndLabel(attributeGridLayout, "Smooth Distance");
+    addLineEditAndLabel(attributeGridLayout, "Fade-In Time");
+    addLineEditAndLabel(attributeGridLayout, "Fade-Out Time");
+    addLineEditAndLabel(attributeGridLayout, "Crossfade Time");
+    addLineEditAndLabel(attributeGridLayout, "Offset Time");
+    addLineEditAndLabel(attributeGridLayout, "Gain");
+    addLineEditAndLabel(attributeGridLayout, "Altitude");
+    addLineEditAndLabel(attributeGridLayout, "Channel Radius");
+    addLineEditAndLabel(attributeGridLayout, "Rotate Offset");
+    addLineEditAndLabel(attributeGridLayout, "Rotate Frequency");
+    addLineEditAndLabel(attributeGridLayout, "Moving Speed");
+    addLineEditAndLabel(attributeGridLayout, "Fixed Orientation");
+    addLineEditAndLabel(attributeGridLayout, "Fixed Elevation");
+    addLineEditAndLabel(attributeGridLayout, "Fixed Distance");
+    addLineEditAndLabel(attributeGridLayout, "Min Distance");
+    addLineEditAndLabel(attributeGridLayout, "libPd Receiver");
 
     addAttrCheckbox(attributeGridLayout, "Exclusive", RWAASSETATTRIBUTE_ISEXCLUSIVE);
     addAttrCheckbox(attributeGridLayout,"Loop", RWAASSETATTRIBUTE_LOOP);

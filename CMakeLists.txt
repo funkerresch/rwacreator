@@ -411,17 +411,29 @@ set(PD_FILES
 
 foreach(file ${PD_FILES})
     set_source_files_properties(${file} PROPERTIES
-        MACOSX_PACKAGE_LOCATION MacOS
+        MACOSX_PACKAGE_LOCATION MacOS/puredata
     )
 endforeach()
 
-set_source_files_properties(images PROPERTIES
-    MACOSX_PACKAGE_LOCATION MacOS
+
+file(GLOB IMAGE_FILES
+    images/*.png
+    images/*.jpg
+    images/*.svg
+)
+
+foreach(file ${IMAGE_FILES})
+    set_source_files_properties(${file} PROPERTIES
+        MACOSX_PACKAGE_LOCATION MacOS/images
+    )
+endforeach()
+
+target_sources(rwacreator PRIVATE
+    ${IMAGE_FILES}
 )
 
 target_sources(rwacreator PRIVATE
     ${PD_FILES}
-    images
 )
 
 # ------------------------------------------------------------------------------

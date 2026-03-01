@@ -52,12 +52,13 @@ RwaCreator::RwaCreator(QWidget *parent)
     QObject::connect(backend, SIGNAL(sendWriteUndo(QString)), this, SLOT(writeUndo(QString)));
     QObject::connect(backend, SIGNAL(readUndoFile(QString )), this, SLOT(readUndoFile(QString )));
     QObject::connect(QApplication::instance(), SIGNAL(aboutToQuit()),this, SLOT(cleanUpBeforeQuit()));
+    this->installEventFilter(this);
 
     setCentralWidget(backend);   
     createInitFolder();      
     loadDefaultViews();
     loadLayoutAndSettings();
-    setupMenuBar();    
+    setupMenuBar();
 
     QShortcut *shortcut = new QShortcut(QKeySequence(tr("Ctrl+s", "Save")), this);
     connect(shortcut, &QShortcut::activated, this, &RwaCreator::save);
@@ -168,7 +169,7 @@ void RwaCreator::loadDefaultViews()
 void RwaCreator::addMapView() // qt bug: stylesheet is applied only if widget is docked:(
 {
     mapView = new RwaMapView(this, backend->getFirstScene(), "MapView");
-    RwaDockWidget *dw = new RwaDockWidget(this);
+    RwaDockWidget *dw = new RwaDockWidget(this, "Map View");
     dw->setObjectName(tr("Map View"));
     dw->setWindowTitle(tr("Map View"));
     dw->setGeometry(0,0,1000,300);
@@ -182,7 +183,7 @@ void RwaCreator::addMapView() // qt bug: stylesheet is applied only if widget is
 void RwaCreator::addLogView()
 {
     logWindow = new RwaLogWindow(this);
-    RwaDockWidget *dw = new RwaDockWidget(this);
+    RwaDockWidget *dw = new RwaDockWidget(this, "Log View");
     dw->setObjectName(tr("Log View"));
     dw->setWindowTitle(tr("Log View"));
     dw->setGeometry(0,0,600,300);
@@ -194,7 +195,7 @@ void RwaCreator::addLogView()
 
 void RwaCreator::addGameView()
 {
-    RwaDockWidget *dw = new RwaDockWidget(this);
+    RwaDockWidget *dw = new RwaDockWidget(this, "Game View");
     dw->setObjectName(tr("Game View"));
     dw->setWindowTitle(tr("Game View"));
     dw->setGeometry(0,0,600,300);
@@ -206,7 +207,7 @@ void RwaCreator::addGameView()
 
 void RwaCreator::addSceneView()
 {
-    RwaDockWidget *dw = new RwaDockWidget(this);
+    RwaDockWidget *dw = new RwaDockWidget(this, "Scene View");
     dw->setObjectName(tr("Scene View"));
     dw->setWindowTitle(tr("Scene View"));
     dw->setGeometry(0,0,600,300);
@@ -218,7 +219,7 @@ void RwaCreator::addSceneView()
 
 void RwaCreator::addStateView()
 {
-    RwaDockWidget *dw = new RwaDockWidget(this);
+    RwaDockWidget *dw = new RwaDockWidget(this, "State View");
     dw->setObjectName(tr("State View"));
     dw->setWindowTitle(tr("State View"));
     dw->setGeometry(0,0,600,300);
@@ -230,7 +231,7 @@ void RwaCreator::addStateView()
 
 void RwaCreator::addHistoryView()
 {
-    RwaDockWidget *dw = new RwaDockWidget(this);
+    RwaDockWidget *dw = new RwaDockWidget(this, "History View");
     dw->setObjectName(tr("History View"));
     dw->setWindowTitle(tr("History View"));
     dw->setGeometry(0,0,600,300);
@@ -296,6 +297,8 @@ bool RwaCreator::eventFilter(QObject *obj, QEvent *event)
             myView->adaptSize(resizeEvent->size().width(),resizeEvent->size().height());
         }
     }
+
+    QMainWindow::changeEvent(event);
 
     return QWidget::eventFilter(obj, event);
 }

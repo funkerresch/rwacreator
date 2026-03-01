@@ -14,7 +14,7 @@ RwaSimulator::RwaSimulator(QObject *parent, RwaBackend *backend) :
     QObject(parent)
 {
     this->backend = backend;
-    QString path = backend->completeBundlePath;
+    QString puredataPath = backend->completeBundlePath+"/puredata";
     QString assetPath = backend->completeAssetPath;
 
     initGandalf();
@@ -23,7 +23,7 @@ RwaSimulator::RwaSimulator(QObject *parent, RwaBackend *backend) :
     gameLoopTimer = new QTimer(this);
     devicesRegistered = false;
     ap = new audioProcessor(1024);
-    runtime = new RwaRuntime(this, path.toStdString().c_str(), assetPath.toStdString().c_str(), ap->getSampleRate(), 25, &ap->pdMutex, backend);
+    runtime = new RwaRuntime(this, puredataPath.toStdString().c_str(), assetPath.toStdString().c_str(), ap->getSampleRate(), 25, &ap->pdMutex, backend);
     runtime->entities = std::list(entities.begin(), entities.end());
     simulationIsRunning = 0;
     gameLoopTimer->setInterval(getSchedulerRate());

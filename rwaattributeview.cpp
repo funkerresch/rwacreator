@@ -118,14 +118,13 @@ QComboBox *RwaAttributeView::addComboBoxAndLabel(QGridLayout *layout, QString na
     QComboBox *attrComboBox = new QComboBox(this);
     attrComboBox->setObjectName(name);
     QLabel *attrLabel = new QLabel(name, this);
-    attrComboBox->setFixedHeight(18);
+
     attrComboBox->setFont(attributeFont);
     attrComboBox->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     attrComboBox->setMinimumWidth(120);
     attrComboBox->setMaximumWidth(120);
     attrLabel->setFont(attributeFont);
     attrLabel->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-    attrLabel->setFixedHeight(22);
 
     layout->addWidget(attrComboBox, assetAttrCounter, 0, Qt::AlignCenter);
     layout->addWidget(attrLabel, assetAttrCounter, 1);
@@ -136,11 +135,11 @@ QComboBox *RwaAttributeView::addComboBoxAndLabel(QGridLayout *layout, QString na
 
     connect(attrComboBox, SIGNAL(activated(int)), this, SLOT(receiveComboBoxAttributeValue(int)));
     connect(attrComboBox, SIGNAL(textActivated(QString)), this, SLOT(receiveEditingFinished()));
+
     QFrame *line = new QFrame(this);
     line->setFrameShape(QFrame::HLine);
-    line->setFixedHeight(1);
-    line->setStyleSheet("background-color: rgba(0,0,0,30); border: none;");
-    layout->addWidget(line, assetAttrCounter, 0, 1, 2, Qt::AlignBottom); // span both columns
+    line->setFrameShadow(QFrame::Sunken);
+    layout->addWidget(line, assetAttrCounter, 0, 1, 2); // span both columns
     assetAttrCounter++;
     return attrComboBox;
 }
@@ -148,21 +147,15 @@ QComboBox *RwaAttributeView::addComboBoxAndLabel(QGridLayout *layout, QString na
 void RwaAttributeView::addComboBoxAndLabel(QGridLayout *layout, QString name, QStringList values, QComboBox **attrComboBox, QLabel **attrLabel)
 {
     *attrComboBox = new QComboBox(this);
-    *attrLabel = new QLabel(name, this);
     (*attrComboBox)->setObjectName(name);
-    (*attrComboBox)->setMinimumSize(QSize(16,16));
-    (*attrComboBox)->setMaximumSize(QSize(16,16));
-    (*attrLabel)->setMinimumSize(QSize(14,14));
-    (*attrLabel)->setMaximumSize(QSize(14,14));
+    *attrLabel = new QLabel(name, this);
+
     (*attrComboBox)->setFont(attributeFont);
     (*attrComboBox)->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     (*attrComboBox)->setMinimumWidth(120);
     (*attrComboBox)->setMaximumWidth(120);
-    (*attrComboBox)->setMinimumHeight(14);
     (*attrLabel)->setFont(attributeFont);
     (*attrLabel)->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-    (*attrLabel)->setMinimumHeight(14);
-    (*attrLabel)->setMinimumWidth(120);
 
     layout->addWidget((*attrComboBox), assetAttrCounter, 0);
     layout->addWidget((*attrLabel), assetAttrCounter, 1);

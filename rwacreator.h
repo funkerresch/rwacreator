@@ -45,19 +45,62 @@ QT_FORWARD_DECLARE_CLASS(QSignalMapper)
 
 /** ***************************************** Subclassed QDockWidget ************************************************** */
 
-class RwaDockWidget : public QDockWidget // Thought it might come in handy for cleaning up, but...
+class RwaDockWidget : public QDockWidget
 {
     Q_OBJECT
 
 public:
-    RwaDockWidget(QWidget *parent = nullptr)
-        : QDockWidget(parent)
+    RwaDockWidget(QWidget *parent = nullptr, const QString& title = "Default")
+        : QDockWidget(title, parent)
     {
+        QWidget *titleBar = new QWidget(this);
+        titleBar->setAutoFillBackground(true);
+        titleBar->setStyleSheet(R"(
+            QWidget {
+                background-color: #2c2c2c;
+            }
+            QLabel {
+                color: white;
+                font: bold 11pt "Arial";
+            }
+            QToolButton {
+                background: transparent;
+                border: none;
+                padding: 2px;
+            }
+            QToolButton:hover {
+                background-color: rgba(255,255,255,0.15);
+                border-radius: 4px;
+            }
+        )");
 
+        QHBoxLayout *layout = new QHBoxLayout(titleBar);
+        layout->setContentsMargins(6, 0, 6, 0);
+        layout->setSpacing(2);
+
+        QLabel *label = new QLabel(title, titleBar);
+        layout->addWidget(label);
+        layout->addStretch();
+
+        QToolButton *floatButton = new QToolButton(titleBar);
+        floatButton->setIcon(style()->standardIcon(QStyle::SP_TitleBarNormalButton));
+        floatButton->setToolTip("Float / Dock");
+        layout->addWidget(floatButton);
+
+        connect(floatButton, &QToolButton::clicked, this, [this]() {
+            setFloating(!isFloating());
+        });
+
+        QToolButton *closeButton = new QToolButton(titleBar);
+        closeButton->setIcon(style()->standardIcon(QStyle::SP_TitleBarCloseButton));
+        closeButton->setToolTip("Close");
+        layout->addWidget(closeButton);
+        connect(closeButton, &QToolButton::clicked, this, &QDockWidget::close);
+        setTitleBarWidget(titleBar);
     }
 };
 
-/** ************************************* Rwa Creator Application Main Window ***************************************** */
+/*************************************** Rwa Creator Application Main Window ***************************************** */
 
 class RwaCreator : public QMainWindow
 {

@@ -5,8 +5,10 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleExecutable</key>
-	<string>$(EXECUTABLE_NAME)</string>
-	<key>CFBundleGetInfoString</key>
+	<key>CFBundleName</key>
+	<string>Rwa Creator</string>
+	<key>CFBundleDisplayName</key>
+	<string>Rwa Creator</string>
 	<string></string>
 	<key>CFBundleIconFile</key>
 	<string></string>
@@ -36,11 +38,7 @@
 	<string></string>
 	<key>NSDocumentsFolderUsageDescription</key>
 	<string>rwacreator needs access to your Documents folder to save and load projects.</string>
-<key>NSAppTransportSecurity</key>
-<dict>
-    <key>NSAllowsArbitraryLoads</key>
-    <true/>
-</dict>
+
 
 </dict>
 
