@@ -305,7 +305,7 @@ set_target_properties(rwacreator PROPERTIES
 )
 
 set_target_properties(rwacreator PROPERTIES
-    MACOSX_BUNDLE_GUI_IDENTIFIER com.local.rwacreator
+    MACOSX_BUNDLE_GUI_IDENTIFIER com.fhnw.rwa.creator
     MACOSX_BUNDLE_BUNDLE_NAME rwacreator
 )
 
