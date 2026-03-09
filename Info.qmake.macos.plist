@@ -5,11 +5,11 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleExecutable</key>
+	<string>rwacreator</string>
 	<key>CFBundleName</key>
 	<string>Rwa Creator</string>
 	<key>CFBundleDisplayName</key>
 	<string>Rwa Creator</string>
-	<string></string>
 	<key>CFBundleIconFile</key>
 	<string></string>
 	<key>CFBundleIdentifier</key>
