@@ -45,6 +45,10 @@
 #include <QtNetwork>
 #include <QObject>
 #include <QString>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QTextDocument>
 
 QT_BEGIN_NAMESPACE
 class QLineEdit;
