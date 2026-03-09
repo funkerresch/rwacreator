@@ -195,8 +195,9 @@ void RwaSuggestPlaces::preventSuggest()
 void RwaSuggestPlaces::handleNetworkData(QNetworkReply *networkReply)
 {
     QUrl url = networkReply->url();
+    QNetworkReply::NetworkError error = networkReply->error();
 
-    if (!networkReply->error())
+    if (error == QNetworkReply::NoError)
     {     
         QStringList choices;
         QStringList lon;
@@ -228,7 +229,7 @@ void RwaSuggestPlaces::handleNetworkData(QNetworkReply *networkReply)
     }
     else
     {
-        qDebug("network Error");
+        qDebug("network Error: %s", qPrintable(networkReply->errorString()));
     }
 
     networkReply->deleteLater();
