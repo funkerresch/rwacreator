@@ -15,7 +15,7 @@ RwaStateView::RwaStateView(QWidget* parent, RwaScene *scene, QString name)
     layout->setContentsMargins(0,0,0,0);
     assetList = new RwaAssetList(this, scene);
     assetAttributes = new RwaAssetAttributeView(this, scene);
-    assetAttributes->scrollArea->setMaximumWidth(250);
+    assetAttributes->scrollArea->setMaximumWidth(256);
     currentPoint = nullptr;
     editStateRadius = false;
     editStateHeight = false;
