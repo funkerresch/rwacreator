@@ -31,13 +31,13 @@
 	<key>CSResourcesFileMapped</key>
 	<true/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string></string>
+	<string>RWA Creator uses Bluetooth to communicate with the head-tracker.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string></string>
 	<key>NSHumanReadableCopyright</key>
 	<string></string>
 	<key>NSDocumentsFolderUsageDescription</key>
-	<string>rwacreator needs access to your Documents folder to save and load projects.</string>
+	<string>RWA Creator needs access to your Documents folder to save and load projects.</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>12.0</string>
 
