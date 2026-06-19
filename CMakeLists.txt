@@ -294,19 +294,34 @@ set(RWACREATOR_SOURCES
 # Executable
 # ------------------------------------------------------------------------------
 
+# Define variables for Info.plist substitution
+set(EXECUTABLE_NAME "rwacreator")
+set(BUNDLE_NAME "RWA Creator")
+set(BUNDLE_DISPLAY_NAME "RWA Creator")
+set(BUNDLE_IDENTIFIER "com.fhnw.rwa.creator")
+
+# Get git commit hash
+execute_process(
+    COMMAND git rev-parse --short HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_COMMIT_HASH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+# Configure Info.plist from template
+configure_file(
+    ${CMAKE_SOURCE_DIR}/Info.qmake.macos.plist
+    ${CMAKE_BINARY_DIR}/Info.plist
+    @ONLY
+)
+
 add_executable(rwacreator MACOSX_BUNDLE
     ${RWACREATOR_SOURCES}
     ${RWACREATOR_HEADERS}
 )
 
 set_target_properties(rwacreator PROPERTIES
-    MACOSX_BUNDLE_INFO_PLIST
-        ${CMAKE_SOURCE_DIR}/Info.qmake.macos.plist
-)
-
-set_target_properties(rwacreator PROPERTIES
-    MACOSX_BUNDLE_GUI_IDENTIFIER com.fhnw.rwa.creator
-    MACOSX_BUNDLE_BUNDLE_NAME rwacreator
+    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_BINARY_DIR}/Info.plist
 )
 
 # ------------------------------------------------------------------------------
