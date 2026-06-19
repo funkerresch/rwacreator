@@ -45,8 +45,8 @@ add_compile_options(
 # ------------------------------------------------------------------------------
 
 if(APPLE)
-    set(CMAKE_OSX_DEPLOYMENT_TARGET "14.0")
-    set(CMAKE_OSX_ARCHITECTURES "arm64")
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0")
+    set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64")
 endif()
 
 # ------------------------------------------------------------------------------
