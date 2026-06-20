@@ -32,8 +32,9 @@ APP_BUNDLE="$BUILD_DIR/rwacreator.app"
 
 # Where to put the final DMG / zip
 DIST_DIR="$(dirname "$0")/dist"
-APP_NAME="RWACreator"
+APP_NAME="RWA Creator"
 ARCHIVE="$DIST_DIR/$APP_NAME.zip"
+DMG_TEMP="$DIST_DIR/dmg_temp"
 DMG="$DIST_DIR/$APP_NAME.dmg"
 
 # =============================================================================
@@ -110,15 +111,20 @@ xcrun stapler validate "$APP_BUNDLE"
 # Create DMG from the stapled bundle
 # =============================================================================
 
-mkdir -p "$DIST_DIR"
+mkdir -p "$DMG_TEMP"
 echo "==> Creating DMG..."
 rm -f "$DMG"
+cp -R "$APP_BUNDLE" "$DMG_TEMP"/
+ln -s /Applications "$DMG_TEMP"/Applications
+
 hdiutil create \
     -volname "$APP_NAME" \
-    -srcfolder "$APP_BUNDLE" \
+    -srcfolder "$DMG_TEMP" \
     -ov \
     -format UDZO \
+    -fs HFS+ \
     "$DMG"
 
+rm -rf "$DMG_TEMP"
 echo ""
 echo "Done. Distributable: $DMG"

@@ -60,7 +60,9 @@ build/Desktop*
 .env
 dist
 build/cmake-release
+build/release
 build/cmake-debug
+build/debug
 
 rwabuild
 .qtc_clangd/

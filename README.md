@@ -15,7 +15,15 @@ Around 2015 I started with the development of the Real World Audio (RWA) environ
 ### CMake
 
 ```bash
+# Option 1: Using Homebrew (if available)
 brew install cmake
+
+# Option 2: Download pre-built binary
+cd ~/Downloads
+curl -L -O https://github.com/Kitware/CMake/releases/download/v3.27.9/cmake-3.27.9-macos-universal.tar.gz
+tar xzf cmake-3.27.9-macos-universal.tar.gz
+echo 'export PATH="$HOME/Downloads/cmake-3.27.9-macos-universal/CMake.app/Contents/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
 ```
 
 ### Qt 6
@@ -30,8 +38,8 @@ source .venv/bin/activate
 pip install --upgrade pip
 pip install aqtinstall
 # check for version: aqt list-qt mac desktop
-aqt install-qt mac desktop 5.15.2 clang_64 --outputdir ~/Qt
-echo 'export PATH="$HOME/Qt/5.15.2/clang_64/bin:$PATH"' >> ~/.zshrc
+aqt install-qt mac desktop 6.11.1 clang_64 --outputdir ~/../Shared/Qt
+echo 'export PATH="$HOME/../Shared/Qt/6.11.1/clang_64/bin:$PATH"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
@@ -40,10 +48,10 @@ source ~/.zshrc
 Clone the repository with submodules:
 
 ```bash
-# set up git to use HTTPS instead of SSH for GitHub` 
-git config --global --unset-all url."https://".insteadOf` 
-git config --global --add url."https://".insteadOf git://` 
-git config --global --add url."https://".insteadOf http://` 
+# set up git to use HTTPS instead of SSH for GitHub
+git config --global --unset-all url."https://".insteadOf 
+git config --global --add url."https://".insteadOf git:// 
+git config --global --add url."https://".insteadOf http:// 
 git config --global --add url."https://github.com/".insteadOf "git@github.com:"
 
 # verify the configuration
@@ -92,9 +100,7 @@ You may use the debugger facilities of you IDE instead of lldb. Configuration fo
 
 ### Release Build
 
-Use build-script, it will build and sign the app, and create a notarized DMG for distribution:
-
-`./build_release.sh`
+Run `./build_release.sh`, it will build and sign the app, and create a notarized DMG for distribution:
 
 Or manually build using CMake (no notarization):
 
