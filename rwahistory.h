@@ -19,6 +19,8 @@
 #include "QListView"
 #include "QFileSystemModel"
 #include "QStringListModel"
+#include <QKeyEvent>
+#include <QMouseEvent>
 
 class RwaHistory : public QListView
 {
