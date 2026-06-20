@@ -41,7 +41,7 @@ void RwaView::writeSplitterLayout()
     if(!windowSplitter)
         return;
 
-    QSettings settings("Intrinsic Audio", "Rwa Creator");
+    QSettings settings;
     settings.setValue(objectName()+"Geometry", windowSplitter->saveGeometry());
     settings.setValue(objectName()+"State", windowSplitter->saveState());
 }
@@ -51,7 +51,7 @@ void RwaView::readSplitterLayout()
     if(!windowSplitter || objectName().isEmpty())
         return;
 
-    QSettings settings("Intrinsic Audio", "Rwa Creator");
+    QSettings settings;
     windowSplitter->restoreGeometry(settings.value(objectName()+"Geometry").toByteArray());
     windowSplitter->restoreState(settings.value(objectName()+"State").toByteArray());
 }

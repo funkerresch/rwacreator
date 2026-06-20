@@ -47,6 +47,14 @@
 int main(int argc, char **argv)
 {
     QApplication app(argc, argv);
+
+    // Set application metadata - this determines QSettings file location
+    // QSettings and native dialogs (using the bundle identifier) create separate preference files
+    QCoreApplication::setOrganizationName("FHNW");
+    QCoreApplication::setOrganizationDomain("fhnw");
+    QCoreApplication::setApplicationName("rwacreator");
+    QCoreApplication::setApplicationVersion("0.8.2");
+
     RwaBackend::getInstance();
     RwaCreator mainWin;
     qInstallMessageHandler(mainWin.logMessages);

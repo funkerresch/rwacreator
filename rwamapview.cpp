@@ -143,7 +143,7 @@ RwaMapView::~RwaMapView()
 
 void RwaMapView::readSettings()
 {
-    QSettings settings("Intrinsic Audio", "Rwa Creator");
+    QSettings settings;
     setAssetsVisible(settings.value("mapviewassetsvisible").toBool());
     toolbar->assetsVisibleButton->setChecked(settings.value("mapviewassetsvisible").toBool());
     setRadiiVisible(settings.value("mapviewradiivisible").toBool());
@@ -156,7 +156,7 @@ void RwaMapView::readSettings()
 
 void RwaMapView::writeSettings()
 {
-    QSettings settings("Intrinsic Audio", "Rwa Creator");
+    QSettings settings;
     settings.setValue("mapviewassetsvisible", assetsVisible);
     settings.setValue("mapviewradiivisible", stateRadiusVisible);
     settings.setValue("mapviewherofollows", backend->heroFollowsSceneAndState);
