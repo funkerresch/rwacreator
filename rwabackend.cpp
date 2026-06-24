@@ -98,7 +98,7 @@ RwaBackend::RwaBackend(QWidget *parent) :
     CFURLRef url = (CFURLRef)CFAutorelease((CFURLRef)CFBundleCopyBundleURL(CFBundleGetMainBundle()));
     QString path = QUrl::fromCFURL(url).path();
     httpProcessId = -1;
-    completeBundlePath = path + "Contents/MacOS/";
+    completeBundlePath = path + "Contents/Resources/";
     completeProjectPath = QString();
     completeFilePath = QString();
     completeUndoPath = QString();
