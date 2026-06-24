@@ -426,7 +426,7 @@ set(PD_FILES
 
 foreach(file ${PD_FILES})
     set_source_files_properties(${file} PROPERTIES
-        MACOSX_PACKAGE_LOCATION MacOS/puredata
+        MACOSX_PACKAGE_LOCATION Resources/puredata
     )
 endforeach()
 
@@ -439,7 +439,7 @@ file(GLOB IMAGE_FILES
 
 foreach(file ${IMAGE_FILES})
     set_source_files_properties(${file} PROPERTIES
-        MACOSX_PACKAGE_LOCATION MacOS/images
+        MACOSX_PACKAGE_LOCATION Resources/images
     )
 endforeach()
 
