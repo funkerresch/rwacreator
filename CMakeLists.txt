@@ -270,23 +270,23 @@ set(RWACREATOR_SOURCES
     vorbis/lib/vorbisenc.c
     vorbis/lib/vorbisfile.c
     vorbis/lib/window.c
-    qmapcontrol/QMapControl/src/geometry.cpp 
-    qmapcontrol/QMapControl/src/imagemanager.cpp 
-    qmapcontrol/QMapControl/src/layer.cpp 
-    qmapcontrol/QMapControl/src/layermanager.cpp 
-    qmapcontrol/QMapControl/src/mapadapter.cpp 
-    qmapcontrol/QMapControl/src/mapcontrol.cpp 
-    qmapcontrol/QMapControl/src/mapnetwork.cpp 
-    qmapcontrol/QMapControl/src/point.cpp 
-    qmapcontrol/QMapControl/src/tilemapadapter.cpp 
-    qmapcontrol/QMapControl/src/circlepoint.cpp 
-    qmapcontrol/QMapControl/src/gps_position.cpp 
-    qmapcontrol/QMapControl/src/osmmapadapter.cpp 
-    qmapcontrol/QMapControl/src/maplayer.cpp 
-    qmapcontrol/QMapControl/src/geometrylayer.cpp 
-    qmapcontrol/QMapControl/src/emptymapadapter.cpp 
-    qmapcontrol/QMapControl/src/rectpoint.cpp 
-    qmapcontrol/QMapControl/src/polygonpoint.cpp 
+    qmapcontrol/QMapControl/src/geometry.cpp
+    qmapcontrol/QMapControl/src/imagemanager.cpp
+    qmapcontrol/QMapControl/src/layer.cpp
+    qmapcontrol/QMapControl/src/layermanager.cpp
+    qmapcontrol/QMapControl/src/mapadapter.cpp
+    qmapcontrol/QMapControl/src/mapcontrol.cpp
+    qmapcontrol/QMapControl/src/mapnetwork.cpp
+    qmapcontrol/QMapControl/src/point.cpp
+    qmapcontrol/QMapControl/src/tilemapadapter.cpp
+    qmapcontrol/QMapControl/src/circlepoint.cpp
+    qmapcontrol/QMapControl/src/gps_position.cpp
+    qmapcontrol/QMapControl/src/osmmapadapter.cpp
+    qmapcontrol/QMapControl/src/maplayer.cpp
+    qmapcontrol/QMapControl/src/geometrylayer.cpp
+    qmapcontrol/QMapControl/src/emptymapadapter.cpp
+    qmapcontrol/QMapControl/src/rectpoint.cpp
+    qmapcontrol/QMapControl/src/polygonpoint.cpp
     qmapcontrol/QMapControl/src/rwamapitem.cpp
 )
 
@@ -340,7 +340,7 @@ target_include_directories(rwacreator PRIVATE
     ${CMAKE_SOURCE_DIR}/ofq/libofqf
     ${CMAKE_SOURCE_DIR}/libogg/include
     ${CMAKE_SOURCE_DIR}/vorbis/include
-    ${CMAKE_SOURCE_DIR}/vorbis/lib   
+    ${CMAKE_SOURCE_DIR}/vorbis/lib
     ${CMAKE_SOURCE_DIR}/qmapcontrol/QMapControl/src
     ${CMAKE_SOURCE_DIR}/cpp-httplib
     ${CMAKE_SOURCE_DIR}
