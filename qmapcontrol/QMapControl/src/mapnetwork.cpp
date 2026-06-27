@@ -50,7 +50,7 @@ namespace qmapcontrol
         QString completeUrl;
 
         request.setUrl(QUrl("https://"+host+url));
-        request.setRawHeader("User-Agent", "MyOwnBrowser 1.0");
+        request.setRawHeader("User-Agent", "RWACreator/1.0 (+https://www.fhnw.ch/de/musik/forschung-dienstleistungen/forschung/institut-klassik)");
         //httpManager->connectToHost(host, 80);
 
 
