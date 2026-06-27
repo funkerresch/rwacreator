@@ -50,7 +50,7 @@ git config --global --add url."https://github.com/".insteadOf "git@github.com:"
 git config --global --get-all url."https://".insteadOf
 
 # clone the repository with submodules
-git clone --recursive \
+git clone --recursive -b h.e.i.-campus-customisation \
   https://github.com/rnd-hsm-klassik/rwa-creator.git
 cd rwa-creator
 ```
