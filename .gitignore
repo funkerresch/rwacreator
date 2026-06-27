@@ -60,3 +60,4 @@ build/Desktop*
 .env
 dist
 build/cmake-release
+build/cmake-debug
