@@ -241,8 +241,14 @@ QString RwaUtilities::getDataType(QString fullpath)
 
 void RwaUtilities::emtpyDirectory(QString fullpath)
 {
-    QString path = fullpath;
-    QDir dir(path);
+    // Safety: never operate on an empty or relative path. QDir("") resolves to
+    // the current working directory, so an unset path here would delete files in
+    // whatever directory the app was launched from.
+    if (fullpath.isEmpty())
+        return;
+    QDir dir(fullpath);
+    if (!dir.isAbsolute() || !dir.exists())
+        return;
     dir.setNameFilters(QStringList() << "*.*");
     dir.setFilter(QDir::Files);
     foreach(QString dirFile, dir.entryList())

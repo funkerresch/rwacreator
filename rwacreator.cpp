@@ -852,6 +852,8 @@ qint32 RwaCreator::open(QString fileName, bool throwDialogue)
 
 void RwaCreator::emptyTmpDirectories()
 {
+    if (backend->completeUndoPath.isEmpty() || backend->completeTmpPath.isEmpty())
+        return;
     RwaUtilities::emtpyDirectory(backend->completeUndoPath);
     RwaUtilities::emtpyDirectory(backend->completeTmpPath);
 }
