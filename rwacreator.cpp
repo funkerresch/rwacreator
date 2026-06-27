@@ -536,7 +536,7 @@ void RwaCreator::enterFilePathPreferences()
 void RwaCreator::enterHtName()
 {
     bool ok;
-    QString text = QInputDialog::getText(this, tr("QInputDialog::getText()"),
+    QString text = QInputDialog::getText(this, tr("Set Headtracker Name"),
                                              tr("Tracker name:"), QLineEdit::Normal,
                                              headtracker->getName(), &ok);
 
