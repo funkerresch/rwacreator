@@ -299,6 +299,7 @@ set(EXECUTABLE_NAME "rwacreator")
 set(BUNDLE_NAME "RWA Creator")
 set(BUNDLE_DISPLAY_NAME "RWA Creator")
 set(BUNDLE_IDENTIFIER "com.fhnw.rwa.creator")
+set(BUNDLE_ICON_FILE "rwa-creator.icns")
 
 # Get git commit hash
 execute_process(
@@ -450,6 +451,12 @@ target_sources(rwacreator PRIVATE
 target_sources(rwacreator PRIVATE
     ${PD_FILES}
 )
+
+set(APP_ICON ${CMAKE_SOURCE_DIR}/images/${BUNDLE_ICON_FILE})
+set_source_files_properties(${APP_ICON} PROPERTIES
+    MACOSX_PACKAGE_LOCATION "Resources"
+)
+target_sources(rwacreator PRIVATE ${APP_ICON})
 
 # ------------------------------------------------------------------------------
 # Install

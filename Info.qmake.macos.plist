@@ -11,7 +11,7 @@
 	<key>CFBundleDisplayName</key>
 	<string>@BUNDLE_DISPLAY_NAME@</string>
 	<key>CFBundleIconFile</key>
-	<string></string>
+	<string>@BUNDLE_ICON_FILE@</string>
 	<key>CFBundleIdentifier</key>
 	<string>@BUNDLE_IDENTIFIER@</string>
 	<key>CFBundleInfoDictionaryVersion</key>
