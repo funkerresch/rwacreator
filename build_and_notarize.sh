@@ -20,8 +20,6 @@ fi
 
 # Path to your Qt6 installation (the directory that contains bin/macdeployqt)
 QT_DIR="/Users/Shared/Qt/6.11.1/macos"
-# Qt's macdeployqt binary
-MACDEPLOYQT="$QT_DIR/bin/macdeployqt"
 
 SIGN_IDENTITY="${TEAM_ID}"
 NOTARY_PROFILE="${PROFILE}"
@@ -55,13 +53,6 @@ cmake -S "$(dirname "$0")" \
 
 echo "==> Building..."
 cmake --build "$BUILD_DIR" --config Release --parallel "$(sysctl -n hw.logicalcpu)"
-
-# =============================================================================
-# 3. Bundle Qt frameworks
-# =============================================================================
-
-echo "==> Running macdeployqt..."
-"$MACDEPLOYQT" "$APP_BUNDLE"
 
 # =============================================================================
 # 4. Inside-out signing (required for notarization / hardened runtime)

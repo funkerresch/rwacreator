@@ -74,7 +74,6 @@ APP_BUNDLE="$BUILD_DIR/rwacreator.app"
 # mkdir -p $BUILD_DIR
 cmake -S . -B $BUILD_DIR -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="$QT_DIR" -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 cmake --build "$BUILD_DIR" --config Debug --parallel "$(sysctl -n hw.logicalcpu)"
-"$MACDEPLOYQT" "$APP_BUNDLE"
 ```
 
 This will also create a `compile_commands.json` file in the build directory, which can be used by IDEs for code navigation and autocompletion (check `.clangd` for configuration).
