@@ -61,19 +61,22 @@ Copy `.env_example` to `.env` and edit accordingly (you can also use adhoc signi
 
 ### Debug Build
 
-```bash
-source .env
-SIGN_IDENTITY="${TEAM_ID}"
-NOTARY_PROFILE="${PROFILE}"
-QT_DIR="/Users/Shared/Qt/6.11.1/macos"
-MACDEPLOYQT="$QT_DIR/bin/macdeployqt"
-BUILD_DIR=build/cmake-debug
-APP_BUNDLE="$BUILD_DIR/rwacreator.app"
+Run `build_debug.sh` or manually build using CMake:
 
+```bash
+QT_DIR="/Users/Shared/Qt/6.11.1/macos"
+BUILD_DIR=build/cmake-debug
+
+# make sure to clean build directory when necessary!
 # rm -rf $BUILD_DIR
 # mkdir -p $BUILD_DIR
-cmake -S . -B $BUILD_DIR -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="$QT_DIR" -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-cmake --build "$BUILD_DIR" --config Debug --parallel "$(sysctl -n hw.logicalcpu)"
+
+cmake -S . -B $BUILD_DIR -DCMAKE_BUILD_TYPE=Debug \
+  -DCMAKE_PREFIX_PATH="$QT_DIR" \
+  -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+cmake --build "$BUILD_DIR" --config Debug \
+  --parallel "$(sysctl -n hw.logicalcpu)"
 ```
 
 This will also create a `compile_commands.json` file in the build directory, which can be used by IDEs for code navigation and autocompletion (check `.clangd` for configuration).
@@ -81,7 +84,7 @@ This will also create a `compile_commands.json` file in the build directory, whi
 Launch the app using the debugger:
 
 ```bash
-lldb "$APP_BUNDLE/Contents/MacOS/rwacreator"
+lldb "$BUILD_DIR/rwacreator.app/Contents/MacOS/rwacreator"
 (lldb) run
 ```
 
@@ -89,11 +92,11 @@ You may use the debugger facilities of you IDE instead of lldb. Configuration fo
 
 ### Release Build
 
-Use build-script:
+Use build-script, it will build and sign the app, and create a notarized DMG for distribution:
 
-`./build_and_notarize.sh`
+`./build_release.sh`
 
-Or manually build using CMake:
+Or manually build using CMake (no notarization):
 
 ```bash
 mkdir -p build/cmake-release
