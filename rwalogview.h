@@ -20,6 +20,8 @@
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QCheckBox>
+#include <QComboBox>
+#include <QLabel>
 #include "rwabackend.h"
 
 
@@ -33,6 +35,8 @@ public:
     RwaBackend *backend;
     QPlainTextEdit *logView;
     QPushButton *clearButton;
+    QComboBox *logLevelComboBox;
+    QtMsgType logLevel = QtInfoMsg;
     QCheckBox *logLongAndLatCheckbox;
     QCheckBox *logLibPdPrint;
     QCheckBox *logSimulatorStates;

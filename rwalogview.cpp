@@ -45,6 +45,16 @@ RwaLogWindow::RwaLogWindow(QWidget *parent) :
     logOther->setText("Other");
     buttonLayout->addWidget(logOther);
     connect(logOther, SIGNAL (stateChanged(int)), backend, SLOT (receiveLogOther(int)) );
+    buttonLayout->addWidget(new QLabel("Log Level:", this));
+    logLevelComboBox = new QComboBox(this);
+    logLevelComboBox->addItems({"Debug", "Info", "Warning", "Critical", "Fatal"});
+    logLevelComboBox->setCurrentIndex(1); // Info
+    buttonLayout->addWidget(logLevelComboBox);
+
+    connect(logLevelComboBox, &QComboBox::currentIndexChanged, this, [this](int index) {
+        static const QtMsgType levels[] = { QtDebugMsg, QtInfoMsg, QtWarningMsg, QtCriticalMsg, QtFatalMsg };
+        logLevel = levels[index];
+    });
 }
 
 RwaLogWindow::~RwaLogWindow()
@@ -52,8 +62,23 @@ RwaLogWindow::~RwaLogWindow()
 
 }
 
+static int msgSeverity(QtMsgType type)
+{
+    switch(type) {
+        case QtDebugMsg:    return 0;
+        case QtInfoMsg:     return 1;
+        case QtWarningMsg:  return 2;
+        case QtCriticalMsg: return 3;
+        case QtFatalMsg:    return 4;
+    }
+    return 0;
+}
+
 void RwaLogWindow::outputMessage(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
+    if (msgSeverity(type) < msgSeverity(logLevel))
+        return;
+
     if (msg.length() > 512) {
         return;
     }
