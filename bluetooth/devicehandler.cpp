@@ -178,8 +178,6 @@ void DeviceHandler::serviceStateChanged(QLowEnergyService::ServiceState s)
 void DeviceHandler::handleCharacteristicData(const QLowEnergyCharacteristic &c, const QByteArray &value)
 {
     Q_UNUSED(c);
-    qDebug() << "[BLE debug] notification raw:" << value;
-    // The headtracker payload is plain ASCII text; forward it verbatim.
     emit headtrackerDataReceived(QString::fromUtf8(value));
 }
 

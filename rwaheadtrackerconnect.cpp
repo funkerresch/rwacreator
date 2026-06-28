@@ -1,4 +1,5 @@
 #include "rwaheadtrackerconnect.h"
+#include "rwabackend.h"
 #include <QTimer>
 
 
@@ -155,11 +156,14 @@ void RwaHeadtrackerConnect::receiveHeadtrackerData(const QString &data)
         receivedOrientation[0] = list.at(0).toFloat();
 
     if(list.length() >= 2)
-       receivedOrientation[1] = list.at(1).toFloat();
+        receivedOrientation[1] = list.at(1).toFloat();
 
-    qDebug() << "[BLE debug] heading data:" << data
-             << "-> azimuth:" << receivedOrientation[0]
-             << "elevation:" << receivedOrientation[1];
+    if(RwaBackend::getInstance()->logSim && list.length() >= 2) {
+        qInfo() << "BT heading:"
+                << "azimuth:" << receivedOrientation[0]
+                << "elevation:" << receivedOrientation[1]
+                << "(" << data << ")";
+    }
 
     if(list.length() >= 3)
         detectStep(list.at(2).toFloat());

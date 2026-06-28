@@ -219,7 +219,6 @@ void RwaSimulator::receiveAzimuth(float azimuth)
     if(entities.empty())
         return;
 
-    qDebug() << azimuth;
     RwaEntity *entity = entities.front();
     entity->setAzimuth(static_cast<int32_t>(azimuth));
 }
