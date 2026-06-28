@@ -29,12 +29,12 @@ public:
     bool read(QIODevice *device);
     QString errorString() const;
 
-private:    
+private:
     QString readRwaInit();
     QString readinit(QIODevice *device);
 
     void readActions();
-    void readRwa();   
+    void readRwa();
     void readState();
     void readEnterconditions();
     void readAssets();

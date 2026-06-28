@@ -15,7 +15,7 @@ RwaAttributeView::RwaAttributeView(QWidget* parent, RwaScene *scene)
     dynamicAddButtonFont = QFont("Courier", 10, QFont::StyleOblique,true);
     connect(assetAttributeGroup, SIGNAL(idToggled(int, bool)), this, SLOT(receiveCheckBoxAttributeValue(int, bool)));
     connect(assetAttributeGroup, SIGNAL(idReleased(int)), this, SLOT(receiveEditingFinished()));
-    assetAttributeGroup->setExclusive(false);   
+    assetAttributeGroup->setExclusive(false);
     scrollArea = new QScrollArea(parent);
     scrollArea->setWidget(this);
     setFrameStyle(QFrame::NoFrame);
@@ -179,5 +179,3 @@ float RwaAttributeView::calculate_window_height()
 {
     return ((float)assetAttrCounter * 0.5f) * 23.0f;
 }
-
-

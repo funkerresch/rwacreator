@@ -398,7 +398,7 @@ void RwaStateView::setCurrentState(RwaState *state)
     window->setWindowTitle("State View - "+ QString::fromStdString(state->objectName()));
     mc->setView(QPointF(state->getCoordinates()[0], state->getCoordinates()[1]));
     setMap2AreaZoomLevel(state);
-    RwaGraphicsView::setCurrentState(state);    
+    RwaGraphicsView::setCurrentState(state);
 
     if(QObject::sender() != this->backend)
     {
@@ -483,8 +483,3 @@ void RwaStateView::deleteAssetItem(const QString &path)
         emit sendCurrentState(currentState);
     }
 }
-
-
-
-
-

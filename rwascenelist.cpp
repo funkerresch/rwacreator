@@ -128,4 +128,3 @@ void RwaSceneList::update()
             setCurrentScene(backend->getScenes().front());
     }
 }
-

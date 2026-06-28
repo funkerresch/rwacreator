@@ -73,4 +73,3 @@ static QString rwaInactiveLableStyle( "color: rgba(0, 0, 222, 60%);"
                                       "font-family: Helvetica Neue;");
 
 #endif // RWASTYLES
-

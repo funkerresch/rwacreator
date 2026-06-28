@@ -52,7 +52,7 @@ public:
     audioProcessor *ap;
     QTimer *gameLoopTimer;
     QTimer *entityTimer;
-    qint32 entityUpdateInterval;   
+    qint32 entityUpdateInterval;
     RwaBackend *backend;
 
     bool step = false;

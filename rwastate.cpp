@@ -37,7 +37,7 @@ RwaState::RwaState(std::string stateName) :
 
 RwaState::~RwaState() // Delete Audio Files from Disk??
 {
-    foreach(RwaAsset1 *asset, assets)       
+    foreach(RwaAsset1 *asset, assets)
         delete asset;
 
     qDebug() << "delete State";
@@ -364,7 +364,3 @@ void RwaState::setType(const int32_t &value)
             this->myScene->setBackgroundState(this);
     }
 }
-
-
-
-

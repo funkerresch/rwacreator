@@ -55,4 +55,3 @@ void RwaSceneView::setCurrentState(RwaState *currentState)
     this->currentState = currentState;
     //stateList->update();
 }
-

@@ -56,18 +56,18 @@ public:
 #endif
     static std::string getFileName1(std::string fullpath);
     static double degrees2radians(double degrees);
-    static double radians2degrees(double radians);   
+    static double radians2degrees(double radians);
     static double calculateDistance1(std::vector<double> p1, std::vector<double> p2);
     static int32_t calculateDistanceInMeters(std::vector<double> p1, std::vector<double> p2);
     static std::vector<double> calculateDestination1(std::vector<double> coordinates, double radius, double bearingInDegrees);
     static std::string getFileName(std::string fullpath);
     static double calculateBearing1(std::vector<double> p1, std::vector<double> p2);
-    static void calculatePolygonOffset2(double offset, std::vector<std::vector<double> > &corners, std::vector<std::vector<double> > &offsetCorners);  
+    static void calculatePolygonOffset2(double offset, std::vector<std::vector<double> > &corners, std::vector<std::vector<double> > &offsetCorners);
     static double calculateBearing1(std::vector<double> p1, std::vector<double> p2, int headDirection);
     static bool coordinateWithinRectangle1(std::vector<double> p, std::vector<double> center, double width, double height);
     static bool coordinateWithinPolygon3(std::vector<double> p, std::vector<std::vector<double> > &corners);
     static void debug2Terminal(const std::string file, const std::string func, int32_t line, const std::string message);
-    static bool coordinateWithinRectangle1(std::vector<double> p, std::vector<double> corner1, std::vector<double> corner2);      
+    static bool coordinateWithinRectangle1(std::vector<double> p, std::vector<double> corner1, std::vector<double> corner2);
     static double calculateElevationEasy(std::vector<double> p1, std::vector<double> p2, double elevation, int headDirection);
     static double calculateDistanceWithAltitude(double hDist, double vDist);
 };

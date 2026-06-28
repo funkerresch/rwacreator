@@ -84,7 +84,7 @@ void RwaGraphicsView::setMap2AreaZoomLevel(RwaArea *area)
 }
 
 void RwaGraphicsView::setCurrentScene(RwaScene *scene)
-{    
+{
     if(!scene)
          return;
 
@@ -148,7 +148,7 @@ void RwaGraphicsView::initNewGame()
 void RwaGraphicsView::addZoomButtons()
 {
     innerLayout->setAlignment(Qt::AlignTop);
-    mc->setLayout(innerLayout);   
+    mc->setLayout(innerLayout);
     leftLayout->addWidget(zoomInButton);
     leftLayout->addWidget(zoomOutButton);
     rightLayout->setAlignment(Qt::AlignRight);
@@ -412,7 +412,7 @@ void RwaGraphicsView::updateReflectionPixmaps()
 {
     for (int i=0; i<assetReflectionLayer->geometries.count(); i++)
     {
-        RwaMapItem *point;       
+        RwaMapItem *point;
         point = static_cast<RwaMapItem *>(assetReflectionLayer->geometries.at(i));
         RwaAsset1 *asset = static_cast<RwaAsset1 *>(point->data);
 
@@ -969,7 +969,7 @@ void RwaGraphicsView::drawEntity(RwaEntity *entity, bool isActive)
 void RwaGraphicsView::redrawAssets()
 {
     if(!currentScene)
-        return;        
+        return;
 
     if(assetReflectionsVisible)
         assetReflectionLayer->clearGeometries();
@@ -1153,7 +1153,3 @@ void RwaGraphicsView::setEntityCoordinates2CurrentState()
         drawEntity(entity, true);
     }
 }
-
-
-
-

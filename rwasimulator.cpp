@@ -311,7 +311,7 @@ void RwaSimulator::stopRwaSimulation()
     simulationIsRunning = false;
     runtime->freeDynamicPdPatchers1();
     clearGame();
-    ap->stopAudio();   
+    ap->stopAudio();
     QTimer::singleShot(100, [this]{ runtime->emptyPdMessageQueue();});
 }
 
@@ -428,4 +428,3 @@ void RwaSimulator::updateRwaGameState()
     runtime->update(entity);
     emit backend->sendRedrawAssets();
 }
-

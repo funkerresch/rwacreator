@@ -238,7 +238,7 @@ void RwaStateAttributeView::updateStateAttr(QComboBox *attrComboBox, QString sta
 {
     int index = 0;
 
-    if(state2compare.compare(""))   
+    if(state2compare.compare(""))
          index = attrComboBox->findText(state2compare);
 
     attrComboBox->setCurrentIndex(index);
@@ -265,7 +265,7 @@ void RwaStateAttributeView::updateSceneAttr(QComboBox *attrComboBox, QString sce
 {
     int index = 0;
 
-    if(scene2compare.compare(""))   
+    if(scene2compare.compare(""))
        index = attrComboBox->findText(scene2compare);
 
     attrComboBox->setCurrentIndex(index);
@@ -522,4 +522,3 @@ void RwaStateAttributeView::receiveFaderAttributeValue(int id)
 {
 
 }
-

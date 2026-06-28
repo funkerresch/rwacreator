@@ -357,4 +357,3 @@ void RwaSceneAttributeView::receiveFaderAttributeValue(int id)
 {
 
 }
-

@@ -962,5 +962,3 @@ void RwaAssetItem::setOrientation2pd(bool value)
 {
     orientation2pd = value;
 }*/
-
-

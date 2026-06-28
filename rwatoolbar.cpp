@@ -702,4 +702,3 @@ void RwaViewToolbar::clearScene()
     emit sendWriteUndo("Clear Scene");
     qDebug("clear Scene");
 }
-

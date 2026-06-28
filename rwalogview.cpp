@@ -6,45 +6,45 @@
 RwaLogWindow::RwaLogWindow(QWidget *parent) :
  QWidget(parent)
 {
-     backend = RwaBackend::getInstance();
-     qRegisterMetaType<QtMsgType>("QtMsgType");
-     QVBoxLayout *layout = new QVBoxLayout;
+    backend = RwaBackend::getInstance();
+    qRegisterMetaType<QtMsgType>("QtMsgType");
+    QVBoxLayout *layout = new QVBoxLayout;
 
-     setLayout(layout);
-     logView = new QPlainTextEdit(this);
-     logView->setReadOnly(true);
-     layout->addWidget(logView);
+    setLayout(layout);
+    logView = new QPlainTextEdit(this);
+    logView->setReadOnly(true);
+    layout->addWidget(logView);
 
-      QHBoxLayout *buttonLayout = new QHBoxLayout;
-      buttonLayout->setContentsMargins(0, 0, 0, 0);
-      layout->addLayout(buttonLayout);
+    QHBoxLayout *buttonLayout = new QHBoxLayout;
+    buttonLayout->setContentsMargins(0, 0, 0, 0);
+    layout->addLayout(buttonLayout);
 
-      buttonLayout->addStretch(10);
+    buttonLayout->addStretch(10);
 
-      clearButton = new QPushButton(this);
-      clearButton->setText("clear");
-      buttonLayout->addWidget(clearButton);
-      connect(clearButton, SIGNAL (clicked()), logView, SLOT (clear()));
+    clearButton = new QPushButton(this);
+    clearButton->setText("clear");
+    buttonLayout->addWidget(clearButton);
+    connect(clearButton, SIGNAL (clicked()), logView, SLOT (clear()));
 
-      logLongAndLatCheckbox = new QCheckBox(this);
-      logLongAndLatCheckbox->setText("Lon & Lat");
-      buttonLayout->addWidget(logLongAndLatCheckbox);
-      connect(logLongAndLatCheckbox, SIGNAL (stateChanged(int)), backend, SLOT (receiveLogLonAndLat(int)) );
+    logLongAndLatCheckbox = new QCheckBox(this);
+    logLongAndLatCheckbox->setText("Lon & Lat");
+    buttonLayout->addWidget(logLongAndLatCheckbox);
+    connect(logLongAndLatCheckbox, SIGNAL (stateChanged(int)), backend, SLOT (receiveLogLonAndLat(int)) );
 
-      logLibPdPrint = new QCheckBox(this);
-      logLibPdPrint->setText("LibPd");
-      buttonLayout->addWidget(logLibPdPrint);
-      connect(logLibPdPrint, SIGNAL (stateChanged(int)), backend, SLOT (receiveLogLibPd(int)) );
+    logLibPdPrint = new QCheckBox(this);
+    logLibPdPrint->setText("LibPd");
+    buttonLayout->addWidget(logLibPdPrint);
+    connect(logLibPdPrint, SIGNAL (stateChanged(int)), backend, SLOT (receiveLogLibPd(int)) );
 
-      logSimulatorStates = new QCheckBox(this);
-      logSimulatorStates->setText("Simulator");
-      buttonLayout->addWidget(logSimulatorStates);
-      connect(logSimulatorStates, SIGNAL (stateChanged(int)), backend, SLOT (receiveLogSimulator(int)) );
+    logSimulatorStates = new QCheckBox(this);
+    logSimulatorStates->setText("Simulator");
+    buttonLayout->addWidget(logSimulatorStates);
+    connect(logSimulatorStates, SIGNAL (stateChanged(int)), backend, SLOT (receiveLogSimulator(int)) );
 
-      logOther = new QCheckBox(this);
-      logOther->setText("Other");
-      buttonLayout->addWidget(logOther);
-      connect(logOther, SIGNAL (stateChanged(int)), backend, SLOT (receiveLogOther(int)) );
+    logOther = new QCheckBox(this);
+    logOther->setText("Other");
+    buttonLayout->addWidget(logOther);
+    connect(logOther, SIGNAL (stateChanged(int)), backend, SLOT (receiveLogOther(int)) );
 }
 
 RwaLogWindow::~RwaLogWindow()

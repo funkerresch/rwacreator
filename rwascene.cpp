@@ -361,6 +361,3 @@ void RwaScene::setName(string name)
 {
     setObjectName(name);
 }
-
-
-

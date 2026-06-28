@@ -86,4 +86,3 @@ private:
 };
 //! [1]
 #endif // GOOGLESUGGEST_H
-

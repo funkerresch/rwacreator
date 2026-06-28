@@ -244,4 +244,3 @@ const char* paWrapper::getErrorText(int errorId)
           return Pa_GetErrorText(errorId);
     }
 }
-

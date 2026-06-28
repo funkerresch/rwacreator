@@ -281,7 +281,7 @@ void RwaRuntime::bangpdHelp(int32_t patcherTag, std::map<string, RwaEntity::Asse
         {
             i = assetItemMap.erase(i);
             releasePatcherFromItem(item);
-            //if(backend->logSim)
+            if(backend->logSim)
                 qDebug() <<  "Released Asset" << ": " << QString::fromStdString(assetItem->fileName);
 
             return;
@@ -473,7 +473,7 @@ void RwaRuntime::initDynamicPdPatchers(RwaEntity *entitiy)
             foreach(asset, state->getAssets())
             {
                 if(asset->type == RWAASSETTYPE_PD && !asset->mute)
-                {   
+                {
                     void *d = libpd_openfile(asset->fileName.c_str(), assetPath.c_str());
                     if(d != nullptr)
                     {
@@ -1485,7 +1485,7 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
     }
 
     enterconditionsFulfilled = true;
-    exitState = false;   
+    exitState = false;
     newScene = QString();
     hint = nullptr;
 
@@ -1581,7 +1581,7 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
                 exitState = true;
             }
         }
-    }   
+    }
 
     if(entity->getTimeInCurrentScene() > entityScene->getTimeOut() && entityScene->getTimeOut() > 0)
     {

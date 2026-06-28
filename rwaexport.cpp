@@ -188,7 +188,7 @@ void RwaExport::writeState(RwaState *state)
             xml.writeTextElement("lat", QString::number(state->corners[i][1], 'f', 8));
         }
     }
-    xml.writeEndElement(); // end section corners   
+    xml.writeEndElement(); // end section corners
 
     xml.writeStartElement("exitoffsetcorners");
     if((state->getExitOffset() > 0) && (state->getAreaType() == RWAAREATYPE_POLYGON) )
@@ -277,4 +277,3 @@ void RwaExport::writeScene(RwaScene *scene)
 
     xml.writeEndElement();
 }
-

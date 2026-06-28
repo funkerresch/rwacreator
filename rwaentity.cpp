@@ -164,7 +164,7 @@ void RwaEntity::setCurrentScene(RwaScene *currentScene)
     this->currentState = nullptr;
 }
 void RwaEntity::setCurrentState(RwaState *currentState)
-{    
+{
     this->currentState = currentState;
 }
 
@@ -205,7 +205,3 @@ double RwaEntity::getFloatAttribute(string attributeName)
     }
     return 0;
 }
-
-
-
-

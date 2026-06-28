@@ -80,7 +80,7 @@ RwaRuntime(QObject *parent, const char *pdpath, const char *assetPath, float sam
 
     bool step = false;
 
-    static pdPatcher binauralStereoPatchers_fabian[RWARUNTIME_MAXNUMBEROFPATCHERS];   
+    static pdPatcher binauralStereoPatchers_fabian[RWARUNTIME_MAXNUMBEROFPATCHERS];
     static pdPatcher binauralStereoPatchersOgg_fabian[RWARUNTIME_MAXNUMBEROFPATCHERS];
     static pdPatcher binauralMonoPatchers_fabian[RWARUNTIME_MAXNUMBEROFPATCHERS];
     static pdPatcher binauralMonoPatchersOgg_fabian[RWARUNTIME_MAXNUMBEROFPATCHERS];
@@ -154,7 +154,7 @@ RwaRuntime(QObject *parent, const char *pdpath, const char *assetPath, float sam
     void startBackgroundState(RwaEntity *entity);
     void createAndBindPlayFinishedReceiver(pdPatcher *patcher);
     void setScene(RwaEntity *entity, RwaScene *scene);
-    
+
     void emptyPdMessageQueue();
 
 signals:

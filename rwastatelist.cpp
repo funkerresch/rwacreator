@@ -17,7 +17,7 @@ RwaStateList::RwaStateList(QWidget* parent, RwaScene *scene) :
 }
 
 void RwaStateList::ListWidgetEditEnd(QWidget *editor, QAbstractItemDelegate::EndEditHint hint)
-{   
+{
     (void) hint;
     QString newName = reinterpret_cast<QLineEdit*>(editor)->text();
     if(currentState->objectName() != newName.toStdString())
@@ -137,7 +137,7 @@ void RwaStateList::keyPressEvent(QKeyEvent *event)
             if(currentState->objectName() != "FALLBACK" && currentState->objectName() != "BACKGROUND")
             {
                 RwaState *toDelete = currentState;
-                takeItem(getSelectedIndex());               
+                takeItem(getSelectedIndex());
                 emit deleteState(QString::fromStdString(toDelete->objectName()));
             }
             else
@@ -153,6 +153,3 @@ void RwaStateList::keyPressEvent(QKeyEvent *event)
             break;
      }
 }
-
-
-

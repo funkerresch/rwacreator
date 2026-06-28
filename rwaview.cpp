@@ -190,4 +190,3 @@ void RwaView::setCurrentAsset(RwaAsset1 *asset)
     currentAsset = asset;
     currentState->setLastTouchedAsset(this->currentAsset);
 }
-

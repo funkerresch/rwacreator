@@ -741,4 +741,3 @@ void RwaImport::readAssets()
         xml.readNext();
     }
 }
-

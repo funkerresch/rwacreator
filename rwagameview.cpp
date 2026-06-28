@@ -31,7 +31,3 @@ RwaGameView::RwaGameView(QWidget *parent, RwaScene *scene, QString name) :
 
     readSplitterLayout();
 }
-
-
-
-

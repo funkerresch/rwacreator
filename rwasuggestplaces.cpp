@@ -183,7 +183,7 @@ void RwaSuggestPlaces::doneCompletion()
 void RwaSuggestPlaces::autoSuggest()
 {
     QString str = editor->text();
-    
+
     QUrl url(GSUGGEST_URL);
     QUrlQuery q;
     q.addQueryItem("type", "locations");
@@ -211,22 +211,22 @@ void RwaSuggestPlaces::handleNetworkData(QNetworkReply *networkReply)
     QNetworkReply::NetworkError error = networkReply->error();
 
     if (error == QNetworkReply::NoError)
-    {     
+    {
         QStringList choices;
         QStringList lon;
         QStringList lat;
 
         QByteArray response(networkReply->readAll());
-        
+
         QJsonParseError parseError;
         QJsonDocument jsonDoc = QJsonDocument::fromJson(response, &parseError);
-        
+
         //qDebug() << QString(response);
         if (parseError.error == QJsonParseError::NoError && jsonDoc.isObject())
         {
             QJsonObject jsonObj = jsonDoc.object();
             QJsonArray results = jsonObj["results"].toArray();
-            
+
             for (const QJsonValue &result : results)
             {
                 QJsonObject resultObj = result.toObject();
@@ -235,10 +235,10 @@ void RwaSuggestPlaces::handleNetworkData(QNetworkReply *networkReply)
                 QTextDocument doc;
                 doc.setHtml(attrs["label"].toString());
                 QString label = doc.toPlainText();
-                
+
                 double latitude = attrs["lat"].toDouble();
                 double longitude = attrs["lon"].toDouble();
-                
+
                 choices << label;
                 lat << QString::number(latitude, 'f', 6);
                 lon << QString::number(longitude, 'f', 6);
@@ -254,5 +254,3 @@ void RwaSuggestPlaces::handleNetworkData(QNetworkReply *networkReply)
 
     networkReply->deleteLater();
 }
-
-

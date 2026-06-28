@@ -16,7 +16,7 @@ class RwaStateView : public RwaGraphicsView
 {
     Q_OBJECT
 public:
-    explicit RwaStateView(QWidget* parent = nullptr, RwaScene *scene = nullptr, QString name = "");    
+    explicit RwaStateView(QWidget* parent = nullptr, RwaScene *scene = nullptr, QString name = "");
 private:
 
     QmapPoint *currentPoint;

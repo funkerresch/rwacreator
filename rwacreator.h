@@ -529,7 +529,7 @@ public slots:
     static void logMessages(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 
 signals:
-    void sendReadNewGame();    
+    void sendReadNewGame();
 };
 
 #endif

@@ -259,7 +259,7 @@ void RwaMapView::moveCurrentState1(const QPointF myPoint)
 
         dx = currentState->getCoordinates()[0] - lastCoordinate[0];
         dy = currentState->getCoordinates()[1] - lastCoordinate[1];
-        if(currentState->childrenDoFollowMe())      
+        if(currentState->childrenDoFollowMe())
             currentState->moveMyChildren(dx, dy);
 
         emit sendMoveCurrentState1(dx, dy);
@@ -610,7 +610,7 @@ void RwaMapView::receiveMouseReleaseEvent()
     editArea = false;
     editSceneArea = false;
     editStateArea = false;
-    areaCornerIndex2Edit = -1;   
+    areaCornerIndex2Edit = -1;
     writeUndo();
 }
 
@@ -695,5 +695,3 @@ void RwaMapView::moveCurrentAsset()
     if(assetsVisible)
         redrawAssets();
 }
-
-

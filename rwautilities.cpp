@@ -503,7 +503,3 @@ std::string RwaUtilities::getFileName1(std::string fullpath)
     qDebug() << QString::fromStdString(p.filename());
     return p.filename();
 }
-
-
-
-

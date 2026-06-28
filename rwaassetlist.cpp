@@ -226,7 +226,7 @@ void RwaAssetList::add2ListAndCopy(QString fullpath)
     }
 
     else
-    {      
+    {
 
     }
 }
