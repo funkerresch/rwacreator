@@ -63,10 +63,10 @@ add_subdirectory(taglib)
 # ------------------------------------------------------------------------------
 
 set(RWACREATOR_HEADERS
-    bluetooth1/bluetoothbaseclass.h
-    bluetooth1/devicefinder.h
-    bluetooth1/devicehandler.h
-    bluetooth1/deviceinfo.h
+    bluetooth/bluetoothbaseclass.h
+    bluetooth/devicefinder.h
+    bluetooth/devicehandler.h
+    bluetooth/deviceinfo.h
     libogg/include/ogg/config_types.h.in
     libogg/include/ogg/ogg.h
     libogg/include/ogg/os_types.h
@@ -176,10 +176,10 @@ set(RWACREATOR_HEADERS
 
 set(RWACREATOR_SOURCES
     main.cpp
-    bluetooth1/bluetoothbaseclass.cpp
-    bluetooth1/devicefinder.cpp
-    bluetooth1/devicehandler.cpp
-    bluetooth1/deviceinfo.cpp
+    bluetooth/bluetoothbaseclass.cpp
+    bluetooth/devicefinder.cpp
+    bluetooth/devicehandler.cpp
+    bluetooth/deviceinfo.cpp
     libogg/src/bitwise.c
     libogg/src/framing.c
     oggread~.c

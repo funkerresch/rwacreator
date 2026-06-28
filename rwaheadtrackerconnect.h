@@ -16,8 +16,8 @@
 
 #include <QObject>
 #include <QRegularExpression>
-#include "bluetooth1/devicefinder.h"
-#include "bluetooth1/devicehandler.h"
+#include "bluetooth/devicefinder.h"
+#include "bluetooth/devicehandler.h"
 
 class RwaHeadtrackerConnect : public QObject
 {
