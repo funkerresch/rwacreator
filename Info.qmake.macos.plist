@@ -37,9 +37,6 @@
 	<key>NSDocumentsFolderUsageDescription</key>
 	<string>RWA Creator needs access to your Documents folder to save and load projects.</string>
 	<key>LSMinimumSystemVersion</key>
-	<string>12.0</string>
-
-
+	<string>@CMAKE_OSX_DEPLOYMENT_TARGET@</string>
 </dict>
-
 </plist>

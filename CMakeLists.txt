@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(rwacreator
-    VERSION 1.0.1
+    VERSION 1.1.0
     LANGUAGES C CXX
 )
 
@@ -45,7 +45,7 @@ add_compile_options(
 # ------------------------------------------------------------------------------
 
 if(APPLE)
-    set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0")
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "13.0")
     set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64")
 endif()
 
