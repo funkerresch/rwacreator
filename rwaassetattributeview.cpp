@@ -49,7 +49,7 @@ RwaAssetAttributeView::RwaAssetAttributeView(QWidget *parent, RwaScene *scene) :
     addLineEditAndLabel(attributeGridLayout, "libPd Receiver");
 
     addAttrCheckbox(attributeGridLayout, "Exclusive", RWAASSETATTRIBUTE_ISEXCLUSIVE);
-    addAttrCheckbox(attributeGridLayout,"Loop", RWAASSETATTRIBUTE_LOOP);
+    addAttrCheckbox(attributeGridLayout, "Loop", RWAASSETATTRIBUTE_LOOP);
     addAttrCheckbox(attributeGridLayout, "Raw Sensors 2 Pd", RWAASSETATTRIBUTE_RAWSENSORS2PD);
     addAttrCheckbox(attributeGridLayout, "GPS 2 Pd", RWAASSETATTRIBUTE_GPS2PD);
     addAttrCheckbox(attributeGridLayout, "Play only once", RWAASSETATTRIBUTE_PLAYONCE);

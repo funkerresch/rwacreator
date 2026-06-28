@@ -938,20 +938,20 @@ void RwaRuntime::processAssets(RwaEntity *entity)
         {
             qDebug() << asset->type;
 
-             patcherTag = findFreePatcher(asset);
-             sendInitValues2pd(asset, patcherTag);
-             if(asset->playOnlyOnce)
-             {
-                 asset->setBlockedForever(true);
-                 qDebug() << "BLOCKFOREVER";
-             }
+            patcherTag = findFreePatcher(asset);
+            sendInitValues2pd(asset, patcherTag);
+            if(asset->playOnlyOnce)
+            {
+                asset->setBlockedForever(true);
+                qDebug() << "BLOCKFOREVER";
+            }
 
-             entity->addActiveAsset(asset->uniqueId, asset, patcherTag);
+            entity->addActiveAsset(asset->uniqueId, asset, patcherTag);
 
 
-             //if(backend->logSim)
+            //if(backend->logSim)
                 qDebug() << "Add Active Asset: " << QString::fromStdString(asset->fileName);
-             break;
+            break;
         }
     }
 }
