@@ -37,7 +37,7 @@ ARCHIVE="$DIST_DIR/$APP_NAME.zip"
 DMG="$DIST_DIR/$APP_NAME.dmg"
 
 # =============================================================================
-# 1. CMake configure
+# CMake configure
 # =============================================================================
 
 echo "==> Configuring..."
@@ -48,17 +48,17 @@ cmake -S "$(dirname "$0")" \
       -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 
 # =============================================================================
-# 2. Build
+# Build
 # =============================================================================
 
 echo "==> Building..."
 cmake --build "$BUILD_DIR" --config Release --parallel "$(sysctl -n hw.logicalcpu)"
 
 # =============================================================================
-# 4. Inside-out signing (required for notarization / hardened runtime)
-#    Sign all nested binaries first, then the bundle itself.
-#    --deep is NOT used: it doesn't reliably propagate --options runtime
-#    to nested components, causing Gatekeeper to reject the app.
+# Inside-out signing (required for notarization / hardened runtime)
+# Sign all nested binaries first, then the bundle itself.
+# --deep is NOT used: it doesn't reliably propagate --options runtime
+# to nested components, causing Gatekeeper to reject the app.
 # =============================================================================
 
 CODESIGN_ARGS=(--sign "$SIGN_IDENTITY" --options runtime --timestamp --force)
@@ -81,7 +81,7 @@ codesign --verify --deep --strict "$APP_BUNDLE"
 echo "    Signature OK"
 
 # =============================================================================
-# 5. Package for notarization (zip is simpler than DMG for submission)
+# Package for notarization (zip is simpler than DMG for submission)
 # =============================================================================
 
 mkdir -p "$DIST_DIR"
@@ -89,8 +89,8 @@ echo "==> Creating archive for notarization..."
 ditto -c -k --keepParent "$APP_BUNDLE" "$ARCHIVE"
 
 # =============================================================================
-# 6. Notarize
-#    --wait  → blocks until Apple returns a result (typically 1–5 min)
+# Notarize
+# --wait  blocks until Apple returns a result (typically 1–5 min)
 # =============================================================================
 
 echo "==> Submitting for notarization..."
@@ -99,7 +99,7 @@ xcrun notarytool submit "$ARCHIVE" \
     --wait
 
 # =============================================================================
-# 7. Staple the notarization ticket to the bundle
+# Staple the notarization ticket to the bundle
 # =============================================================================
 
 echo "==> Stapling..."
@@ -107,7 +107,7 @@ xcrun stapler staple "$APP_BUNDLE"
 xcrun stapler validate "$APP_BUNDLE"
 
 # =============================================================================
-# 8. Create DMG from the stapled bundle
+# Create DMG from the stapled bundle
 # =============================================================================
 
 mkdir -p "$DIST_DIR"

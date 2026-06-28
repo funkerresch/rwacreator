@@ -464,6 +464,7 @@ install(TARGETS rwacreator
 # Finalize the rwacreator Qt target (links/imports static plugins, incl. the
 # macOS permission plugin). Must come after all of rwacreator's configuration.
 # ------------------------------------------------------------------------------
+
 qt_finalize_target(rwacreator)
 
 
@@ -471,23 +472,25 @@ qt_finalize_target(rwacreator)
 # Deploy Qt frameworks & plugins into the bundle (macdeployqt)
 # ------------------------------------------------------------------------------
 
-# Locate macdeployqt next to the qmake of the Qt used for this build.
-get_target_property(_qmake_exe Qt6::qmake IMPORTED_LOCATION)
-get_filename_component(_qt_bin_dir "${_qmake_exe}" DIRECTORY)
-# NO_DEFAULT_PATH: never fall back to PATH (which holds a Homebrew Qt here) —
-# macdeployqt must come from the same Qt that find_package() selected.
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    # Locate macdeployqt next to the qmake of the Qt used for this build.
+    get_target_property(_qmake_exe Qt6::qmake IMPORTED_LOCATION)
+    get_filename_component(_qt_bin_dir "${_qmake_exe}" DIRECTORY)
+    # NO_DEFAULT_PATH: never fall back to PATH (which holds a Homebrew Qt here) —
+    # macdeployqt must come from the same Qt that find_package() selected.
 
-find_program(MACDEPLOYQT_EXECUTABLE macdeployqt
-    HINTS "${_qt_bin_dir}" NO_DEFAULT_PATH)
+    find_program(MACDEPLOYQT_EXECUTABLE macdeployqt
+        HINTS "${_qt_bin_dir}" NO_DEFAULT_PATH)
 
-if(MACDEPLOYQT_EXECUTABLE)
-    add_custom_command(TARGET rwacreator POST_BUILD
-        COMMAND "${MACDEPLOYQT_EXECUTABLE}" "$<TARGET_BUNDLE_DIR:rwacreator>"
-        MESSAGE(STATUS "MACDEPLOYQT_EXECUTABLE: ${MACDEPLOYQT_EXECUTABLE}")
-        COMMENT "Deploying Qt frameworks into bundle (macdeployqt)"
-        VERBATIM
-    )
-else()
-    message(WARNING "macdeployqt not found near ${_qt_bin_dir}; "
-                    "Qt frameworks will not be bundled")
+    if(MACDEPLOYQT_EXECUTABLE)
+        add_custom_command(TARGET rwacreator POST_BUILD
+            COMMAND "${MACDEPLOYQT_EXECUTABLE}" "$<TARGET_BUNDLE_DIR:rwacreator>"
+            MESSAGE(STATUS "MACDEPLOYQT_EXECUTABLE: ${MACDEPLOYQT_EXECUTABLE}")
+            COMMENT "Deploying Qt frameworks into bundle (macdeployqt)"
+            VERBATIM
+        )
+    else()
+        message(WARNING "macdeployqt not found near ${_qt_bin_dir}; "
+                        "Qt frameworks will not be bundled")
+    endif()
 endif()
