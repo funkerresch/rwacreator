@@ -17,7 +17,7 @@
 
 
 #include <QWidget>
-#include <QTextBrowser>
+#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QCheckBox>
 #include "rwabackend.h"
@@ -31,7 +31,7 @@ public:
  ~RwaLogWindow();
 
     RwaBackend *backend;
-    QTextBrowser *browser;
+    QPlainTextEdit *logView;
     QPushButton *clearButton;
     QCheckBox *logLongAndLatCheckbox;
     QCheckBox *logLibPdPrint;

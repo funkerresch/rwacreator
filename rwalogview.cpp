@@ -11,8 +11,9 @@ RwaLogWindow::RwaLogWindow(QWidget *parent) :
      QVBoxLayout *layout = new QVBoxLayout;
 
      setLayout(layout);
-     browser = new QTextBrowser(this);
-     layout->addWidget(browser);
+     logView = new QPlainTextEdit(this);
+     logView->setReadOnly(true);
+     layout->addWidget(logView);
 
       QHBoxLayout *buttonLayout = new QHBoxLayout;
       buttonLayout->setContentsMargins(0, 0, 0, 0);
@@ -23,7 +24,7 @@ RwaLogWindow::RwaLogWindow(QWidget *parent) :
       clearButton = new QPushButton(this);
       clearButton->setText("clear");
       buttonLayout->addWidget(clearButton);
-      connect(clearButton, SIGNAL (clicked()), browser, SLOT (clear()));
+      connect(clearButton, SIGNAL (clicked()), logView, SLOT (clear()));
 
       logLongAndLatCheckbox = new QCheckBox(this);
       logLongAndLatCheckbox->setText("Lon & Lat");
@@ -53,34 +54,31 @@ RwaLogWindow::~RwaLogWindow()
 
 void RwaLogWindow::outputMessage(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
-    QByteArray localMsg = msg.toLocal8Bit();
-    if(localMsg.size() > 512)
+    if (msg.length() > 512) {
         return;
-
-    const char *file = context.file ? context.file : "";
-    const char *function = context.function ? context.function : "";
-    char output[1024];
-
-    switch (type)
-    {
-        case QtDebugMsg:
-        sprintf(output, "Debug: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
-        browser->append(output);
-        break;
-
-        case QtInfoMsg:
-        break;
-
-        case QtWarningMsg:
-        //browser->append(tr("— WARNING: %1").arg(msg));
-        break;
-
-        case QtCriticalMsg:
-        //browser->append(tr("— CRITICAL: %1").arg(msg));
-        break;
-
-        case QtFatalMsg:
-        //browser->append(tr("— FATAL: %1").arg(msg));
-        break;
     }
+
+    // extract context safely
+    QString file = context.file ? QString::fromUtf8(context.file) : QString();
+    QString function = context.function ? QString::fromUtf8(context.function) : QString();
+
+    if (!file.isEmpty()) {
+        file = QFileInfo(file).fileName();
+    }
+
+    QString prefix;
+    switch (type) {
+        case QtDebugMsg:    prefix = QStringLiteral("Debug"); break;
+        case QtInfoMsg:     prefix = QStringLiteral("Info"); break;
+        case QtWarningMsg:  prefix = QStringLiteral("Warning"); break;
+        case QtCriticalMsg: prefix = QStringLiteral("Critical"); break;
+        case QtFatalMsg:    prefix = QStringLiteral("Fatal"); break;
+    }
+
+    QString output = QStringLiteral("%1: %2 (%3:%4, %5)")
+                        .arg(prefix, msg, file)
+                        .arg(context.line)
+                        .arg(function);
+
+    logView->appendPlainText(output);
 }
