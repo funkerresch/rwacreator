@@ -9,6 +9,8 @@ RwaLogWindow::RwaLogWindow(QWidget *parent) :
     backend = RwaBackend::getInstance();
     qRegisterMetaType<QtMsgType>("QtMsgType");
     QVBoxLayout *layout = new QVBoxLayout;
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
 
     setLayout(layout);
     logView = new QPlainTextEdit(this);
@@ -16,18 +18,20 @@ RwaLogWindow::RwaLogWindow(QWidget *parent) :
     layout->addWidget(logView);
 
     QHBoxLayout *buttonLayout = new QHBoxLayout;
-    buttonLayout->setContentsMargins(0, 0, 0, 0);
+    buttonLayout->setContentsMargins(4, 4, 4, 4);
     layout->addLayout(buttonLayout);
 
-    buttonLayout->addStretch(10);
-
+    // Left: clear button
     clearButton = new QPushButton(this);
     clearButton->setText("clear");
     buttonLayout->addWidget(clearButton);
     connect(clearButton, SIGNAL (clicked()), logView, SLOT (clear()));
 
+    buttonLayout->addStretch(1);
+
+    // Middle: filter toggles
     logLongAndLatCheckbox = new QCheckBox(this);
-    logLongAndLatCheckbox->setText("Lon & Lat");
+    logLongAndLatCheckbox->setText("Lon/Lat");
     buttonLayout->addWidget(logLongAndLatCheckbox);
     connect(logLongAndLatCheckbox, SIGNAL (stateChanged(int)), backend, SLOT (receiveLogLonAndLat(int)) );
 
@@ -45,6 +49,13 @@ RwaLogWindow::RwaLogWindow(QWidget *parent) :
     logOther->setText("Other");
     buttonLayout->addWidget(logOther);
     connect(logOther, SIGNAL (stateChanged(int)), backend, SLOT (receiveLogOther(int)) );
+
+    for (QCheckBox *cb : {logLongAndLatCheckbox, logLibPdPrint, logSimulatorStates, logOther})
+        cb->setMinimumWidth(cb->sizeHint().width() + 10);
+
+    buttonLayout->addStretch(1);
+
+    // Right: log level selector
     buttonLayout->addWidget(new QLabel("Log Level:", this));
     logLevelComboBox = new QComboBox(this);
     logLevelComboBox->addItems({"Debug", "Info", "Warning", "Critical", "Fatal"});
