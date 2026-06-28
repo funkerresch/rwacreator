@@ -35,9 +35,8 @@ RwaHeadtrackerConnect::RwaHeadtrackerConnect(QObject *parent) : QObject(parent)
 
 void RwaHeadtrackerConnect::startBluetoothScanning()
 {
-    qDebug() << "[BLE debug] Start Headtracker Discovery";
     m_finder->setTargetName(name);
-    m_finder->startSearch();   // requests BLE permission, then scans + auto-connects
+    m_finder->startSearch();
 }
 
 void RwaHeadtrackerConnect::disconnectHeadtracker()

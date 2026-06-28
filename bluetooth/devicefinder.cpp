@@ -81,18 +81,23 @@ void DeviceFinder::setTargetName(const QString &name)
     m_targetName = name;
 }
 
+/**
+ * Start the Bluetooth device discovery process.
+ *
+ * A note on Bluetooth permissions:
+ * - request ONLY the "Access" (central/scanner) communication mode.
+ * - default QBluetoothPermission also requests "Advertise" (peripheral) mode,
+ *   would require NSBluetoothPeripheralUsageDescription in Info.plist
+ * - restricting to "Access" depends only on NSBluetoothAlwaysUsageDescription
+ */
 void DeviceFinder::startSearch()
 {
-    // request ONLY the "Access" (central/scanner) communication mode.
-    // default QBluetoothPermission also requests "Advertise" (peripheral) mode.
-    // would require NSBluetoothPeripheralUsageDescription in Info.plist
-    // restricting to "Access" depends only on NSBluetoothAlwaysUsageDescription
     QBluetoothPermission permission;
     permission.setCommunicationModes(QBluetoothPermission::Access);
 
     switch (qApp->checkPermission(permission)) {
     case Qt::PermissionStatus::Undetermined:
-        // aks for bt permissions, then re-enter: the status is resolved to Granted/Denied
+        // ask for BT permissions, then re-enter: the status is resolved to Granted/Denied
         // by the time the callback fires, so the cases below handle the outcome.
         setInfo(tr("Requesting Bluetooth permission..."));
         qApp->requestPermission(permission, this, [this](const QPermission &p) {
@@ -166,12 +171,6 @@ void DeviceFinder::scanError(QBluetoothDeviceDiscoveryAgent::Error error)
 
 void DeviceFinder::scanFinished()
 {
-#ifdef SIMULATOR
-    // Only for testing
-    for (int i = 0; i < 4; i++)
-        m_devices.append(new DeviceInfo(QBluetoothDeviceInfo()));
-#endif
-
     if (m_devices.isEmpty())
         setError(tr("No Low Energy devices found."));
     else
