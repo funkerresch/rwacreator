@@ -15,3 +15,4 @@ cmake --build "$BUILD_DIR" --config Debug \
   --parallel "$(sysctl -n hw.logicalcpu)"
 
 echo "Ready to launch in debugger"
+exit 0
