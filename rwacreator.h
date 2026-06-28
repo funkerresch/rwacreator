@@ -313,6 +313,7 @@ private slots:
  */
 
     void gatherViews();
+    void restoreFloatingViews();
 
 /**
  * @brief Creates a Map View. <br>

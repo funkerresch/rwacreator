@@ -24,6 +24,7 @@
 #include <QComboBox>
 #include <QLabel>
 #include <QPushButton>
+#include <QTimer>
 #include <qdebug.h>
 #include <unistd.h>
 #include "rwainputdialog.h"
@@ -54,10 +55,11 @@ RwaCreator::RwaCreator(QWidget *parent)
     QObject::connect(QApplication::instance(), SIGNAL(aboutToQuit()),this, SLOT(cleanUpBeforeQuit()));
     this->installEventFilter(this);
 
-    setCentralWidget(backend);   
-    createInitFolder();      
+    setCentralWidget(backend);
+    createInitFolder();
     loadDefaultViews();
     loadLayoutAndSettings();
+    QTimer::singleShot(0, this, &RwaCreator::restoreFloatingViews);
     setupMenuBar();
 
     QShortcut *shortcut = new QShortcut(QKeySequence(tr("Ctrl+s", "Save")), this);
@@ -156,7 +158,7 @@ void RwaCreator::loadLayoutAndSettings()
 /** ********************************************* Add default views ************************************************** */
 
 void RwaCreator::loadDefaultViews()
-{   
+{
     addMapView();
     addStateView();
     addSceneView();
@@ -453,6 +455,18 @@ void RwaCreator::gatherViews()
     foreach(RwaDockWidget *widget, rwaDockWidgets)
     {
         if(!widget->isVisible())
+            widget->setVisible(true);
+    }
+}
+
+/**
+ * Restore floating (detached) views hidden by Qt after restoreState() on startup
+ */
+void RwaCreator::restoreFloatingViews()
+{
+    foreach(RwaDockWidget *widget, rwaDockWidgets)
+    {
+        if(widget->isFloating() && !widget->isVisible())
             widget->setVisible(true);
     }
 }
@@ -862,7 +876,7 @@ void RwaCreator::clear()
 {
     qDebug();
     undoCounter = 0;
-    emptyTmpDirectories();      
+    emptyTmpDirectories();
     backend->reset();
     setWindowTitle("Not saved");
     exportProject();
@@ -955,5 +969,3 @@ void RwaCreator::deleteUnusedAssetFiles()
         }
     }
 }
-
-
