@@ -16,7 +16,6 @@
 
 #include <QObject>
 #include <QRegularExpression>
-#include "bluetooth/device.h"
 #include "bluetooth1/devicefinder.h"
 #include "bluetooth1/devicehandler.h"
 
@@ -37,8 +36,8 @@ public slots:
     void calibrateHeadtracker();
 
 private:
-    DeviceHandler *deviceHandler;
-    Device *rwaBluetooth;
+    DeviceHandler *m_handler;
+    DeviceFinder *m_finder;
     QString name = "rwaht84";
     std::vector<float> headTrackerOrientation;
     std::vector<float> headTrackerOffset;

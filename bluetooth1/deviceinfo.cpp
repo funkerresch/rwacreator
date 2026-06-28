@@ -48,46 +48,37 @@
 **
 ****************************************************************************/
 
-//#include "heartrate-global.h"
-#include "connectionhandler.h"
-#include <QtBluetooth/qtbluetooth-config.h>
-#include <QtCore/qsystemdetection.h>
+#include "deviceinfo.h"
+#include <QBluetoothAddress>
+#include <QBluetoothUuid>
 
-ConnectionHandler::ConnectionHandler(QObject *parent) : QObject(parent)
+DeviceInfo::DeviceInfo(const QBluetoothDeviceInfo &info):
+    m_device(info)
 {
-    connect(&m_localDevice, &QBluetoothLocalDevice::hostModeStateChanged,
-            this, &ConnectionHandler::hostModeChanged);
 }
 
-bool ConnectionHandler::alive() const
+QBluetoothDeviceInfo DeviceInfo::getDevice() const
 {
-#if defined(SIMULATOR) || defined(QT_PLATFORM_UIKIT)
-    return true;
+    return m_device;
+}
+
+QString DeviceInfo::getName() const
+{
+    return m_device.name();
+}
+
+QString DeviceInfo::getAddress() const
+{
+#ifdef Q_OS_DARWIN
+    // workaround for Core Bluetooth:
+    return m_device.deviceUuid().toString();
 #else
-    return m_localDevice.isValid() && m_localDevice.hostMode() != QBluetoothLocalDevice::HostPoweredOff;
+    return m_device.address().toString();
 #endif
 }
 
-bool ConnectionHandler::requiresAddressType() const
+void DeviceInfo::setDevice(const QBluetoothDeviceInfo &device)
 {
-#if QT_CONFIG(bluez)
-    return true;
-#else
-    return false;
-#endif
-}
-
-QString ConnectionHandler::name() const
-{
-    return m_localDevice.name();
-}
-
-QString ConnectionHandler::address() const
-{
-    return m_localDevice.address().toString();
-}
-
-void ConnectionHandler::hostModeChanged(QBluetoothLocalDevice::HostMode /*mode*/)
-{
+    m_device = device;
     emit deviceChanged();
 }

@@ -50,6 +50,8 @@
 
 #include "bluetoothbaseclass.h"
 
+#include <QDebug>
+
 BluetoothBaseClass::BluetoothBaseClass(QObject *parent) : QObject(parent)
 {
 }
@@ -68,6 +70,8 @@ void BluetoothBaseClass::setError(const QString &error)
 {
     if (m_error != error) {
         m_error = error;
+        if (!error.isEmpty())
+            qWarning() << "[BLE error]" << error;
         emit errorChanged();
     }
 }
@@ -76,6 +80,8 @@ void BluetoothBaseClass::setInfo(const QString &info)
 {
     if (m_info != info) {
         m_info = info;
+        if (!info.isEmpty())
+            qInfo() << "[BLE]" << info;
         emit infoChanged();
     }
 }

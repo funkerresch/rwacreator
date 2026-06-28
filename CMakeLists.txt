@@ -64,10 +64,9 @@ add_subdirectory(taglib)
 
 set(RWACREATOR_HEADERS
     bluetooth1/bluetoothbaseclass.h
-    bluetooth1/connectionhandler.h
     bluetooth1/devicefinder.h
     bluetooth1/devicehandler.h
-    bluetooth1/deviceinfo1.h
+    bluetooth1/deviceinfo.h
     libogg/include/ogg/config_types.h.in
     libogg/include/ogg/ogg.h
     libogg/include/ogg/os_types.h
@@ -114,10 +113,6 @@ set(RWACREATOR_HEADERS
     rwascenelist.h
     rwasceneattributeview.h
     rwaarea.h
-    bluetooth/characteristicinfo.h
-    bluetooth/device.h
-    bluetooth/deviceinfo.h
-    bluetooth/serviceinfo.h
     rwastateview.h
     clipper/clipper.hpp
     vas_library/examples/PureData/m_pd.h
@@ -182,10 +177,9 @@ set(RWACREATOR_HEADERS
 set(RWACREATOR_SOURCES
     main.cpp
     bluetooth1/bluetoothbaseclass.cpp
-    bluetooth1/connectionhandler.cpp
     bluetooth1/devicefinder.cpp
     bluetooth1/devicehandler.cpp
-    bluetooth1/deviceinfo1.cpp
+    bluetooth1/deviceinfo.cpp
     libogg/src/bitwise.c
     libogg/src/framing.c
     oggread~.c
@@ -230,10 +224,6 @@ set(RWACREATOR_SOURCES
     rwascenelist.cpp
     rwasceneattributeview.cpp
     rwaarea.cpp
-    bluetooth/characteristicinfo.cpp
-    bluetooth/device.cpp
-    bluetooth/deviceinfo.cpp
-    bluetooth/serviceinfo.cpp
     rwastateview.cpp
     clipper/clipper.cpp
     vas_library/examples/PureData/rwa_binauralsimple~.c
@@ -316,7 +306,13 @@ configure_file(
     @ONLY
 )
 
-add_executable(rwacreator MACOSX_BUNDLE
+# qt_add_executable (NOT plain add_executable) so Qt's finalization links and
+# imports the STATIC plugins this app needs, in particular the macOS
+# permission plugin libqdarwinbluetoothpermission.a, without which
+# QBluetoothPermission can't be queried and Bluetooth always reads as Denied.
+# MANUAL_FINALIZATION: this target is configured across many later commands, so
+# we finalize explicitly at the end of this file.
+qt_add_executable(rwacreator MANUAL_FINALIZATION MACOSX_BUNDLE
     ${RWACREATOR_SOURCES}
     ${RWACREATOR_HEADERS}
 )
@@ -379,21 +375,19 @@ target_link_libraries(rwacreator PRIVATE
 # macOS Frameworks
 # ------------------------------------------------------------------------------
 
-if(APPLE)
-    target_link_libraries(rwacreator PRIVATE
-        "-framework AudioToolbox"
-        "-framework AudioUnit"
-        "-framework CoreAudio"
-        "-framework CoreServices"
-        "-framework Accelerate"
-        "-framework Carbon"
-    )
+target_link_libraries(rwacreator PRIVATE
+    "-framework AudioToolbox"
+    "-framework AudioUnit"
+    "-framework CoreAudio"
+    "-framework CoreServices"
+    "-framework Accelerate"
+    "-framework Carbon"
+)
 
-    set_target_properties(rwacreator PROPERTIES
-        INSTALL_RPATH "@executable_path/../Frameworks"
-        BUILD_RPATH "@executable_path/../Frameworks"
-    )
-endif()
+set_target_properties(rwacreator PROPERTIES
+    INSTALL_RPATH "@executable_path/../Frameworks"
+    BUILD_RPATH "@executable_path/../Frameworks"
+)
 
 # ------------------------------------------------------------------------------
 # Link libpd & portaudio
@@ -465,6 +459,12 @@ target_sources(rwacreator PRIVATE ${APP_ICON})
 install(TARGETS rwacreator
     BUNDLE DESTINATION .
 )
+
+# ------------------------------------------------------------------------------
+# Finalize the rwacreator Qt target (links/imports static plugins, incl. the
+# macOS permission plugin). Must come after all of rwacreator's configuration.
+# ------------------------------------------------------------------------------
+qt_finalize_target(rwacreator)
 
 
 # ------------------------------------------------------------------------------

@@ -20,10 +20,14 @@ float RwaHeadtrackerConnect::getAzimuth()
 }
 
 RwaHeadtrackerConnect::RwaHeadtrackerConnect(QObject *parent) : QObject(parent)
-{   
+{
+    m_handler = new DeviceHandler(this);
+    m_finder = new DeviceFinder(m_handler, this);
 
-     // deviceHandler = new DeviceHandler();
-      rwaBluetooth = new Device();
+    // The handler forwards every notification from the headtracker
+    // characteristic as a raw ASCII string, which we parse below.
+    connect(m_handler, &DeviceHandler::headtrackerDataReceived,
+            this, &RwaHeadtrackerConnect::receiveHeadtrackerData);
 
     headTrackerOrientation = std::vector<float>(3, 0.0);
     headTrackerOffset = std::vector<float>(3, 0.0);
@@ -31,16 +35,14 @@ RwaHeadtrackerConnect::RwaHeadtrackerConnect(QObject *parent) : QObject(parent)
 
 void RwaHeadtrackerConnect::startBluetoothScanning()
 {
-    qDebug() << "Start Headtracker Discovery";
-    //rwaBluetooth->startDeviceDiscovery(name);
-    rwaBluetooth->startDeviceDiscovery(name);
-    connect (rwaBluetooth, SIGNAL(sendHeadtrackerData(QString)),
-             this, SLOT(receiveHeadtrackerData(QString)));
+    qDebug() << "[BLE debug] Start Headtracker Discovery";
+    m_finder->setTargetName(name);
+    m_finder->startSearch();   // requests BLE permission, then scans + auto-connects
 }
 
 void RwaHeadtrackerConnect::disconnectHeadtracker()
 {
-    rwaBluetooth->disconnectFromDevice();
+    m_handler->disconnectService();
 }
 
 void RwaHeadtrackerConnect::setName(QString newName)
@@ -153,10 +155,12 @@ void RwaHeadtrackerConnect::receiveHeadtrackerData(const QString &data)
     if(list.length() >= 1)
         receivedOrientation[0] = list.at(0).toFloat();
 
-    //qDebug() << receivedOrientation[0];
-
     if(list.length() >= 2)
        receivedOrientation[1] = list.at(1).toFloat();
+
+    qDebug() << "[BLE debug] heading data:" << data
+             << "-> azimuth:" << receivedOrientation[0]
+             << "elevation:" << receivedOrientation[1];
 
     if(list.length() >= 3)
         detectStep(list.at(2).toFloat());

@@ -6,14 +6,6 @@
 ** This file is part of the examples of the QtBluetooth module of the Qt Toolkit.
 **
 ** $QT_BEGIN_LICENSE:BSD$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
 ** BSD License Usage
 ** Alternatively, you may use this file under the terms of the BSD license
 ** as follows:
@@ -31,43 +23,24 @@
 **     contributors may be used to endorse or promote products derived
 **     from this software without specific prior written permission.
 **
-**
 ** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-** LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-** A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-** OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-** SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-** LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-** DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-** THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-** (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-** OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
+** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES IS DISCLAIMED.
 **
 ** $QT_END_LICENSE$
 **
 ****************************************************************************/
 
-//#include "heartrate-global.h"
 #include "devicehandler.h"
-#include "deviceinfo1.h"
-#include <QtEndian>
-#include <QRandomGenerator>
+#include "deviceinfo.h"
+
+// Custom BLE service exposed by the RWA headtracker (RFduino/Simblee style).
+// Its notify characteristic streams orientation as an ASCII text payload.
+static const QBluetoothUuid rwaServiceUuid(
+    QStringLiteral("{713d0000-503e-4c75-ba94-3148f18d941e}"));
 
 DeviceHandler::DeviceHandler(QObject *parent) :
-    BluetoothBaseClass(parent),
-    m_foundHeartRateService(false),
-    m_measuring(false),
-    m_currentValue(0),
-    m_min(0), m_max(0), m_sum(0), m_avg(0), m_calories(0)
+    BluetoothBaseClass(parent)
 {
-#ifdef SIMULATOR
-    m_demoTimer.setSingleShot(false);
-    m_demoTimer.setInterval(2000);
-    connect(&m_demoTimer, &QTimer::timeout, this, &DeviceHandler::updateDemoHR);
-    m_demoTimer.start();
-    updateDemoHR();
-#endif
 }
 
 void DeviceHandler::setAddressType(AddressType type)
@@ -90,15 +63,10 @@ DeviceHandler::AddressType DeviceHandler::addressType() const
     return DeviceHandler::AddressType::PublicAddress;
 }
 
-void DeviceHandler::setDevice(DeviceInfo1 *device)
+void DeviceHandler::setDevice(DeviceInfo *device)
 {
     clearMessages();
     m_currentDevice = device;
-
-#ifdef SIMULATOR
-    setInfo(tr("Demo device connected."));
-    return;
-#endif
 
     // Disconnect and delete old connection
     if (m_control) {
@@ -109,13 +77,8 @@ void DeviceHandler::setDevice(DeviceInfo1 *device)
 
     // Create new controller and connect it if device available
     if (m_currentDevice) {
-
-        // Make connections
-        //! [Connect-Signals-1]
         m_control = QLowEnergyController::createCentral(m_currentDevice->getDevice(), this);
-        //! [Connect-Signals-1]
         m_control->setRemoteAddressType(m_addressType);
-        //! [Connect-Signals-2]
         connect(m_control, &QLowEnergyController::serviceDiscovered,
                 this, &DeviceHandler::serviceDiscovered);
         connect(m_control, &QLowEnergyController::discoveryFinished,
@@ -136,40 +99,16 @@ void DeviceHandler::setDevice(DeviceInfo1 *device)
 
         // Connect
         m_control->connectToDevice();
-        //! [Connect-Signals-2]
     }
 }
 
-void DeviceHandler::startMeasurement()
-{
-    if (alive()) {
-        m_start = QDateTime::currentDateTime();
-        m_min = 0;
-        m_max = 0;
-        m_avg = 0;
-        m_sum = 0;
-        m_calories = 0;
-        m_measuring = true;
-        m_measurements.clear();
-        emit measuringChanged();
-    }
-}
-
-void DeviceHandler::stopMeasurement()
-{
-    m_measuring = false;
-    emit measuringChanged();
-}
-
-//! [Filter HeartRate service 1]
 void DeviceHandler::serviceDiscovered(const QBluetoothUuid &gatt)
 {
-    if (gatt == QBluetoothUuid(QBluetoothUuid::ServiceClassUuid::HeartRate)) {
-        setInfo("Heart Rate service discovered. Waiting for service scan to be done...");
-        m_foundHeartRateService = true;
+    if (gatt == rwaServiceUuid) {
+        setInfo("RWA headtracker service discovered. Waiting for service scan to be done...");
+        m_foundHeadtrackerService = true;
     }
 }
-//! [Filter HeartRate service 1]
 
 void DeviceHandler::serviceScanDone()
 {
@@ -181,24 +120,20 @@ void DeviceHandler::serviceScanDone()
         m_service = nullptr;
     }
 
-//! [Filter HeartRate service 2]
-    // If heartRateService found, create new service
-    if (m_foundHeartRateService)
-        m_service = m_control->createServiceObject(QBluetoothUuid(QBluetoothUuid::ServiceClassUuid::HeartRate), this);
+    // If the headtracker service was found, create the service object
+    if (m_foundHeadtrackerService)
+        m_service = m_control->createServiceObject(rwaServiceUuid, this);
 
     if (m_service) {
         connect(m_service, &QLowEnergyService::stateChanged, this, &DeviceHandler::serviceStateChanged);
-        connect(m_service, &QLowEnergyService::characteristicChanged, this, &DeviceHandler::updateHeartRateValue);
+        connect(m_service, &QLowEnergyService::characteristicChanged, this, &DeviceHandler::handleCharacteristicData);
         connect(m_service, &QLowEnergyService::descriptorWritten, this, &DeviceHandler::confirmedDescriptorWrite);
         m_service->discoverDetails();
     } else {
-        setError("Heart Rate Service not found.");
+        setError("RWA headtracker service not found.");
     }
-//! [Filter HeartRate service 2]
 }
 
-// Service functions
-//! [Find HRM characteristic]
 void DeviceHandler::serviceStateChanged(QLowEnergyService::ServiceState s)
 {
     switch (s) {
@@ -209,15 +144,26 @@ void DeviceHandler::serviceStateChanged(QLowEnergyService::ServiceState s)
     {
         setInfo(tr("Service discovered."));
 
-        const QLowEnergyCharacteristic hrChar = m_service->characteristic(QBluetoothUuid(QBluetoothUuid::CharacteristicType::HeartRateMeasurement));
-        if (!hrChar.isValid()) {
-            setError("HR Data not found.");
-            break;
+        // subscribe by writing 0100 to the CCCD of every characteristic that has
+        // one. deliberately do NOT filter on the Notify property flag - the
+        // RWA headtracker firmware doesn't always report it, and the old working
+        // code subscribed to every characteristic's CCCD too.
+        const QList<QLowEnergyCharacteristic> chars = m_service->characteristics();
+        qDebug() << "[BLE debug] RWA service characteristics:" << chars.size();
+        for (const QLowEnergyCharacteristic &ch : chars) {
+            qDebug() << "[BLE debug]   char" << ch.uuid().toString()
+                     << "properties=" << int(ch.properties());
+            const QLowEnergyDescriptor cccd = ch.descriptor(
+                QBluetoothUuid::DescriptorType::ClientCharacteristicConfiguration);
+            if (cccd.isValid()) {
+                m_notificationDesc = cccd;
+                m_service->writeDescriptor(cccd, QByteArray::fromHex("0100"));
+                qDebug() << "[BLE debug]   -> subscribed (wrote 0100 to CCCD)";
+            }
         }
 
-        m_notificationDesc = hrChar.descriptor(QBluetoothUuid::DescriptorType::ClientCharacteristicConfiguration);
-        if (m_notificationDesc.isValid())
-            m_service->writeDescriptor(m_notificationDesc, QByteArray::fromHex("0100"));
+        if (!m_notificationDesc.isValid())
+            setError("No characteristic with a CCCD found on RWA service.");
 
         break;
     }
@@ -228,44 +174,14 @@ void DeviceHandler::serviceStateChanged(QLowEnergyService::ServiceState s)
 
     emit aliveChanged();
 }
-//! [Find HRM characteristic]
 
-//! [Reading value]
-void DeviceHandler::updateHeartRateValue(const QLowEnergyCharacteristic &c, const QByteArray &value)
+void DeviceHandler::handleCharacteristicData(const QLowEnergyCharacteristic &c, const QByteArray &value)
 {
-    // ignore any other characteristic change -> shouldn't really happen though
-    if (c.uuid() != QBluetoothUuid(QBluetoothUuid::CharacteristicType::HeartRateMeasurement))
-        return;
-
-    auto data = reinterpret_cast<const quint8 *>(value.constData());
-    quint8 flags = *data;
-
-    //Heart Rate
-    int hrvalue = 0;
-    if (flags & 0x1) // HR 16 bit? otherwise 8 bit
-        hrvalue = static_cast<int>(qFromLittleEndian<quint16>(data[1]));
-    else
-        hrvalue = static_cast<int>(data[1]);
-
-    addMeasurement(hrvalue);
+    Q_UNUSED(c);
+    qDebug() << "[BLE debug] notification raw:" << value;
+    // The headtracker payload is plain ASCII text; forward it verbatim.
+    emit headtrackerDataReceived(QString::fromUtf8(value));
 }
-//! [Reading value]
-
-#ifdef SIMULATOR
-void DeviceHandler::updateDemoHR()
-{
-    int randomValue = 0;
-    if (m_currentValue < 30) { // Initial value
-        randomValue = 55 + QRandomGenerator::global()->bounded(30);
-    } else if (!m_measuring) { // Value when relax
-        randomValue = qBound(55, m_currentValue - 2 + QRandomGenerator::global()->bounded(5), 75);
-    } else { // Measuring
-        randomValue = m_currentValue + QRandomGenerator::global()->bounded(10) - 2;
-    }
-
-    addMeasurement(randomValue);
-}
-#endif
 
 void DeviceHandler::confirmedDescriptorWrite(const QLowEnergyDescriptor &d, const QByteArray &value)
 {
@@ -279,7 +195,7 @@ void DeviceHandler::confirmedDescriptorWrite(const QLowEnergyDescriptor &d, cons
 
 void DeviceHandler::disconnectService()
 {
-    m_foundHeartRateService = false;
+    m_foundHeadtrackerService = false;
 
     //disable notifications
     if (m_notificationDesc.isValid() && m_service
@@ -294,69 +210,10 @@ void DeviceHandler::disconnectService()
     }
 }
 
-bool DeviceHandler::measuring() const
-{
-    return m_measuring;
-}
-
 bool DeviceHandler::alive() const
 {
-#ifdef SIMULATOR
-    return true;
-#endif
-
     if (m_service)
         return m_service->state() == QLowEnergyService::RemoteServiceDiscovered;
 
     return false;
-}
-
-int DeviceHandler::hr() const
-{
-    return m_currentValue;
-}
-
-int DeviceHandler::time() const
-{
-    return m_start.secsTo(m_stop);
-}
-
-int DeviceHandler::maxHR() const
-{
-    return m_max;
-}
-
-int DeviceHandler::minHR() const
-{
-    return m_min;
-}
-
-float DeviceHandler::average() const
-{
-    return m_avg;
-}
-
-float DeviceHandler::calories() const
-{
-    return m_calories;
-}
-
-void DeviceHandler::addMeasurement(int value)
-{
-    m_currentValue = value;
-
-    // If measuring and value is appropriate
-    if (m_measuring && value > 30 && value < 250) {
-
-        m_stop = QDateTime::currentDateTime();
-        m_measurements << value;
-
-        m_min = m_min == 0 ? value : qMin(value, m_min);
-        m_max = qMax(value, m_max);
-        m_sum += value;
-        m_avg = (double)m_sum / m_measurements.size();
-        m_calories = ((-55.0969 + (0.6309 * m_avg) + (0.1988 * 94) + (0.2017 * 24)) / 4.184) * 60 * time()/3600;
-    }
-
-    emit statsChanged();
 }

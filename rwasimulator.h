@@ -8,7 +8,6 @@
 #include "qoscserver.h"
 #include "qoscclient.h"
 #include "qosctypes.h"
-#include "bluetooth/device.h"
 #include "rwaheadtrackerconnect.h"
 
 #define RWA_MAXNUMBEROFPATCHERS 20

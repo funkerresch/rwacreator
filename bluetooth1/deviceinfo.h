@@ -48,21 +48,21 @@
 **
 ****************************************************************************/
 
-#ifndef DEVICEINFO1_H
-#define DEVICEINFO1_H
+#ifndef DEVICEINFO_H
+#define DEVICEINFO_H
 
 #include <QString>
 #include <QObject>
 #include <QBluetoothDeviceInfo>
 
-class DeviceInfo1: public QObject
+class DeviceInfo: public QObject
 {
     Q_OBJECT
     Q_PROPERTY(QString deviceName READ getName NOTIFY deviceChanged)
     Q_PROPERTY(QString deviceAddress READ getAddress NOTIFY deviceChanged)
 
 public:
-    DeviceInfo1(const QBluetoothDeviceInfo &device);
+    DeviceInfo(const QBluetoothDeviceInfo &device);
 
     void setDevice(const QBluetoothDeviceInfo &device);
     QString getName() const;
@@ -76,4 +76,4 @@ private:
     QBluetoothDeviceInfo m_device;
 };
 
-#endif // DEVICEINFO1_H
+#endif // DEVICEINFO_H

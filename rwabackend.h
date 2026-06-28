@@ -25,7 +25,6 @@
 #include "rwascene.h"
 #include "rwaentity.h"
 #include "rwasimulator.h"
-#include "bluetooth/device.h"
 #include "httplib.h"
 
 #define RWATOOL_ARROW 1

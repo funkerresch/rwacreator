@@ -50,15 +50,17 @@
 
 #include "devicefinder.h"
 #include "devicehandler.h"
-#include "deviceinfo1.h"
+#include "deviceinfo.h"
+
+#include <QCoreApplication>
+#include <QPermissions>
 
 DeviceFinder::DeviceFinder(DeviceHandler *handler, QObject *parent):
     BluetoothBaseClass(parent),
     m_deviceHandler(handler)
 {
-    //! [devicediscovery-1]
     m_deviceDiscoveryAgent = new QBluetoothDeviceDiscoveryAgent(this);
-    m_deviceDiscoveryAgent->setLowEnergyDiscoveryTimeout(5000);
+    m_deviceDiscoveryAgent->setLowEnergyDiscoveryTimeout(15000);
 
     connect(m_deviceDiscoveryAgent, &QBluetoothDeviceDiscoveryAgent::deviceDiscovered, this, &DeviceFinder::addDevice);
     connect(m_deviceDiscoveryAgent, &QBluetoothDeviceDiscoveryAgent::errorOccurred, this,
@@ -66,7 +68,6 @@ DeviceFinder::DeviceFinder(DeviceHandler *handler, QObject *parent):
 
     connect(m_deviceDiscoveryAgent, &QBluetoothDeviceDiscoveryAgent::finished, this, &DeviceFinder::scanFinished);
     connect(m_deviceDiscoveryAgent, &QBluetoothDeviceDiscoveryAgent::canceled, this, &DeviceFinder::scanFinished);
-    //! [devicediscovery-1]
 }
 
 DeviceFinder::~DeviceFinder()
@@ -75,9 +76,46 @@ DeviceFinder::~DeviceFinder()
     m_devices.clear();
 }
 
+void DeviceFinder::setTargetName(const QString &name)
+{
+    m_targetName = name;
+}
+
 void DeviceFinder::startSearch()
 {
-    qDebug() << "STARTING SEARCH";
+    // request ONLY the "Access" (central/scanner) communication mode.
+    // default QBluetoothPermission also requests "Advertise" (peripheral) mode.
+    // would require NSBluetoothPeripheralUsageDescription in Info.plist
+    // restricting to "Access" depends only on NSBluetoothAlwaysUsageDescription
+    QBluetoothPermission permission;
+    permission.setCommunicationModes(QBluetoothPermission::Access);
+
+    switch (qApp->checkPermission(permission)) {
+    case Qt::PermissionStatus::Undetermined:
+        // aks for bt permissions, then re-enter: the status is resolved to Granted/Denied
+        // by the time the callback fires, so the cases below handle the outcome.
+        setInfo(tr("Requesting Bluetooth permission..."));
+        qApp->requestPermission(permission, this, [this](const QPermission &p) {
+            qDebug() << "[BLE debug] Bluetooth permission result:" << p.status();
+            if (p.status() == Qt::PermissionStatus::Granted) {
+                startDiscovery();
+            }
+            else {
+                qDebug() << "[BLE debug] Bluetooth permission denied.";
+            }
+        });
+        return;
+    case Qt::PermissionStatus::Denied:
+        setError(tr("Bluetooth permission denied. Enable it in System Settings > Privacy & Security > Bluetooth."));
+        return;
+    case Qt::PermissionStatus::Granted:
+        startDiscovery();
+        return;
+    }
+}
+
+void DeviceFinder::startDiscovery()
+{
     clearMessages();
     m_deviceHandler->setDevice(nullptr);
     qDeleteAll(m_devices);
@@ -85,28 +123,33 @@ void DeviceFinder::startSearch()
 
     emit devicesChanged();
 
-    //! [devicediscovery-2]
     m_deviceDiscoveryAgent->start(QBluetoothDeviceDiscoveryAgent::LowEnergyMethod);
-    //! [devicediscovery-2]
+
+    // qDebug() << "[BLE debug] DeviceDiscoveryAgent after start(): isActive=" << m_deviceDiscoveryAgent->isActive();
+    // qDebug() << "[BLE debug]    error=" << m_deviceDiscoveryAgent->error();
+    // qDebug() << "[BLE debug]    (" << m_deviceDiscoveryAgent->errorString() << ")";
+    // qDebug() << "[BLE debug]    supportedMethods=" << QBluetoothDeviceDiscoveryAgent::supportedDiscoveryMethods();
+
     emit scanningChanged();
     setInfo(tr("Scanning for devices..."));
 }
 
-//! [devicediscovery-3]
 void DeviceFinder::addDevice(const QBluetoothDeviceInfo &device)
 {
-    // If device is LowEnergy-device, add it to the list
+    // If device is a BLE device, add it to the list
     if (device.coreConfigurations() & QBluetoothDeviceInfo::LowEnergyCoreConfiguration) {
-        qDebug();
-        m_devices.append(new DeviceInfo1(device));
-        setInfo(tr("Low Energy device found. Scanning more..."));
-//! [devicediscovery-3]
+        auto *info = new DeviceInfo(device);
+        m_devices.append(info);
+        setInfo(tr("BLE device found: %1").arg(device.name()));
         emit devicesChanged();
-//! [devicediscovery-4]
+
+        // connect as soon as the configured headtracker shows up.
+        if (!m_targetName.isEmpty() && device.name() == m_targetName) {
+            setInfo(tr("Connecting to %1...").arg(m_targetName));
+            connectToService(info->getAddress());
+        }
     }
-    //...
 }
-//! [devicediscovery-4]
 
 void DeviceFinder::scanError(QBluetoothDeviceDiscoveryAgent::Error error)
 {
@@ -114,28 +157,11 @@ void DeviceFinder::scanError(QBluetoothDeviceDiscoveryAgent::Error error)
         setError(tr("The Bluetooth adaptor is powered off."));
     else if (error == QBluetoothDeviceDiscoveryAgent::InputOutputError)
         setError(tr("Writing or reading from the device resulted in an error."));
+    else if (error == QBluetoothDeviceDiscoveryAgent::MissingPermissionsError)
+        setError(tr("Bluetooth permission denied — enable it in "
+                    "System Settings > Privacy & Security > Bluetooth."));
     else
         setError(tr("An unknown error has occurred."));
-}
-
-void DeviceFinder::deviceScanFinished()
-{
-//    emit devicesUpdated();
-//    m_deviceScanState = false;
-//    emit stateChanged();
-//    if (devices.isEmpty())
-//        qDebug() << "Did not find RWA Headtracker";
-//    else
-//    {
-//        setUpdate("Done! Scan Again!");
-//        for (int i = 0; i < devices.size(); i++) {
-//            if(! (((DeviceInfo*)devices.at(i))->getName()).compare(headtrackerName) )
-//            {
-//                qDebug() << "Found RWA Headtracker";
-//                scanServices( ((DeviceInfo*)devices.at(i))->getAddress() );
-//            }
-//        }
-//    }
 }
 
 void DeviceFinder::scanFinished()
@@ -159,9 +185,9 @@ void DeviceFinder::connectToService(const QString &address)
 {
     m_deviceDiscoveryAgent->stop();
 
-    DeviceInfo1 *currentDevice = nullptr;
-    for (QObject *entry : qAsConst(m_devices)) {
-        auto device = qobject_cast<DeviceInfo1 *>(entry);
+    DeviceInfo *currentDevice = nullptr;
+    for (QObject *entry : std::as_const(m_devices)) {
+        auto device = qobject_cast<DeviceInfo *>(entry);
         if (device && device->getAddress() == address ) {
             currentDevice = device;
             break;
@@ -176,11 +202,7 @@ void DeviceFinder::connectToService(const QString &address)
 
 bool DeviceFinder::scanning() const
 {
-#ifdef SIMULATOR
-    return m_demoTimer.isActive();
-#else
     return m_deviceDiscoveryAgent->isActive();
-#endif
 }
 
 QVariant DeviceFinder::devices()

@@ -48,10 +48,12 @@
 **
 ****************************************************************************/
 
+// Adapted from the Qt "Heart Rate Game" example for the RWA headtracker:
+// scans for a device matching a configured name and auto-connects to it.
+
 #ifndef DEVICEFINDER_H
 #define DEVICEFINDER_H
 
-//#include "heartrate-global.h"
 #include "bluetoothbaseclass.h"
 
 #include <QTimer>
@@ -77,11 +79,13 @@ public:
     bool scanning() const;
     QVariant devices();
 
+    // Name of the headtracker to look for and auto-connect to.
+    void setTargetName(const QString &name);
+
 public slots:
     void startSearch();
     void connectToService(const QString &address);
 
-    void deviceScanFinished();
 private slots:
     void addDevice(const QBluetoothDeviceInfo&);
     void scanError(QBluetoothDeviceDiscoveryAgent::Error error);
@@ -92,13 +96,12 @@ signals:
     void devicesChanged();
 
 private:
+    void startDiscovery();
+
     DeviceHandler *m_deviceHandler;
     QBluetoothDeviceDiscoveryAgent *m_deviceDiscoveryAgent;
     QList<QObject*> m_devices;
-
-#ifdef SIMULATOR
-    QTimer m_demoTimer;
-#endif
+    QString m_targetName;
 };
 
 #endif // DEVICEFINDER_H
