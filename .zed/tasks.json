@@ -1,0 +1,11 @@
+[
+  {
+    "label": "Compile debug build",
+    "command": "$ZED_WORKTREE_ROOT/build_debug.sh",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "always",
+    "hide": "on_success",
+    "shell": "system"
+  }
+]
