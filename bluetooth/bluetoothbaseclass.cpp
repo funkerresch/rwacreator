@@ -71,7 +71,7 @@ void BluetoothBaseClass::setError(const QString &error)
     if (m_error != error) {
         m_error = error;
         if (!error.isEmpty())
-            qWarning() << "[BLE error]" << error;
+            qWarning() << "[BLE]" << error;
         emit errorChanged();
     }
 }

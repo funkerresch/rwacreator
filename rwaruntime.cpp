@@ -160,7 +160,7 @@ void RwaRuntime::printpd(const char *s)
         return;
 
     if(backend->logPd)
-        qDebug() << s;
+        qInfo() << QString::fromLatin1(s).trimmed();
 }
 
 void RwaRuntime::floatpd(const char *source, float value)
@@ -169,7 +169,7 @@ void RwaRuntime::floatpd(const char *source, float value)
         return;
 
      if(backend->logPd)
-         qDebug() << source << " " << value;
+         qInfo() << source << " " << value;
 }
 
 pdPatcher *RwaRuntime::findDynamicPatcher(int32_t patcherTag)
@@ -210,7 +210,6 @@ void RwaRuntime::releasePatcherFromItem(RwaEntity::AssetMapItem item)
 
             case RWAPLAYBACKTYPE_BINAURALMONO_FABIAN:
                 binauralMonoPatchersOgg_fabian[getBinauralMonoFabianOggPatcherIndex(patcherTag)].isBusy = false;
-                qDebug();
                 break;
 
             case RWAPLAYBACKTYPE_BINAURALSTEREO_FABIAN:
@@ -282,7 +281,7 @@ void RwaRuntime::bangpdHelp(int32_t patcherTag, std::map<string, RwaEntity::Asse
             i = assetItemMap.erase(i);
             releasePatcherFromItem(item);
             if(backend->logSim)
-                qDebug() <<  "Released Asset" << ": " << QString::fromStdString(assetItem->fileName);
+                qInfo() <<  "Released Asset" << ": " << QString::fromStdString(assetItem->fileName);
 
             return;
         }
@@ -432,7 +431,7 @@ void *RwaRuntime::findFreeDynamicPatcher(RwaAsset1 *asset)
              patcher->isBusy = true;
 
              if(backend->logSim)
-                 qDebug() <<  "Found Dynamic PD Asset" << ": " << QString::fromStdString(patcher->name);
+                 qInfo() <<  "Found Dynamic PD Asset" << ": " << QString::fromStdString(patcher->name);
 
              return patcher->patcherTag;
         }
@@ -457,7 +456,7 @@ void RwaRuntime::freeDynamicPdPatchers1()
     dynamicPatchers1.clear();
 
     if(backend->logSim)
-        qDebug() <<  "Freed all dynamic Patchers";
+        qDebug() << "Freed all dynamic Patchers";
 }
 
 void RwaRuntime::initDynamicPdPatchers(RwaEntity *entitiy)
@@ -484,7 +483,7 @@ void RwaRuntime::initDynamicPdPatchers(RwaEntity *entitiy)
                         createAndBindPlayFinishedReceiver(newPatcher);
                         dynamicPatchers1.push_back(newPatcher);
                         if(backend->logSim)
-                            qDebug() <<  "Initialize Pd Asset" << ": " << QString::fromStdString(newPatcher->name);
+                            qInfo() <<  "Initialize Pd Asset" << ": " << QString::fromStdString(newPatcher->name);
                     }
                 }
             }
@@ -515,7 +514,7 @@ void RwaRuntime::sendEnd2backgroundAssets(RwaEntity *entity)
             if(pdMutex != nullptr)
                 pdMutex->unlock();
 
-            qDebug() <<  "End background asset: "  << QString::fromStdString(assetItem->fileName);
+            qInfo() <<  "End background asset: "  << QString::fromStdString(assetItem->fileName);
 
             ++i;
         }
@@ -546,7 +545,7 @@ void RwaRuntime::sendEnd2activeAssets(RwaEntity *entity)
                 pdMutex->unlock();
 
             if(backend->logSim)
-                qDebug() <<  "End active asset: "  << QString::fromStdString(assetItem->fileName);
+                qInfo() <<  "End active asset: "  << QString::fromStdString(assetItem->fileName);
 
             ++i;
         }
@@ -948,9 +947,8 @@ void RwaRuntime::processAssets(RwaEntity *entity)
 
             entity->addActiveAsset(asset->uniqueId, asset, patcherTag);
 
+            qInfo() << "Add Active Asset: " << QString::fromStdString(asset->fileName);
 
-            //if(backend->logSim)
-                qDebug() << "Add Active Asset: " << QString::fromStdString(asset->fileName);
             break;
         }
     }
@@ -1539,7 +1537,7 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
                     bool found = (std::find(entity->visitedStates.begin(), entity->visitedStates.end(), state->objectName()) != entity->visitedStates.end());
                     if(!found)
                     {
-                        qDebug() << "Append to visited states" << QString::fromStdString(state->objectName());
+                        qInfo() << "Append to visited states" << QString::fromStdString(state->objectName());
                         entity->visitedStates.push_back(state->objectName());
                     }
 
@@ -1548,7 +1546,7 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
                     emit sendSelectedState(state);
 
                     if(backend->logSim)
-                        qDebug() << "Enter new State: " << QString::fromStdString(state->objectName());
+                        qInfo() << "Enter new State: " << QString::fromStdString(state->objectName());
 
                     break; // we can break here for now
                 }
@@ -1574,8 +1572,8 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
             newScene = QString::fromStdString(background->getNextScene());
             if(newScene.compare(""))
             {
-                //if(backend->getLogSim())
-                    //qDebug() << "Enter new Scene after timeout.";
+                if(backend->logSim)
+                    qInfo() << "Enter new Scene after timeout.";
 
                 sendEnd2activeAssets(entity);
                 exitState = true;
@@ -1600,8 +1598,8 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
         if(entity->getTimeInCurrentState() > state->getTimeOut() && state->getTimeOut() > 0)
         {
             sendEnd2activeAssets(entity);
-            //if(backend->getLogSim())
-                //qDebug() << "Will exit State after timeout.";
+            if(backend->logSim)
+                qInfo() << "Will exit State after timeout.";
 
             exitState = true;
         }
@@ -1610,7 +1608,7 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
         {
             if(entity->activeAssets.empty() )
             {
-               //qDebug() << "EXIT STATE AFTER ASSETS FINISH";
+                qInfo() << "EXIT STATE AFTER ASSETS FINISH";
                 exitState = true;
             }
         }
@@ -1622,7 +1620,7 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
                 if( (!state->getLeaveOnlyAfterAssetsFinish() && !entity->getCurrentScene()->fallbackDisabled())
                      || state->stateWithinState)
                 {
-                    //qDebug() << "EXIT STATE AFTER LEAVING STATE AREA";
+                    qInfo() << "EXIT STATE AFTER LEAVING STATE AREA";
                     sendEnd2activeAssets(entity);
                     exitState = true;
                 }
@@ -1643,10 +1641,10 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
 
     if(exitState)
     {
-        qDebug() << "EXIT STATE";
+        qInfo() << "EXIT STATE";
         if(hint)
         {
-             //qDebug() << "auto hint state";
+             qDebug() << "auto hint state";
              entity->getCurrentState()->setBlockUntilRadiusHasBeenLeft(true);
              RwaState *nextState = hint;
              if(hint != entity->getCurrentState())
@@ -1655,7 +1653,7 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
                  entity->setCurrentState(nextState);
                  entity->setTimeInCurrentState(0);
                  emit sendSelectedState(nextState);
-                 //qDebug() << "RwaSimulator::setEntityState" << nextState->objectName().toLatin1();
+                 qDebug() << nextState->objectName();
              }
         }
 
@@ -1673,13 +1671,13 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
 
         else if(state->getNextState().compare("") )
         {
-            //qDebug() << "auto next state";
+            qDebug() << "auto next state";
             RwaState *nextState = entity->getCurrentScene()->getState(state->getNextState());
             unblockAssets(nextState);
             entity->setCurrentState(nextState);
             entity->setTimeInCurrentState(0);
             emit sendSelectedState(nextState);
-            //qDebug() << "RwaSimulator::setEntityState" << nextState->objectName().toLatin1();
+            qDebug() << "RwaSimulator::setEntityState" << nextState->objectName();
         }
         else
         {
@@ -1690,7 +1688,7 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
                 entity->setTimeInCurrentState(0);
                 emit sendSelectedState(nextState);
                 if(backend->logSim)
-                    qDebug() << "Enter Fallback State";
+                    qInfo() << "Enter Fallback State";
             }
         }
     }
@@ -1736,7 +1734,7 @@ void RwaRuntime::endBackgroundState()
             releasePatcherFromItem(item);
             resetPatcher(intPatcherTag);
             if(backend->logSim)
-                qDebug() << "Free Background Asset: " << intPatcherTag;
+                qInfo() << "Free Background Asset: " << intPatcherTag;
         }
     }
 }

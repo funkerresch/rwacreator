@@ -150,7 +150,7 @@ void RwaCreator::loadLayoutAndSettings()
 
     if(!open(settings.value("lastgame").toString(), false))
     {
-        qDebug("Last game does not exist.");
+        qWarning("Last game does not exist.");
         clear();
     }
 }
@@ -332,7 +332,7 @@ void RwaCreator::selectSampleRate(qint32 index)
     if(index == 1)
         backend->sampleRate = 48000;
 
-    qDebug() << backend->sampleRate;
+    qInfo() << backend->sampleRate;
 
     settings.setValue("samplerate", backend->sampleRate);
     settings.sync(); // forces to write the settings to storage
@@ -708,7 +708,7 @@ void RwaCreator::exportZip()
     FILE* pipe = popen(zipGame.toStdString().c_str(), "w");
     if (!pipe)
     {
-       qDebug() << "Could not zip";
+       qCritical() << "Could not zip";
        return;
     }
 
@@ -823,7 +823,7 @@ qint32 RwaCreator::open(QString fileName, bool throwDialogue)
     if (!file.open(QFile::ReadOnly | QFile::Text))
     {
         statusBar()->showMessage(tr("Could not open file"), 2000);
-        qDebug() << "Could not open File";
+        qCritical() << "Could not open File";
         return 0;
     }
 
@@ -965,7 +965,7 @@ void RwaCreator::deleteUnusedAssetFiles()
         {
             QString completeFilePath(file.absoluteFilePath());
             QFile::remove(completeFilePath);
-            qDebug() << "Removed "<< completeFilePath << " from Disk.";
+            qInfo() << "Removed "<< completeFilePath << " from Disk.";
         }
     }
 }
