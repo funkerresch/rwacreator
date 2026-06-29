@@ -111,10 +111,15 @@ void RwaLogWindow::outputMessage(QtMsgType type, const QMessageLogContext &conte
         case QtFatalMsg:    prefix = QStringLiteral("Fatal"); break;
     }
 
-    QString output = QStringLiteral("%1: %2 (%3:%4, %5)")
+    QString output;
+    if (logLevel == msgSeverity(QtDebugMsg))
+        output = QStringLiteral("%1: %2 (%3:%4, %5)")
                         .arg(prefix, msg, file)
                         .arg(context.line)
                         .arg(function);
+    else
+        output = QStringLiteral("%1: %2")
+                        .arg(prefix, msg);
 
     logView->appendPlainText(output);
 }
