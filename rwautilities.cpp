@@ -38,7 +38,7 @@ void RwaUtilities::copyCoordinate2Clipboard(RwaLocation1 *currentArea)
 
 void RwaUtilities::logLocationCoordinates(QPointF location)
 {
-    qDebug() << "Lon: "<< QString::number(location.x(), 'f', 10) << " Lat: " << QString::number(location.y(), 'f', 10);
+    qInfo() << "("<< QString::number(location.y(), 'f', 10) << ", " << QString::number(location.x(), 'f', 10) << ") WGS-84 (lat, lon)";
 }
 
 void RwaUtilities::copyLocationCoordinates2Clipboard(QPointF location)

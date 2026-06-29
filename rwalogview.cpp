@@ -31,7 +31,7 @@ RwaLogWindow::RwaLogWindow(QWidget *parent) :
 
     // Middle: filter toggles
     logLongAndLatCheckbox = new QCheckBox(this);
-    logLongAndLatCheckbox->setText("Lon/Lat");
+    logLongAndLatCheckbox->setText("Coords");
     buttonLayout->addWidget(logLongAndLatCheckbox);
     connect(logLongAndLatCheckbox, SIGNAL (stateChanged(int)), backend, SLOT (receiveLogLonAndLat(int)) );
 
