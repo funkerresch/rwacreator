@@ -301,7 +301,7 @@ execute_process(
 
 # Configure Info.plist from template
 configure_file(
-    ${CMAKE_SOURCE_DIR}/Info.qmake.macos.plist
+    ${CMAKE_SOURCE_DIR}/Info.plist.in
     ${CMAKE_BINARY_DIR}/Info.plist
     @ONLY
 )
