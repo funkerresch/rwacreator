@@ -61,3 +61,7 @@ build/Desktop*
 dist
 build/cmake-release
 build/cmake-debug
+
+rwabuild
+.qtc_clangd/
+*.idx
