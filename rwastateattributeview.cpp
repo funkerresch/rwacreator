@@ -251,14 +251,14 @@ void RwaStateAttributeView::updateStateComboBox(QComboBox *attrComboBox)
 
     RwaState *state;
 
-    //disconnect(attrComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(receiveComboBoxAttributeValue(QString)));
+    //disconnect(attrComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &RwaStateAttributeView::receiveComboBoxAttributeValue);
     attrComboBox->clear();
     attrComboBox->addItem("None");
 
     foreach(state, currentScene->getStates())
         attrComboBox->addItem(QString::fromStdString(state->objectName()));
 
-    //connect(attrComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(receiveComboBoxAttributeValue(QString)));
+    //connect(attrComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &RwaStateAttributeView::receiveComboBoxAttributeValue);
 }
 
 void RwaStateAttributeView::updateSceneAttr(QComboBox *attrComboBox, QString scene2compare)

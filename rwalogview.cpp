@@ -62,7 +62,7 @@ RwaLogWindow::RwaLogWindow(QWidget *parent) :
     logLevelComboBox->setCurrentIndex(1); // Info
     buttonLayout->addWidget(logLevelComboBox);
 
-    connect(logLevelComboBox, &QComboBox::currentIndexChanged, this, [this](int index) {
+    connect(logLevelComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index) {
         static const QtMsgType levels[] = { QtDebugMsg, QtInfoMsg, QtWarningMsg, QtCriticalMsg, QtFatalMsg };
         logLevel = levels[index];
     });

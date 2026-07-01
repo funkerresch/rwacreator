@@ -131,14 +131,14 @@ void RwaSceneAttributeView::updateSceneComboBox(QComboBox *attrComboBox)
 
     RwaScene *scene;
 
-    //disconnect(attrComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(receiveComboBoxAttributeValue(QString)));
+    //disconnect(attrComboBox, &QComboBox::currentTextChanged, this, QOverload<QString>::of(&RwaSceneAttributeView::receiveComboBoxAttributeValue));
     attrComboBox->clear();
     attrComboBox->addItem("None");
 
     foreach(scene, backend->getScenes())
         attrComboBox->addItem(QString::fromStdString(scene->objectName()));
 
-    //connect(attrComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(receiveComboBoxAttributeValue(QString)));
+    //connect(attrComboBox, &QComboBox::currentTextChanged, this, QOverload<QString>::of(&RwaSceneAttributeView::receiveComboBoxAttributeValue));
 }
 
 void RwaSceneAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
