@@ -1653,7 +1653,7 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
                  entity->setCurrentState(nextState);
                  entity->setTimeInCurrentState(0);
                  emit sendSelectedState(nextState);
-                 qDebug() << nextState->objectName();
+                 qDebug() << QString::fromStdString(nextState->objectName());
              }
         }
 
@@ -1677,7 +1677,7 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
             entity->setCurrentState(nextState);
             entity->setTimeInCurrentState(0);
             emit sendSelectedState(nextState);
-            qDebug() << "RwaSimulator::setEntityState" << nextState->objectName();
+            qDebug() << "RwaSimulator::setEntityState" << QString::fromStdString(nextState->objectName());
         }
         else
         {

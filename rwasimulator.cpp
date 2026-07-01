@@ -260,8 +260,7 @@ void RwaSimulator::setCurrentScene(RwaScene *currentScene)
         if((QObject::sender() == this->backend))
         {
             sendSelectedScene2Devices();
-           // qDebug() << currentScene->objectName();
-
+            // qDebug() << QString::fromStdString(currentScene->objectName());
         }
     }
 }
