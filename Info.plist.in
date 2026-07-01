@@ -18,14 +18,18 @@
 	<string>6.0</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
-	<key>CFBundleShortVersionString</key>
-	<string>@PROJECT_VERSION@</string>
 	<key>CFBundleSignature</key>
 	<string>RWAC</string>
+	<key>CFBundleShortVersionString</key>
+	<string>@PROJECT_VERSION@</string>
 	<key>CFBundleVersion</key>
 	<string>@PROJECT_VERSION@</string>
 	<key>GitCommitHash</key>
 	<string>@GIT_COMMIT_HASH@</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>@CMAKE_OSX_DEPLOYMENT_TARGET@</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2026 FHNW</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>NSHighResolutionCapable</key>
@@ -36,13 +40,9 @@
 	<string>RWA Creator uses Bluetooth to connect to head tracking devices for spatial audio.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>RWA Creator uses Bluetooth to connect to head tracking devices for spatial audio.</string>
-	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2026 FHNW</string>
 	<key>NSDocumentsFolderUsageDescription</key>
 	<string>RWA Creator needs access to your Documents folder to save and load projects.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>RWA Creator needs access to the microphone for audio recording features.</string>
-	<key>LSMinimumSystemVersion</key>
-	<string>@CMAKE_OSX_DEPLOYMENT_TARGET@</string>
 </dict>
 </plist>
