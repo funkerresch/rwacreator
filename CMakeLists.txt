@@ -288,7 +288,11 @@ set(RWACREATOR_SOURCES
 set(EXECUTABLE_NAME "rwacreator")
 set(BUNDLE_NAME "RWA Creator")
 set(BUNDLE_DISPLAY_NAME "RWA Creator")
+
+# the string BUNDLE_IDENTIFIER.plist should not overlap with the
+# qt generated settings file-name (com.fhnw.rwacreator.plist, see main.cpp)
 set(BUNDLE_IDENTIFIER "com.fhnw.rwa.creator")
+
 set(BUNDLE_ICON_FILE "rwa-creator.icns")
 
 # Get git commit hash

@@ -48,8 +48,11 @@ int main(int argc, char **argv)
 {
     QApplication app(argc, argv);
 
-    // Set application metadata - this determines QSettings file location
+    // Set application metadata - this determines QSettings file name
     // QSettings and native dialogs (using the bundle identifier) create separate preference files
+    // those file names should NOT overlap
+    // qt settings:     com.fhnw.rwacreator.plist
+    // native settings: com.fhnw.rwa.creator.plist
     QCoreApplication::setOrganizationName("FHNW");
     QCoreApplication::setOrganizationDomain("fhnw");
     QCoreApplication::setApplicationName("rwacreator");
