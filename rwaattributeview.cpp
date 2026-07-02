@@ -25,6 +25,17 @@ RwaAttributeView::RwaAttributeView(QWidget* parent, RwaScene *scene)
     lastSenderValue = "";
 }
 
+void RwaAttributeView::addSeparator(QGridLayout *layout)
+{
+    QFrame *line = new QFrame(this);
+    line->setFrameShape(QFrame::HLine);
+    line->setFrameShadow(QFrame::Plain);
+    line->setFixedHeight(1);
+    line->setStyleSheet("background-color: rgba(0,0,0,30); border: none;");
+    layout->addWidget(line, assetAttrCounter, 0, 1, 2); // span both columns
+    assetAttrCounter++;
+}
+
 void RwaAttributeView::addAttrCheckbox(QGridLayout *layout, QString name, int type)
 {
     QCheckBox *attrCheckbox = new QCheckBox(name, this);
@@ -38,13 +49,7 @@ void RwaAttributeView::addAttrCheckbox(QGridLayout *layout, QString name, int ty
     layout->addWidget(attrCheckbox, assetAttrCounter, 0);
     assetAttrCounter++;
 
-    QFrame *line = new QFrame(this);
-    line->setFrameShape(QFrame::HLine);
-    line->setFrameShadow(QFrame::Sunken);
-    line->setFixedHeight(1);
-    line->setStyleSheet("background-color: rgba(0,0,0,30); border: none;");
-    layout->addWidget(line, assetAttrCounter, 0, 1, 2); // span both columns
-    assetAttrCounter++;
+    addSeparator(layout);
 }
 
 QLineEdit *RwaAttributeView::addLineEditAndLabel(QGridLayout *layout, QString name)
@@ -67,13 +72,7 @@ QLineEdit *RwaAttributeView::addLineEditAndLabel(QGridLayout *layout, QString na
     connect(attrLineEdit, SIGNAL(editingFinished()), this, SLOT(receiveEditingFinished()));
     assetAttrCounter++;
 
-    QFrame *line = new QFrame(this);
-    line->setFrameShape(QFrame::HLine);
-    line->setFrameShadow(QFrame::Sunken);
-    line->setFixedHeight(1);
-    line->setStyleSheet("background-color: rgba(0,0,0,30); border: none;");
-    layout->addWidget(line, assetAttrCounter, 0, 1, 2); // span both columns
-    assetAttrCounter++;
+    addSeparator(layout);
     return attrLineEdit;
 }
 
@@ -97,13 +96,7 @@ void RwaAttributeView::addLineEditAndLabel(QGridLayout *layout, QString name, QL
     connect(*attrLineEdit, SIGNAL(editingFinished()), this, SLOT(receiveEditingFinished()));
     assetAttrCounter++;
 
-    QFrame *line = new QFrame(this);
-    line->setFrameShape(QFrame::HLine);
-    line->setFrameShadow(QFrame::Sunken);
-    line->setFixedHeight(1);
-    line->setStyleSheet("background-color: rgba(0,0,0,30); border: none;");
-    layout->addWidget(line, assetAttrCounter, 0, 1, 2); // span both columns
-    assetAttrCounter++;
+    addSeparator(layout);
 }
 
 void RwaAttributeView::setLineEditSignal2editingFinished(QLineEdit *attrLineEdit)
@@ -136,11 +129,7 @@ QComboBox *RwaAttributeView::addComboBoxAndLabel(QGridLayout *layout, QString na
     connect(attrComboBox, SIGNAL(activated(int)), this, SLOT(receiveComboBoxAttributeValue(int)));
     connect(attrComboBox, SIGNAL(textActivated(QString)), this, SLOT(receiveEditingFinished()));
 
-    QFrame *line = new QFrame(this);
-    line->setFrameShape(QFrame::HLine);
-    line->setFrameShadow(QFrame::Sunken);
-    layout->addWidget(line, assetAttrCounter, 0, 1, 2); // span both columns
-    assetAttrCounter++;
+    addSeparator(layout);
     return attrComboBox;
 }
 
@@ -168,11 +157,7 @@ void RwaAttributeView::addComboBoxAndLabel(QGridLayout *layout, QString name, QS
 
     assetAttrCounter++;
 
-    QFrame *line = new QFrame(this);
-    line->setFrameShape(QFrame::HLine);
-    line->setFrameShadow(QFrame::Sunken);
-    layout->addWidget(line, assetAttrCounter, 0, 1, 2); // span both columns
-    assetAttrCounter++;
+    addSeparator(layout);
 }
 
 float RwaAttributeView::calculate_window_height()

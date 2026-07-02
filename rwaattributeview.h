@@ -59,6 +59,7 @@ protected:
     QGridLayout *attributeGridLayout;
 
     void setLineEditSignal2editingFinished(QLineEdit *attrLineEdit);
+    void addSeparator(QGridLayout *layout);
     void addAttrCheckbox(QGridLayout *layout, QString name, int type);
     void addLineEditAndLabel(QGridLayout *layout, QString name, QLineEdit **attrLineEdit, QLabel **attrLabel);
     QLineEdit *addLineEditAndLabel(QGridLayout *layout, QString name);
