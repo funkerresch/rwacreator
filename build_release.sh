@@ -1,6 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Parse arguments
+CLEAN=false
+for arg in "$@"; do
+  case "$arg" in
+    --clean) CLEAN=true ;;
+    *)
+      echo "Unknown argument: $arg" >&2
+      exit 1
+      ;;
+  esac
+done
+
 # read from .env
 # if no .env, variables from CI pipeline are expected
 cd "$(dirname "$0")"
@@ -18,9 +30,19 @@ fi
 # Configuration — check .env_example and create .env
 # =============================================================================
 
+# Read version from cmake config
+VERSION="$(sed -n 's/^[[:space:]]*VERSION[[:space:]]*//p' CMakeLists.txt | head -n1)"
+if [ -z "$VERSION" ]; then
+  echo "Could not read VERSION from CMakeLists" >&2
+  exit 1
+else
+    echo "==> Version $VERSION"
+fi
+
 # Path to your Qt6 installation (the directory that contains bin/macdeployqt)
 QT_DIR="/Users/Shared/Qt/6.11.1/macos"
 
+# Signing and Notarisation
 SIGN_IDENTITY="${TEAM_ID}"
 NOTARY_PROFILE="${PROFILE}"
 
@@ -35,7 +57,17 @@ APP_BUNDLE="$BUILD_DIR/$APP_NAME.app"
 DIST_DIR="$(dirname "$0")/dist"
 ARCHIVE="$DIST_DIR/$APP_NAME.zip"
 DMG_TEMP="$DIST_DIR/dmg_temp"
-DMG="$DIST_DIR/$APP_NAME.dmg"
+DMG="$DIST_DIR/$APP_NAME-$VERSION.dmg"
+
+# =============================================================================
+# Clean (optional, enable with --clean)
+# =============================================================================
+
+if [ "$CLEAN" = true ]; then
+  echo "==> Cleaning previous build..."
+  rm -rf "$BUILD_DIR"
+fi
+mkdir -p "$BUILD_DIR"
 
 # =============================================================================
 # CMake configure
