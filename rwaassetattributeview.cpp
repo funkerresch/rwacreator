@@ -75,8 +75,7 @@ RwaAssetAttributeView::RwaAssetAttributeView(QWidget *parent, RwaScene *scene) :
               backend, SLOT(receiveCurrentStateWithouRepositioning(RwaState*)));
 
     this->setMinimumHeight(calculate_window_height());
-    this->setMinimumWidth(20);
-    this->setMaximumWidth(260);
+    this->setFixedWidth(240);
 }
 
 void RwaAssetAttributeView::receiveSelectedAssets(QStringList assets)

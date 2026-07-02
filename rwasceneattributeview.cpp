@@ -38,8 +38,7 @@ RwaSceneAttributeView::RwaSceneAttributeView(QWidget *parent, RwaScene *scene) :
               backend, SLOT(receiveLastTouchedScene(RwaScene*)));
 
     this->setMinimumHeight(calculate_window_height());
-    this->setMinimumWidth(20);
-    this->setMaximumWidth(240);
+    this->setFixedWidth(240);
 }
 
 void RwaSceneAttributeView::setCurrentScene(RwaScene *scene)

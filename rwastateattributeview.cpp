@@ -85,8 +85,7 @@ RwaStateAttributeView::RwaStateAttributeView(QWidget *parent, RwaScene *scene) :
               this, SLOT(receiveSelectedStates(QStringList)));
 
     this->setMinimumHeight(calculate_window_height());
-    this->setMinimumWidth(20);
-    this->setMaximumWidth(240);
+    this->setFixedWidth(240);
 }
 
 void RwaStateAttributeView::receiveEditingFinished()
