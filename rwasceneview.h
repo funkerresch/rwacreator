@@ -26,7 +26,6 @@ private:
 
 signals:
     void updateAttributes();
-
 };
 
 #endif // RWASTATEVIEW_H

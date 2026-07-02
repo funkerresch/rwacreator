@@ -57,9 +57,9 @@ RwaStateAttributeView::RwaStateAttributeView(QWidget *parent, RwaScene *scene) :
 
     editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Longitude");
     editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Latitude");
-    editingFinishedLineEdit =addLineEditAndLabel(attributeGridLayout, "State Radius");
-    editingFinishedLineEdit =addLineEditAndLabel(attributeGridLayout, "State Width");
-    editingFinishedLineEdit =addLineEditAndLabel(attributeGridLayout, "State Height");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "State Radius");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "State Width");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "State Height");
     addLineEditAndLabel(attributeGridLayout, "Exit Offset");
 
     addAttrCheckbox(attributeGridLayout, "Assets follow state", RWASTATEATTRIBUTE_FOLLOWINGASSETS);

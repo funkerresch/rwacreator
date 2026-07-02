@@ -5,9 +5,24 @@ RwaAssetAttributeView::RwaAssetAttributeView(QWidget *parent, RwaScene *scene) :
 {
     //setAlignment(Qt::AlignTop);
     QStringList playbackTypes;
-    playbackTypes << "Undetermined" << "Mono" << "Stereo" << "Auto" << "Binaural-Mono (Legacy)" << "Binaural-Stereo (Legacy)" \
-                  << "Binaural-5Channel (Legacy)" << "Binaural-7Channel (Legacy)"<< "Binaural-Mono" << "Binaural-Stereo" << "Binaural-Auto" \
-                  << "Binaural-5Channel" << "Binaural-7Channel"  << "Binaural-Space" << "Custom IR-Set 1" << "Custom IR-Set 2" << "Custom IR-Set 3";
+    playbackTypes <<
+        "Undetermined" <<                // 0
+        "Mono" <<                        // 1
+        "Stereo" <<                      // 2
+        "Auto" <<                        // 3
+        "Binaural-Mono (Legacy)" <<      // 4  X
+        "Binaural-Stereo (Legacy)"  <<   // 5  X
+        "Binaural-5Channel (Legacy)" <<  // 6  X
+        "Binaural-7Channel (Legacy)"<<   // 7  X
+        "Binaural-Mono" <<               // 8
+        "Binaural-Stereo" <<             // 9
+        "Binaural-Auto" <<               // 10
+        "Binaural-5Channel" <<           // 11
+        "Binaural-7Channel"  <<          // 12
+        "Binaural-Space" <<              // 13
+        "Custom IR-Set 1" <<             // 14
+        "Custom IR-Set 2" <<             // 15
+        "Custom IR-Set 3";               // 16
 
     QComboBox *playbackTypesCombo = addComboBoxAndLabel(attributeGridLayout, "Playback Mode", playbackTypes);
     qobject_cast<QListView *>(playbackTypesCombo->view())->setRowHidden(4, true);

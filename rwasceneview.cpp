@@ -1,13 +1,13 @@
 #include "rwasceneview.h"
 
-
-RwaSceneView::RwaSceneView(QWidget *parent, RwaScene *scene, QString name) :
-    RwaView(parent, scene, name)
-
+RwaSceneView::RwaSceneView(QWidget *parent, RwaScene *scene, QString name)
+: RwaView(parent, scene, name)
 {
     setAcceptDrops(true);
     setAlignment(Qt::AlignTop);
+
     windowSplitter = new QSplitter(this);
+
     layout = new QBoxLayout(QBoxLayout::LeftToRight,this);
     layout->setContentsMargins(0,0,0,0);
 

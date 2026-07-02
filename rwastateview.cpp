@@ -7,12 +7,14 @@ RwaStateView::RwaStateView(QWidget* parent, RwaScene *scene, QString name)
 : RwaGraphicsView(parent, scene, name)
 {
     setAcceptDrops(true);
-
     setAlignment(Qt::AlignTop);
+
     windowSplitter = new QSplitter(this);
     connect(windowSplitter, SIGNAL(splitterMoved(int,int)), this, SLOT(handleSplitter(int, int)));
+
     layout = new QBoxLayout(QBoxLayout::LeftToRight,this);
     layout->setContentsMargins(0,0,0,0);
+
     assetList = new RwaAssetList(this, scene);
     assetAttributes = new RwaAssetAttributeView(this, scene);
     assetAttributes->scrollArea->setFixedWidth(260);
@@ -84,6 +86,7 @@ RwaStateView::RwaStateView(QWidget* parent, RwaScene *scene, QString name)
               this, SLOT(setCurrentStateWithoutRepositioning(RwaState *)));
 
     addZoomButtons();
+
     windowSplitter->addWidget(assetAttributes->scrollArea);
     windowSplitter->addWidget(assetList);
     windowSplitter->addWidget(mc);
@@ -101,24 +104,24 @@ void RwaStateView::keyPressEvent(QKeyEvent *event)
     {
         case Qt::Key_Return:
         case Qt::Key_Enter:
-          //qDebug() << "Enter";
-          break;
+            // qDebug() << "Enter";
+            break;
         case Qt::Key_Escape:
-          //qDebug() << "Escape";
-          break;
+            // qDebug() << "Escape";
+            break;
         case Qt::Key_Insert:
-          //qDebug() << "Insert";
-          break;
+            // qDebug() << "Insert";
+            break;
 
-          default:
-        //qDebug() << "RwaStateView::keyPressEvent" << event->key();
-          break;
+        default:
+            // qDebug() << "RwaStateView::keyPressEvent" << event->key();
+            break;
      }
 }
 
 void RwaStateView::correctMapView()
 {
-     mc->resize(QSize(windowSplitter->sizes().at(2), this->height()));
+    mc->resize(QSize(windowSplitter->sizes().at(2), this->height()));
 }
 
 void RwaStateView::receiveUpdateCurrentStateRadius()
