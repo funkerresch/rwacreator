@@ -28,11 +28,11 @@ NOTARY_PROFILE="${PROFILE}"
 BUILD_DIR="$(dirname "$0")/build/cmake-release"
 
 # App bundle produced by CMake
-APP_BUNDLE="$BUILD_DIR/rwacreator.app"
+APP_NAME="RWA Creator"
+APP_BUNDLE="$BUILD_DIR/$APP_NAME.app"
 
 # Where to put the final DMG / zip
 DIST_DIR="$(dirname "$0")/dist"
-APP_NAME="RWA Creator"
 ARCHIVE="$DIST_DIR/$APP_NAME.zip"
 DMG_TEMP="$DIST_DIR/dmg_temp"
 DMG="$DIST_DIR/$APP_NAME.dmg"

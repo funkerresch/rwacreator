@@ -498,3 +498,17 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
                         "Qt frameworks will not be bundled")
     endif()
 endif()
+
+# ------------------------------------------------------------------------------
+# Rename the bundle wrapper to "RWA Creator.app". The target (and the binary
+# at Contents/MacOS/rwacreator) must stay named "rwacreator" — CFBundleExecutable
+# in Info.plist.in and macdeployqt above both depend on that — so the rename
+# happens as a POST_BUILD step after macdeployqt, not via OUTPUT_NAME.
+# ------------------------------------------------------------------------------
+
+add_custom_command(TARGET rwacreator POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E rm -rf "${CMAKE_BINARY_DIR}/${BUNDLE_NAME}.app"
+    COMMAND ${CMAKE_COMMAND} -E rename "$<TARGET_BUNDLE_DIR:rwacreator>" "${CMAKE_BINARY_DIR}/${BUNDLE_NAME}.app"
+    COMMENT "Renaming bundle to '${BUNDLE_NAME}.app'"
+    VERBATIM
+)
