@@ -15,6 +15,7 @@ set(CMAKE_AUTOUIC ON)
 
 find_package(Qt6 REQUIRED COMPONENTS
     Widgets
+    Svg
     Bluetooth
     Network
     Multimedia
@@ -355,8 +356,12 @@ target_include_directories(rwacreator PRIVATE
 # Qt linkage
 # ------------------------------------------------------------------------------
 
+# Qt6::Svg must be a direct dependency: macdeployqt only deploys the
+# imageformats/libqsvg.dylib plugin (needed for QPixmap("*.svg")) when it
+# sees QtSvg among the app's linked frameworks.
 target_link_libraries(rwacreator PRIVATE
     Qt6::Widgets
+    Qt6::Svg
     Qt6::Bluetooth
     Qt6::Network
     Qt6::Multimedia

@@ -232,7 +232,7 @@ void RwaViewToolbar::initToolButtonGroup()
     QToolButton *arrow = new QToolButton(this);
     arrow->setCheckable(true);
     arrow->setObjectName("arrow");
-    arrow->setIcon(QIcon(path+"images/arrow.png"));
+    arrow->setIcon(QIcon(path+"images/arrow.svg"));
     arrow->setIconSize(QSize(20,20));
     arrow->setFixedSize(QSize(20,20));
     arrow->setToolTip("Arrow Tool: Move Map, Double Click for new State, Click for selecting State, Drag for moving State.");
@@ -243,7 +243,7 @@ void RwaViewToolbar::initToolButtonGroup()
     QToolButton *pen = new QToolButton(this);
     pen->setCheckable(true);
     pen->setObjectName("pen");
-    pen->setIcon(QIcon(path+"images/pen.png"));
+    pen->setIcon(QIcon(path+"images/pen.svg"));
     pen->setIconSize(QSize(20,20));
     pen->setFixedSize(QSize(20,20));
     pen->setToolTip("Selection Tool: Draw state selection into map.");
@@ -254,7 +254,7 @@ void RwaViewToolbar::initToolButtonGroup()
     QToolButton *rubber = new QToolButton(this);
     rubber->setCheckable(true);
     rubber->setObjectName("rubber");
-    rubber->setIcon(QIcon(path+"images/rubber.png"));
+    rubber->setIcon(QIcon(path+"images/rubber.svg"));
     rubber->setIconSize(QSize(20,20));
     rubber->setFixedSize(QSize(20,20));
     rubber->setToolTip("Rubber Tool: Click for removing States.");
@@ -290,7 +290,7 @@ void RwaViewToolbar::initControls()
     assetsVisibleButton->setCheckable(true);
     connect (assetsVisibleButton, SIGNAL(clicked(bool)), this, SLOT(receiveAssetsVisible(bool)));
     assetsVisibleButton->setObjectName("assetsVisibleButton");
-    assetsVisibleButton->setIcon(QIcon(path+"images/audiosource.png"));
+    assetsVisibleButton->setIcon(QIcon(path+"images/audiosource.svg"));
     assetsVisibleButton->setIconSize(QSize(20,20));
     assetsVisibleButton->setFixedSize(QSize(20,20));
     assetsVisibleButton->setToolTip("Show Assets.");
@@ -300,7 +300,7 @@ void RwaViewToolbar::initControls()
     radiiVisibleButton->setCheckable(true);
     connect (radiiVisibleButton, SIGNAL(clicked(bool)), this, SLOT(receiveRadiiVisible(bool)));
     radiiVisibleButton->setObjectName("radiiVisibleButton");
-    radiiVisibleButton->setIcon(QIcon(path+"images/radiiVisibleButton.png"));
+    radiiVisibleButton->setIcon(QIcon(path+"images/radiiVisibleButton.svg"));
     radiiVisibleButton->setIconSize(QSize(20,20));
     radiiVisibleButton->setFixedSize(QSize(20,20));
     radiiVisibleButton->setToolTip("Show State radii.");
@@ -310,7 +310,7 @@ void RwaViewToolbar::initControls()
     startSimulatorButton->setCheckable(true);
     connect (startSimulatorButton, SIGNAL(clicked(bool)), this, SLOT(receiveStartSimulator(bool)));
     startSimulatorButton->setObjectName("startStopSimulatorButton");
-    startSimulatorButton->setIcon(QIcon(path+"images/start.png"));
+    startSimulatorButton->setIcon(QIcon(path+"images/start.svg"));
     startSimulatorButton->setIconSize(QSize(20,20));
     startSimulatorButton->setFixedSize(QSize(20,20));
     startSimulatorButton->setToolTip("Start simulation.");
@@ -320,7 +320,7 @@ void RwaViewToolbar::initControls()
     stopSimulatorButton->setCheckable(false);
     connect (stopSimulatorButton, SIGNAL(clicked(bool)), this, SLOT(receiveStopSimulator(bool)));
     stopSimulatorButton->setObjectName("startStopSimulatorButton");
-    stopSimulatorButton->setIcon(QIcon(path+"images/stop.png"));
+    stopSimulatorButton->setIcon(QIcon(path+"images/stop.svg"));
     stopSimulatorButton->setIconSize(QSize(20,20));
     stopSimulatorButton->setFixedSize(QSize(20,20));
     stopSimulatorButton->setToolTip("Stop simulation.");
@@ -330,7 +330,7 @@ void RwaViewToolbar::initControls()
     calibrateHeadtrackerButton->setCheckable(false);
     connect (calibrateHeadtrackerButton, SIGNAL(clicked(bool)), this, SLOT(receiveCalibrateHeadtracker(bool)));
     calibrateHeadtrackerButton->setObjectName("calibrateHeadtrackerButton");
-    calibrateHeadtrackerButton->setIcon(QIcon(path+"images/calibrateHeadtrackerButton.png"));
+    calibrateHeadtrackerButton->setIcon(QIcon(path+"images/calibrateHeadtrackerButton.svg"));
     calibrateHeadtrackerButton->setIconSize(QSize(20,20));
     calibrateHeadtrackerButton->setFixedSize(QSize(20,20));
     calibrateHeadtrackerButton->setToolTip("Calibrate head tracker.");
@@ -341,7 +341,7 @@ void RwaViewToolbar::initControls()
     simulateHeadtrackerStepButton->setChecked(false);
     connect (simulateHeadtrackerStepButton, SIGNAL(clicked(bool)), this, SLOT(receiveSendHeadtrackerStep(bool)));
     simulateHeadtrackerStepButton->setObjectName("headtrackerStepButton");
-    simulateHeadtrackerStepButton->setIcon(QIcon(path+"images/headtrackerStepButton.png"));
+    simulateHeadtrackerStepButton->setIcon(QIcon(path+"images/headtrackerStepButton.svg"));
     simulateHeadtrackerStepButton->setIconSize(QSize(15,15));
     simulateHeadtrackerStepButton->setFixedSize(QSize(20,20));
     simulateHeadtrackerStepButton->setToolTip("Send Step");
@@ -363,7 +363,7 @@ void RwaViewToolbar::initControls()
     trashAssetsButton->setChecked(false);
     connect (trashAssetsButton, SIGNAL(clicked(bool)), this, SLOT(receiveTrashAssets(bool)));
     trashAssetsButton->setObjectName("trashAssetsButton");
-    trashAssetsButton->setIcon(QIcon(path+"images/donttrashassets.png"));
+    trashAssetsButton->setIcon(QIcon(path+"images/donttrashassets.svg"));
     trashAssetsButton->setIconSize(QSize(20,20));
     trashAssetsButton->setFixedSize(QSize(20,20));
     trashAssetsButton->setToolTip("On asset delete: keep/remove Assets on/from Disk.");
@@ -374,7 +374,7 @@ void RwaViewToolbar::initControls()
     activateClientSyncButton->setChecked(false);
     connect (activateClientSyncButton, SIGNAL(clicked(bool)), this, SLOT(receiveActivateClientSync(bool)));
     activateClientSyncButton->setObjectName("activateClientSyncButton");
-    activateClientSyncButton->setIcon(QIcon(path+"images/syncwithclients.png"));
+    activateClientSyncButton->setIcon(QIcon(path+"images/syncwithclients.svg"));
     activateClientSyncButton->setIconSize(QSize(20,20));
     activateClientSyncButton->setFixedSize(QSize(20,20));
     activateClientSyncButton->setToolTip("Activate File Server for downloading games from clients");
@@ -384,7 +384,7 @@ void RwaViewToolbar::initControls()
     findButton->setCheckable(false);
     connect(findButton, SIGNAL(clicked(bool)), this, SLOT(showFindPlacesDialog()));
     findButton->setObjectName("FindMapLocation");
-    findButton->setIcon(QIcon(path+"images/findlocation.png"));
+    findButton->setIcon(QIcon(path+"images/findlocation.svg"));
     findButton->setIconSize(QSize(20,20));
     findButton->setFixedSize(QSize(20,20));
     findButton->setToolTip("Search for new map location.");
@@ -422,9 +422,9 @@ void RwaViewToolbar::receiveTrashAssets(bool onOff)
     trashAssetsButton->setChecked(onOff);
     emit sendTrashAssets(onOff);
     if(onOff)
-        trashAssetsButton->setIcon(QIcon(path+"images/trashassets.png"));
+        trashAssetsButton->setIcon(QIcon(path+"images/trashassets.svg"));
     else
-        trashAssetsButton->setIcon(QIcon(path+"images/donttrashassets.png"));
+        trashAssetsButton->setIcon(QIcon(path+"images/donttrashassets.svg"));
 }
 
 void RwaViewToolbar::receiveHeroFollowsSceneAndState(bool onOff)

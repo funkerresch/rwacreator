@@ -38,32 +38,32 @@ RwaGraphicsView::RwaGraphicsView(QWidget *parent, RwaScene *scene, QString name)
     mc->addLayer(l);
 
     scenesLayer = new GeometryLayer("Scene Layer", mapadapter);
-    scenesLayer->setActivePixmap(QPixmap(path+"images/sceneselected.png"));
-    scenesLayer->setPassivePixmap(QPixmap(path+"images/scene.png"));
+    scenesLayer->setActivePixmap(QPixmap(path+"images/sceneselected.svg").scaled(21, 21, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    scenesLayer->setPassivePixmap(QPixmap(path+"images/scene.svg").scaled(21, 21, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     mc->addLayer(scenesLayer);
 
     sceneRadiusLayer = new GeometryLayer("Scene Area Layer", mapadapter);
     mc->addLayer(sceneRadiusLayer);
 
     statesLayer = new GeometryLayer("Geometry Layer", mapadapter);
-    statesLayer->setActivePixmap(QPixmap(path+"images/stateselected.png"));
-    statesLayer->setPassivePixmap(QPixmap(path+"images/state.png"));
+    statesLayer->setActivePixmap(QPixmap(path+"images/stateselected.svg").scaled(21, 21, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    statesLayer->setPassivePixmap(QPixmap(path+"images/state.svg").scaled(21, 21, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     mc->addLayer(statesLayer);
 
     stateRadiusLayer = new GeometryLayer("Radius Layer", mapadapter);
     mc->addLayer(stateRadiusLayer);
 
     assetLayer = new GeometryLayer("Asset Layer", mapadapter);
-    assetLayer->setActivePixmap(QPixmap(path+"images/audiosourceselected.png"));
-    assetLayer->setPassivePixmap(QPixmap(path+"images/audiosource.png"));
-    assetLayer->setPixmap3(QPixmap(path+"images/audiochannelsource.png"));
-    assetLayer->setPixmap4(QPixmap(path+"images/audiosourcestartpoint.png"));
-    assetLayer->setPixmap5(QPixmap(path+"images/audiosourcestartpoint1.png"));
+    assetLayer->setActivePixmap(QPixmap(path+"images/audiosourceselected.svg").scaled(21, 21, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    assetLayer->setPassivePixmap(QPixmap(path+"images/audiosource.svg").scaled(21, 21, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    assetLayer->setPixmap3(QPixmap(path+"images/audiochannelsource.svg").scaled(21, 21, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    assetLayer->setPixmap4(QPixmap(path+"images/audiosourcestartpoint.svg").scaled(21, 21, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    assetLayer->setPixmap5(QPixmap(path+"images/audiosourcestartpoint1.svg").scaled(21, 21, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     mc->addLayer(assetLayer);
 
     assetReflectionLayer = new GeometryLayer("Asset Reflection Layer", mapadapter);
-    assetReflectionLayer->setActivePixmap(QPixmap(path+"images/audioreflectionactive.png"));
-    assetReflectionLayer->setPassivePixmap(QPixmap(path+"images/audioreflectionpassive.png"));
+    assetReflectionLayer->setActivePixmap(QPixmap(path+"images/audioreflectionactive.svg").scaled(21, 21, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    assetReflectionLayer->setPassivePixmap(QPixmap(path+"images/audioreflectionpassive.svg").scaled(21, 21, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     mc->addLayer(assetReflectionLayer);
 
     entityLayer = new GeometryLayer("Client Layer", mapadapter);
