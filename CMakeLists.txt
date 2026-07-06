@@ -326,6 +326,12 @@ set_target_properties(rwacreator PROPERTIES
     MACOSX_BUNDLE_INFO_PLIST ${CMAKE_BINARY_DIR}/Info.plist
 )
 
+# Expose version and git hash to the code (About dialog)
+target_compile_definitions(rwacreator PRIVATE
+    RWA_VERSION="${PROJECT_VERSION}"
+    RWA_GIT_COMMIT_HASH="${GIT_COMMIT_HASH}"
+)
+
 # ------------------------------------------------------------------------------
 # Include paths
 # ------------------------------------------------------------------------------

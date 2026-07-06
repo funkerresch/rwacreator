@@ -24,12 +24,22 @@
 #include <QComboBox>
 #include <QLabel>
 #include <QPushButton>
+#include <QDialog>
+#include <QVBoxLayout>
 #include <QTimer>
 #include <qdebug.h>
 #include <unistd.h>
 #include "rwainputdialog.h"
 
 Q_DECLARE_METATYPE(QDockWidget::DockWidgetFeatures)
+
+// Set via target_compile_definitions in CMakeLists.txt
+#ifndef RWA_VERSION
+#define RWA_VERSION "unknown"
+#endif
+#ifndef RWA_GIT_COMMIT_HASH
+#define RWA_GIT_COMMIT_HASH "unknown"
+#endif
 
 RwaLogWindow *RwaCreator::logWindow;
 
@@ -501,7 +511,12 @@ void RwaCreator::initViewMenu1(QMenu *fileMenu)
 
 void RwaCreator::initFileMenu(QMenu *fileMenu)
 {
-    QAction *action = fileMenu->addAction(tr("File Path Preferences"));
+    // AboutRole moves the action into the application menu ("RWA Creator") on macOS
+    QAction *action = fileMenu->addAction(tr("About RWA Creator"));
+    action->setMenuRole(QAction::AboutRole);
+    connect(action, SIGNAL(triggered()), this, SLOT(about()));
+
+    action = fileMenu->addAction(tr("File Path Preferences"));
     connect(action, SIGNAL(triggered()), this, SLOT(enterFilePathPreferences()));
 
     action = fileMenu->addAction(tr("Remove unused files from disk"));
@@ -543,6 +558,50 @@ void RwaCreator::enterFilePathPreferences()
         backend->completeClientDownloadPathWithEscape = "'"+backend->completeClientDownloadPath+"'";
         backend->completeXCodeClientProjectExportPath = list[1];
     }
+}
+
+/** ************************************************ About pop-up ***************************************************** */
+
+void RwaCreator::about()
+{
+    QString text = tr(
+        "<h3 align='center'>RWA Creator</h3>"
+        "<p align='center'>Version %1 (%2)</p>"
+        "<p align='center'>An open-source middleware for creating interactive soundwalks.</p>"
+        "<p align='center'>Author: Thomas Resch (and contributors)</p>"
+        "<p align='center'><a href=\"https://github.com/rnd-hsm-klassik/rwa-creator\">GitHub repository</a><br>"
+        "<a href=\"https://www.fhnw.ch/de/musik/forschung-dienstleistungen/forschung/projekte/real-world-audio-2\">"
+        "Real World Audio</a><br/>Forschung Institut Klassik<br/>Hochschule für Musik Basel FHNW</p>")
+        .arg(QStringLiteral(RWA_VERSION), QStringLiteral(RWA_GIT_COMMIT_HASH));
+
+    QDialog aboutDialog(this);
+    aboutDialog.setWindowTitle(tr("About RWA Creator"));
+
+    QVBoxLayout *layout = new QVBoxLayout(&aboutDialog);
+    layout->setContentsMargins(60, 24, 60, 24);
+    layout->setSpacing(2);
+
+    // Qt can't decode the .icns app icon, use a png version
+    QPixmap appIcon(backend->completeBundlePath + "images/rwa-creator.png");
+    if(!appIcon.isNull())
+    {
+        qreal dpr = aboutDialog.devicePixelRatio();
+        QPixmap scaledIcon = appIcon.scaled(QSize(96, 96) * dpr, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        scaledIcon.setDevicePixelRatio(dpr);
+        QLabel *iconLabel = new QLabel(&aboutDialog);
+        iconLabel->setPixmap(scaledIcon);
+        iconLabel->setAlignment(Qt::AlignHCenter);
+        layout->addWidget(iconLabel);
+    }
+
+    QLabel *textLabel = new QLabel(text, &aboutDialog);
+    textLabel->setTextFormat(Qt::RichText);
+    textLabel->setAlignment(Qt::AlignHCenter);
+    textLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
+    textLabel->setOpenExternalLinks(true);
+    layout->addWidget(textLabel);
+
+    aboutDialog.exec();
 }
 
 /** ******************************************** Head tracker name pop-up ********************************************* */

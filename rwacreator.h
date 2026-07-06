@@ -469,6 +469,15 @@ private slots:
     void enterFilePathPreferences();
 
 /**
+ * @brief Shows the About dialogue. <br>
+ * Shows app name, version, git commit hash and links to <br>
+ * the GitHub repository and the FHNW research project page. <br>
+ * On macOS the action is placed in the application menu ("RWA Creator").
+ */
+
+    void about();
+
+/**
  * @brief Deletes unused assets. <br>
  * The function deletes unused assets. <br>
  * Currently the ThrashAssets option from the <br>
