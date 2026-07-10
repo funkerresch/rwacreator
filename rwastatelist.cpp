@@ -134,7 +134,7 @@ void RwaStateList::keyPressEvent(QKeyEvent *event)
     switch (event->key())
     {
         case 16777219: // Qt::Key_Delete not working on OSX
-            if(currentState->objectName() != "FALLBACK" && currentState->objectName() != "BACKGROUND")
+            if(currentState && !currentState->isImmortal)
             {
                 RwaState *toDelete = currentState;
                 takeItem(getSelectedIndex());

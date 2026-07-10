@@ -30,6 +30,8 @@ RwaState::RwaState(std::string stateName) :
     setEnterOnlyAfterAssetsFinish(false);
     setEnterOnlyOnce(false);
     isExclusive = false;
+    isImmortal = false;
+    isSelected = false;
     exitOffset = 0;
     positionLocked = false;
     childrenFollowMe = true;
@@ -85,6 +87,7 @@ void RwaState::copyAttributes(RwaState *dest)
     dest->enterOnlyAfterAssetsFinish = this->getEnterOnlyAfterAssetsFinish();
     dest->enterOnlyOnce =  this->getEnterOnlyOnce();
     dest->isExclusive = this->isExclusive;
+    dest->isImmortal = this->isImmortal;
     dest->exitOffset = this->exitOffset;
     dest->positionLocked = this->positionLocked;
 }

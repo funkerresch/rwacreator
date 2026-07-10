@@ -92,7 +92,7 @@ This will also create a `compile_commands.json` file in the build directory, whi
 Launch the app using the debugger:
 
 ```bash
-lldb "$BUILD_DIR/rwacreator.app/Contents/MacOS/rwacreator"
+lldb "$BUILD_DIR/RWA Creator.app/Contents/MacOS/rwacreator"
 (lldb) run
 ```
 

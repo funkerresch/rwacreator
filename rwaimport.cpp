@@ -314,6 +314,9 @@ void RwaImport::readState()
 
                     readAssets();
 
+                    if(state->objectName() == "FALLBACK" || state->objectName() == "BACKGROUND")
+                        state->isImmortal = true;
+
                     if(state->objectName() == "FALLBACK" && stateListIndex != 0)
                         currentScene->InsertStateAtIndex(state, 0);
                     else if(state->objectName() == "BACKGROUND" && stateListIndex != 1)

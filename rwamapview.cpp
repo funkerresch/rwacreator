@@ -512,6 +512,17 @@ void RwaMapView::mouseDownRubber(const QMouseEvent *event, const QPointF myPoint
             {
                  currentStatePoint = (QmapPoint *)statesLayer->geometries.at(i);
                  RwaState *state = (RwaState *)currentStatePoint->data;
+                 if(state->isImmortal)
+                 {
+                     qDebug() << "Fallback/Background States can not be deleted.";
+                     delete tmppoint;
+                     return;
+                 }
+
+                 if(currentState == state)
+                     currentState = nullptr;
+                 currentStatePoint = nullptr;
+
                  currentScene->removeState(state);
                  emit sendCurrentScene(currentScene);
                  emit sendCurrentState(currentScene->lastTouchedState);

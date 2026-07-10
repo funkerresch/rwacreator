@@ -73,8 +73,10 @@ void RwaAssetList::setCurrentScene(RwaScene *scene)
 
     if(currentScene->lastTouchedState)
         setCurrentState(currentScene->lastTouchedState);
-    else
+    else if(!currentScene->getStates().empty())
         setCurrentState(currentScene->getStates().front());
+    else
+        clear();
 }
 
 int RwaAssetList::getNumberOfSelectedAssets()

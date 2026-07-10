@@ -133,14 +133,14 @@ void RwaBackend::updateLastTouchedSceneStateAndAsset()
 
     emit sendLastTouchedScene(lastTouchedScene);
 
-    if(!lastTouchedScene->lastTouchedState)
+    if(!lastTouchedScene->lastTouchedState && !lastTouchedScene->states.empty())
         lastTouchedScene->lastTouchedState = lastTouchedScene->states.front();
 
     lastTouchedState = lastTouchedScene->lastTouchedState;
 
     emit sendLastTouchedState(lastTouchedState);
 
-    if(!lastTouchedState->assets.empty())
+    if(lastTouchedState && !lastTouchedState->assets.empty())
     {
         if(!lastTouchedState->lastTouchedAsset)
             lastTouchedState->lastTouchedAsset = lastTouchedState->assets.front();

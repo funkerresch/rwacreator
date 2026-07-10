@@ -352,8 +352,11 @@ void RwaScene::resetAssets()
 
 void RwaScene::removeState(RwaState *state)
 {
-    lastTouchedState = states.front();
+    if(!state)
+        return;
+
     states.remove(state);
+    lastTouchedState = states.empty() ? nullptr : states.front();
     delete state;
 }
 
