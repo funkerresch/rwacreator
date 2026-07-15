@@ -76,7 +76,7 @@ void RwaState::copyAttributes(RwaState *dest)
     dest->hintState = this->hintState;
     dest->defaultPlaybackType = this->defaultPlaybackType;
     dest->zoom = this->zoom;
-    dest->setType(this->getType());
+    dest->type = this->getType(); // don't use setType() here, its side effect would register the copy as background state of the source scene
     dest->letChildrenFollowMe(this->childrenDoFollowMe());
     dest->radius = this->radius;
     dest->width = this->width;

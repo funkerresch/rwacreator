@@ -298,7 +298,13 @@ void RwaScene::setCurrentState(string stateName)
 
 RwaState * RwaScene::getBackgroundState()
 {
-    return this->backgroundState;
+    foreach(RwaState *state, states) // don't trust the cached pointer, it can go stale when states are copied or deleted
+    {
+        if(state->getType() == RWASTATETYPE_BACKGROUND)
+            return state;
+    }
+
+    return nullptr;
 }
 
 void RwaScene::setBackgroundState(RwaState *backgroundState)

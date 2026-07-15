@@ -1280,19 +1280,19 @@ void RwaRuntime::sendData2activeAssets(RwaEntity *entity)
                 }
                 step = 0;
             }
+        }
 
-            if(!entity->backgroundAssets.empty())
+        if(!entity->backgroundAssets.empty()) // background assets belong to the scene, update them even without a current state
+        {
+            std::map<string, RwaEntity::AssetMapItem>::iterator i = entity->backgroundAssets.begin();
+            while(i != entity->backgroundAssets.end())
             {
-                std::map<string, RwaEntity::AssetMapItem>::iterator i = entity->backgroundAssets.begin();
-                while(i != entity->backgroundAssets.end())
-                {
-                    key = i->first;
-                    item = i->second;
-                    sendData2Asset(entity, item);
-                    ++i;
-                }
-                step = 0;
+                key = i->first;
+                item = i->second;
+                sendData2Asset(entity, item);
+                ++i;
             }
+            step = 0;
         }
     }
     emit sendRedrawAssets();
@@ -1373,11 +1373,7 @@ void RwaRuntime::setScene(RwaEntity *entity, RwaScene *scene)
         sendEnd2backgroundAssets(entity);
 
         if(!scene->fallbackDisabled())
-        {
             sendEnd2activeAssets(entity);
-            entity->setCurrentState(entity->getCurrentScene()->getStates().front());
-            entity->setTimeInCurrentState(0);
-        }
     }
 
     if(entity->getCurrentState())
@@ -1385,6 +1381,13 @@ void RwaRuntime::setScene(RwaEntity *entity, RwaScene *scene)
 
     entity->setCurrentScene(scene);
     entity->setTimeInCurrentScene(0);
+
+    if(!scene->fallbackDisabled() && !scene->getStates().empty())
+    {
+        entity->setCurrentState(scene->getStates().front());
+        entity->setTimeInCurrentState(0);
+    }
+
     startBackgroundState(entity);
     emit sendSelectedScene(scene);
 }
