@@ -42,6 +42,8 @@
 	<string>RWA Creator uses Bluetooth to connect to head tracking devices for spatial audio.</string>
 	<key>NSDocumentsFolderUsageDescription</key>
 	<string>RWA Creator needs access to your Documents folder to save and load projects.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>RWA Creator receives OSC messages from tracking devices on your local network.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>RWA Creator needs access to the microphone for audio recording features.</string>
 </dict>
