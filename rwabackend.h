@@ -74,9 +74,9 @@ public:
     QString completeTmpPath;
     QString completeAssetPath;
     QString completeClientExportPath;
-    QString completeClientDownloadPath;
-    QString completeClientDownloadPathWithEscape;
-    QString completeXCodeClientProjectExportPath;
+    QString completeSharingServerPath;
+    QString completeSharingServerPathWithEscape;
+    QString completeTransferToPlayerExportPath;
     QString applicationSupportPath;
     QString applicationSupportPathWithEscape;
     QStringList assetStringList;

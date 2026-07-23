@@ -106,7 +106,7 @@ void RwaCreator::createInitFolder()
         file.close();
     }
 
-    path = QString(backend->completeClientDownloadPath);
+    path = QString(backend->completeSharingServerPath);
     if(!QDir(path).exists())
         QDir().mkdir(path);
 }
@@ -119,9 +119,9 @@ void RwaCreator::saveLayoutAndSettings()
     settings.setValue("geometry", saveGeometry());
     settings.setValue("windowState", saveState());
     settings.setValue("lastgame", backend->completeFilePath);
-    settings.setValue("xcodeclientprojectpath", backend->completeXCodeClientProjectExportPath);
-    settings.setValue("downloadpath", backend->completeClientDownloadPath);
-    settings.setValue("downloadpathwithescape", backend->completeClientDownloadPathWithEscape);
+    settings.setValue("xcodeclientprojectpath", backend->completeTransferToPlayerExportPath);
+    settings.setValue("downloadpath", backend->completeSharingServerPath);
+    settings.setValue("downloadpathwithescape", backend->completeSharingServerPathWithEscape);
     settings.setValue("headtrackerid", headtracker->getName());
     settings.setValue("samplerate", backend->sampleRate);
     settings.sync(); // forces to write the settings to storage
@@ -144,19 +144,19 @@ void RwaCreator::loadLayoutAndSettings()
         backend->setSampleRate(48000);
 
     if(settings.contains("xcodeclientprojectpath"))
-        backend->completeXCodeClientProjectExportPath = (settings.value("xcodeclientprojectpath").toString());
+        backend->completeTransferToPlayerExportPath = (settings.value("xcodeclientprojectpath").toString());
     else
-        backend->completeXCodeClientProjectExportPath = QString("%1%2").arg(QDir::homePath()).arg("/Desktop");
+        backend->completeTransferToPlayerExportPath = QString("%1%2").arg(QDir::homePath()).arg("/Desktop");
 
     if(settings.contains("downloadpath"))
-        backend->completeClientDownloadPath = (settings.value("downloadpath").toString());
+        backend->completeSharingServerPath = (settings.value("downloadpath").toString());
     else
-        backend->completeClientDownloadPath = QString("%1%2").arg(QDir::homePath()).arg("/Library/Application Support/RWACreator/Games");
+        backend->completeSharingServerPath = QString("%1%2").arg(QDir::homePath()).arg("/Library/Application Support/RWACreator/Games");
 
     if(settings.contains("downloadpathwithescape"))
-        backend->completeClientDownloadPathWithEscape = (settings.value("downloadpathwithescape").toString());
+        backend->completeSharingServerPathWithEscape = (settings.value("downloadpathwithescape").toString());
     else
-        backend->completeClientDownloadPathWithEscape = QString("%1%2").arg(QDir::homePath()).arg("'/Library/Application Support/RWACreator/Games\'");
+        backend->completeSharingServerPathWithEscape = QString("%1%2").arg(QDir::homePath()).arg("'/Library/Application Support/RWACreator/Games\'");
 
     if(!open(settings.value("lastgame").toString(), false))
     {
@@ -538,7 +538,7 @@ void RwaCreator::initFileMenu(QMenu *fileMenu)
     connect(action, SIGNAL(triggered()), this, SLOT(exportProject()));
 
     action = fileMenu->addAction(tr("Export Project for transfer to RWA Player..."));
-    connect(action, SIGNAL(triggered()), this, SLOT(exportToXCodeClientProject()));
+    connect(action, SIGNAL(triggered()), this, SLOT(exportForTransferToPlayer()));
 
     action = fileMenu->addAction(tr("Send Project to Sharing Server..."));
     connect(action, SIGNAL(triggered()), this, SLOT(exportZip()));
@@ -551,12 +551,12 @@ void RwaCreator::enterFilePathPreferences()
     QStringList labels;
     QStringList values;
     labels << "Sharing Server Path" << "Project Export Path";
-    values << backend->completeClientDownloadPath << backend->completeXCodeClientProjectExportPath;
+    values << backend->completeSharingServerPath << backend->completeTransferToPlayerExportPath;
     QStringList list = RwaInputDialog::getStrings(this, labels, values, tr("File Path Preferences"));
     if (!list.isEmpty()) {
-        backend->completeClientDownloadPath = list[0];
-        backend->completeClientDownloadPathWithEscape = "'"+backend->completeClientDownloadPath+"'";
-        backend->completeXCodeClientProjectExportPath = list[1];
+        backend->completeSharingServerPath = list[0];
+        backend->completeSharingServerPathWithEscape = "'"+backend->completeSharingServerPath+"'";
+        backend->completeTransferToPlayerExportPath = list[1];
     }
 }
 
@@ -710,13 +710,13 @@ void RwaCreator::prepareWrite1(QString fullpath, int flags)  // fullpath is /RWA
     }
 }
 
-void RwaCreator::exportToXCodeClientProject()
+void RwaCreator::exportForTransferToPlayer()
 {
     qint32 flags = 0;
     flags |= RWAEXPORT_COPYASSETS
           | RWAEXPORT_EXPORTFORMOBILECLIENT;
 
-    QString directory = backend->completeXCodeClientProjectExportPath;
+    QString directory = backend->completeTransferToPlayerExportPath;
     if(!QDir(directory).exists())
         QDir().mkdir(directory);
 
@@ -743,7 +743,7 @@ void RwaCreator::exportZip()
           | RWAEXPORT_EXPORTFORMOBILECLIENT
           | RWAEXPORT_ZIP;
 
-    QString directory = backend->completeClientDownloadPath;
+    QString directory = backend->completeSharingServerPath;
     if(!QDir(directory).exists())
         QDir().mkdir(directory);
 
@@ -763,7 +763,7 @@ void RwaCreator::exportZip()
     if(zipFile.exists())
         zipFile.remove();
 
-    QString zipGame = QString("cd %1 && zip -r -X %2.zip %3").arg(backend->completeClientDownloadPathWithEscape).arg(baseName).arg(baseName);
+    QString zipGame = QString("cd %1 && zip -r -X %2.zip %3").arg(backend->completeSharingServerPathWithEscape).arg(baseName).arg(baseName);
     FILE* pipe = popen(zipGame.toStdString().c_str(), "w");
     if (!pipe)
     {
