@@ -552,7 +552,7 @@ void RwaCreator::enterFilePathPreferences()
     QStringList values;
     labels << "Sharing Server Path" << "Project Export Path";
     values << backend->completeClientDownloadPath << backend->completeXCodeClientProjectExportPath;
-    QStringList list = RwaInputDialog::getStrings(this, labels, values);
+    QStringList list = RwaInputDialog::getStrings(this, labels, values, tr("File Path Preferences"));
     if (!list.isEmpty()) {
         backend->completeClientDownloadPath = list[0];
         backend->completeClientDownloadPathWithEscape = "'"+backend->completeClientDownloadPath+"'";

@@ -5,16 +5,17 @@
 #include <QFormLayout>
 #include <QDebug>
 
-RwaInputDialog::RwaInputDialog(QWidget *parent, QStringList labels, QStringList values) : QDialog(parent)
+RwaInputDialog::RwaInputDialog(QWidget *parent, QStringList labels, QStringList values, QString title) : QDialog(parent)
 {
     QFormLayout *lytMain = new QFormLayout(this);
-    this->setMinimumWidth(800);
+    this->setMinimumWidth(600);
+    this->setWindowTitle(title);
 
     for (int i = 0; i < labels.length(); ++i)
     {
         QLabel *tLabel = new QLabel(labels[i], this);
         QLineEdit *tLine = new QLineEdit(this);
-        tLine->setMinimumWidth(600);
+        tLine->setMinimumWidth(450);
         tLine->setText(values[i]);
         lytMain->addRow(tLabel, tLine);
 
@@ -36,9 +37,9 @@ RwaInputDialog::RwaInputDialog(QWidget *parent, QStringList labels, QStringList 
     setLayout(lytMain);
 }
 
-QStringList RwaInputDialog::getStrings(QWidget *parent, QStringList labels, QStringList values, bool *ok)
+QStringList RwaInputDialog::getStrings(QWidget *parent, QStringList labels, QStringList values, QString title, bool *ok)
 {
-    RwaInputDialog *dialog = new RwaInputDialog(parent, labels, values);
+    RwaInputDialog *dialog = new RwaInputDialog(parent, labels, values, title);
     QStringList list;
 
     const int ret = dialog->exec();
