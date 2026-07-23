@@ -730,9 +730,9 @@ void RwaCreator::exportForTransferToPlayer()
         dir.removeRecursively();
 
     prepareWrite1(fullDirectory, flags);
-    write1("Export zip for RWA Server", flags, fullpath);
+    write1("Export zip for RWA Sharing Server", flags, fullpath);
 
-    setWindowTitle(backend->projectName + " Successfully exported for XCode iOS build");
+    setWindowTitle(backend->projectName + " Successfully exported for transfer to RWA Player");
     QTimer::singleShot(2000, [this]{setWindowTitle(backend->projectName);});
 }
 
@@ -781,7 +781,7 @@ void RwaCreator::exportZip()
     while(pclose(pipe) != -1)
         ;
 
-    setWindowTitle(backend->projectName + " Successfully exported zip");
+    setWindowTitle(backend->projectName + " Successfully sent ZIP to Sharing Server");
     QTimer::singleShot(2000, [this]{setWindowTitle(backend->projectName);});
 }
 
@@ -792,7 +792,7 @@ void RwaCreator::exportProject()
           | RWAEXPORT_SAVEAS
           | RWAEXPORT_CREATEFOLDERS;
 
-    QString fullpath = QFileDialog::getSaveFileName(this, tr("Save RWA File"),
+    QString fullpath = QFileDialog::getSaveFileName(this, tr("Copy entire RWA Project Folder"),
                                          QDir::homePath(),
                                          tr("RWA Files (*.rwa *.xml)"));
 
@@ -825,7 +825,7 @@ void RwaCreator::saveAs()
     qint32 flags = 0;
     flags |= RWAEXPORT_SAVEAS;
 
-    QString fullpath = QFileDialog::getSaveFileName(this, tr("Save RWA File"),
+    QString fullpath = QFileDialog::getSaveFileName(this, tr("Save Version of RWA Project File"),
                                          backend->completeProjectPath,
                                          tr("RWA Files (*.rwa *.xml)"));
 
