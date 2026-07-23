@@ -531,16 +531,16 @@ void RwaCreator::initFileMenu(QMenu *fileMenu)
     action = fileMenu->addAction(tr("Save"));
     connect(action, SIGNAL(triggered()), this, SLOT(save()));
 
-    action = fileMenu->addAction(tr("Save as"));
+    action = fileMenu->addAction(tr("Save Version as..."));
     connect(action, SIGNAL(triggered()), this, SLOT(saveAs()));
 
-    action = fileMenu->addAction(tr("Export Project"));
+    action = fileMenu->addAction(tr("Copy Project to..."));
     connect(action, SIGNAL(triggered()), this, SLOT(exportProject()));
 
-    action = fileMenu->addAction(tr("Export for XCode Client Project"));
+    action = fileMenu->addAction(tr("Export Project for transfer to RWA Player..."));
     connect(action, SIGNAL(triggered()), this, SLOT(exportToXCodeClientProject()));
 
-    action = fileMenu->addAction(tr("Export for Server Download"));
+    action = fileMenu->addAction(tr("Send Project to Sharing Server..."));
     connect(action, SIGNAL(triggered()), this, SLOT(exportZip()));
 }
 
@@ -550,7 +550,7 @@ void RwaCreator::enterFilePathPreferences()
 {
     QStringList labels;
     QStringList values;
-    labels << "Download Path" << "Export Games Path";
+    labels << "Sharing Server Path" << "Project Export Path";
     values << backend->completeClientDownloadPath << backend->completeXCodeClientProjectExportPath;
     QStringList list = RwaInputDialog::getStrings(this, labels, values);
     if (!list.isEmpty()) {
@@ -792,7 +792,7 @@ void RwaCreator::exportProject()
           | RWAEXPORT_SAVEAS
           | RWAEXPORT_CREATEFOLDERS;
 
-    QString fullpath = QFileDialog::getSaveFileName(this, tr("Save Rwa File"),
+    QString fullpath = QFileDialog::getSaveFileName(this, tr("Save RWA File"),
                                          QDir::homePath(),
                                          tr("RWA Files (*.rwa *.xml)"));
 
@@ -825,7 +825,7 @@ void RwaCreator::saveAs()
     qint32 flags = 0;
     flags |= RWAEXPORT_SAVEAS;
 
-    QString fullpath = QFileDialog::getSaveFileName(this, tr("Save Rwa File"),
+    QString fullpath = QFileDialog::getSaveFileName(this, tr("Save RWA File"),
                                          backend->completeProjectPath,
                                          tr("RWA Files (*.rwa *.xml)"));
 
@@ -871,7 +871,7 @@ qint32 RwaCreator::open(QString fileName, bool throwDialogue)
     else
     {
         if(throwDialogue)
-            fullpath = QFileDialog::getOpenFileName(this, tr("Open Bookmark File"), QDir::currentPath(),tr("RWA Files (*.rwa *.xml)"));
+            fullpath = QFileDialog::getOpenFileName(this, tr("Open RWA File"), QDir::currentPath(),tr("RWA Files (*.rwa *.xml)"));
     }
 
     if (fullpath.isEmpty() || fullpath.isNull())
