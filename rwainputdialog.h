@@ -23,9 +23,9 @@ class RwaInputDialog : public QDialog
 {
     Q_OBJECT
 public:
-    RwaInputDialog(QWidget *parent = nullptr, QStringList labels = QStringList(), QStringList values = QStringList());
+    RwaInputDialog(QWidget *parent = nullptr, QStringList labels = QStringList(), QStringList values = QStringList(), QString title = QString());
 
-    static QStringList getStrings(QWidget *parent, QStringList _labels, QStringList values, bool *ok = nullptr);
+    static QStringList getStrings(QWidget *parent, QStringList _labels, QStringList values, QString title, bool *ok = nullptr);
 
     private:
         QList<QLineEdit*> fields;

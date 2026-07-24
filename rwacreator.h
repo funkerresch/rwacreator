@@ -375,7 +375,7 @@ private slots:
  * tilecache folder for a mobile client. <br>
  */
 
-    void exportToXCodeClientProject();
+    void exportForTransferToPlayer();
 
 /**
  * @brief Exports (copies) a project for a mobile client as *.zip-file. <br>

@@ -377,7 +377,7 @@ void RwaViewToolbar::initControls()
     activateClientSyncButton->setIcon(QIcon(path+"images/syncwithclients.svg"));
     activateClientSyncButton->setIconSize(QSize(20,20));
     activateClientSyncButton->setFixedSize(QSize(20,20));
-    activateClientSyncButton->setToolTip("Activate File Server for downloading games from clients");
+    activateClientSyncButton->setToolTip("Activate Sharing Server for downloading projects in RWA Player");
     addWidget(activateClientSyncButton);
 
     findButton = new QToolButton(this);

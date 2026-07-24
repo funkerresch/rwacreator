@@ -45,7 +45,7 @@ void RwaBackend::StartHttpServer1(qint32 port)
 {
     serverThread = new QThread();
     serverThread->setObjectName("RWA Listener");
-    RwaGamesServer* worker = new RwaGamesServer(&svr, port, completeClientDownloadPath.toStdString());
+    RwaGamesServer* worker = new RwaGamesServer(&svr, port, completeSharingServerPath.toStdString());
     worker->moveToThread(serverThread);
     connect( serverThread, &QThread::started, worker, &RwaGamesServer::process);
     connect( serverThread, &QThread::finished, worker, &QObject::deleteLater);
@@ -106,9 +106,9 @@ RwaBackend::RwaBackend(QWidget *parent) :
     completeUndoPath = QString();
     completeAssetPath = QString();
     completeTmpPath = QString();
-    completeXCodeClientProjectExportPath = QString("%1%2").arg(QDir::homePath()).arg("/Desktop");
-    completeClientDownloadPath = QString("%1%2").arg(QDir::homePath()).arg("/Library/Application Support/RWACreator/Games");
-    completeClientDownloadPathWithEscape = QString("%1%2").arg(QDir::homePath()).arg("\"/Library/Application Support/RWACreator/Games\"");
+    completeTransferToPlayerExportPath = QString("%1%2").arg(QDir::homePath()).arg("/Desktop");
+    completeSharingServerPath = QString("%1%2").arg(QDir::homePath()).arg("/Library/Application Support/RWACreator/Games");
+    completeSharingServerPathWithEscape = QString("%1%2").arg(QDir::homePath()).arg("\"/Library/Application Support/RWACreator/Games\"");
     applicationSupportPath = QString("%1%2").arg(QDir::homePath()).arg("/Library/Application Support/RWACreator");
     applicationSupportPathWithEscape = QString("%1%2").arg(QDir::homePath()).arg("\"/Library/Application Support/RWACreator\"");
     projectName = QString();
