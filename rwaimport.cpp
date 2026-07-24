@@ -170,7 +170,7 @@ void RwaImport::readRwa()
                 if(xml.attributes().hasAttribute("level"))
                     scene->setLevel(xml.attributes().value("level").toInt());
                 else
-                    scene->setLevel(backend->getScenes().count()-1);
+                    scene->setLevel(backend ? backend->getScenes().count()-1 : 0);
 
                 readSceneCorners();
                 readState();
@@ -208,10 +208,13 @@ void RwaImport::readRwa()
     if (xml.hasError())
           qDebug() << "Error in XML file.";
 
-    if(currentSceneName == "")
-        backend->receiveLastTouchedScene(backend->getScenes().first());
-    else
-        backend->receiveLastTouchedScene(backend->getScene(currentSceneName));
+    if(backend) // headless import (trace harness) has no GUI to synchronize
+    {
+        if(currentSceneName == "")
+            backend->receiveLastTouchedScene(backend->getScenes().first());
+        else
+            backend->receiveLastTouchedScene(backend->getScene(currentSceneName));
+    }
 }
 
 void RwaImport::readActions()
@@ -586,7 +589,10 @@ void RwaImport::readAssets()
                 tmp[1] = lat;
 
                 path = QString("%1").arg(url);
-                path = QString("%1/%2").arg(backend->completeAssetPath).arg(fileName);
+                if(backend)
+                    path = QString("%1/%2").arg(backend->completeAssetPath).arg(fileName);
+                else
+                    path = QString("%1/assets/%2").arg(projectPath).arg(fileName);
 
                 RwaAsset1 *item = new RwaAsset1(path.toStdString(),gps, type, id);
                 item->setStartPosition(tmp);

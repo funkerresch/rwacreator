@@ -63,6 +63,8 @@ void RwaBackend::setSampleRate(qint32 newSampleRate)
         sampleRate = newSampleRate;
     else
         sampleRate = 48000;
+
+    RwaRuntime::pdSampleRate = sampleRate;
 }
 
 void RwaBackend::StopHttpServer1()
@@ -115,7 +117,7 @@ RwaBackend::RwaBackend(QWidget *parent) :
     headtracker = RwaHeadtrackerConnect::getInstance();
     clipboardStates = new RwaScene(std::string("ClipboardScene"), std::vector<double>(2, 0.0), 0);
     assetStringList = QStringList();
-    sampleRate = 48000;
+    setSampleRate(48000);
     appendScene();
 }
 
@@ -607,11 +609,13 @@ void RwaBackend::receiveLogLonAndLat(int onOff)
 void RwaBackend::receiveLogLibPd(int onOff)
 {
     logPd = onOff;
+    RwaRuntime::logPd = onOff;
 }
 
 void RwaBackend::receiveLogSimulator(int onOff)
 {
     logSim = onOff;
+    RwaRuntime::logSim = onOff;
 }
 
 void RwaBackend::receiveLogOther(int onOff)

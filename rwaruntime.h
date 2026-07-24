@@ -75,6 +75,13 @@ RwaRuntime(QObject *parent, const char *pdpath, const char *assetPath, float sam
     float schedulerRate = 0;
     float lastP = 0;
 
+    // Runtime config formerly read live from the RwaBackend singleton; kept as
+    // statics so the engine compiles and runs without the Qt GUI backend
+    // (headless trace harness). The GUI mirrors its toggles into these.
+    static bool logSim;
+    static bool logPd;
+    static float pdSampleRate; // sample rate of the pd patches (48 kHz), distinct from the device rate passed to the ctor
+
     static bool debug;
     static std::list<RwaEntity *> entities;
 

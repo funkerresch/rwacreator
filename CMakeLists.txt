@@ -523,3 +523,64 @@ add_custom_command(TARGET rwacreator POST_BUILD
     COMMENT "Renaming bundle to '${BUNDLE_NAME}.app'"
     VERBATIM
 )
+
+# ------------------------------------------------------------------------------
+# rwatrace — headless engine trace harness (no audio, no GUI).
+# Links the engine sources against tools/trace/fake_libpd.cpp instead of the
+# real libpd/portaudio; used for golden-trace parity testing against the iOS
+# Player. See docs/engine-runtime-investigation.md.
+# ------------------------------------------------------------------------------
+
+option(RWA_BUILD_TRACE_TOOLS "Build the headless rwatrace engine harness" ON)
+
+if(RWA_BUILD_TRACE_TOOLS)
+    qt_add_executable(rwatrace
+        tools/trace/rwatracemain.cpp
+        tools/trace/fake_libpd.cpp
+        tools/trace/fake_libpd.h
+        tools/trace/stub_backend.cpp
+        rwaruntime.cpp
+        rwaruntime.h
+        rwaentity.cpp
+        rwascene.cpp
+        rwastate.cpp
+        rwaasset1.cpp
+        rwaarea.cpp
+        rwalocation1.cpp
+        rwautilities.cpp
+        rwaattribute.cpp
+        rwaimport.cpp
+        clipper/clipper.cpp
+    )
+
+    target_include_directories(rwatrace PRIVATE
+        ${CMAKE_SOURCE_DIR}
+        ${CMAKE_SOURCE_DIR}/tools/trace
+        ${CMAKE_SOURCE_DIR}/vas_library/source
+        ${CMAKE_SOURCE_DIR}/vas_library/examples/PureData
+        ${CMAKE_SOURCE_DIR}/libpd/libpd_wrapper
+        ${CMAKE_SOURCE_DIR}/libpd/pure-data/src
+        ${CMAKE_SOURCE_DIR}/portaudio/include
+        ${CMAKE_SOURCE_DIR}/ofq/libofqf
+        ${CMAKE_SOURCE_DIR}/cpp-httplib
+        ${CMAKE_SOURCE_DIR}/taglib
+        ${CMAKE_SOURCE_DIR}/taglib/taglib
+        ${CMAKE_SOURCE_DIR}/taglib/taglib/ogg
+        ${CMAKE_SOURCE_DIR}/taglib/taglib/toolkit
+        ${CMAKE_SOURCE_DIR}/taglib/3rdparty
+    )
+
+    # Widgets/Bluetooth/SerialPort are header-only needs (rwautilities.h,
+    # rwabackend.h include chain); the harness only instantiates QCoreApplication.
+    target_link_libraries(rwatrace PRIVATE
+        Qt6::Widgets
+        Qt6::Gui
+        Qt6::Core
+        Qt6::Network
+        Qt6::Bluetooth
+        Qt6::Multimedia
+        Qt6::SerialPort
+        tag
+        z
+    )
+endif()

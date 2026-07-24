@@ -1,0 +1,16 @@
+{
+  "schema": "rwa-scenario/1",
+  "description": "Smoke test against rwatest: background state starts forest.ogg; hero walks north-east across the scene, turns head, steps.",
+  "game": "rwatest/rwatest.rwa",
+  "startScene": "Scene 0",
+  "durationMs": 10000,
+  "timeline": [
+    { "t": 0,    "pos": { "lon": 7.94604957, "lat": 47.28877782 } },
+    { "t": 2000, "pos": { "lon": 7.94620000, "lat": 47.28890000 } },
+    { "t": 3000, "azimuth": 90 },
+    { "t": 4000, "pos": { "lon": 7.94650000, "lat": 47.28910000 } },
+    { "t": 5000, "step": true },
+    { "t": 6000, "pos": { "lon": 7.94680000, "lat": 47.28930000 } },
+    { "t": 8000, "playFinished": { "asset": "forest.ogg" } }
+  ]
+}

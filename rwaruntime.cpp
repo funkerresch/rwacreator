@@ -1,7 +1,4 @@
 #include "rwaruntime.h"
-#ifdef QT_VERSION
-#include "rwabackend.h"
-#endif
 
 std::list <RwaEntity *> RwaRuntime::entities;
 bool RwaRuntime::debug;
@@ -19,6 +16,10 @@ pdPatcher RwaRuntime::monoPatchersOgg[RWARUNTIME_MAXNUMBEROFPATCHERS];
 
 std::list<pdPatcher *> RwaRuntime::dynamicPatchers1;
 RwaBackend *RwaRuntime::backend;
+
+bool RwaRuntime::logSim = false;
+bool RwaRuntime::logPd = false;
+float RwaRuntime::pdSampleRate = 48000;
 
 #ifdef QT_VERSION
 #define INIT_LIBPD_QUEUED
@@ -156,19 +157,13 @@ void RwaRuntime::createAndBindPlayFinishedReceiver(pdPatcher *patcher)
 
 void RwaRuntime::printpd(const char *s)
 {
-    if(!backend)
-        return;
-
-    if(backend->logPd)
+    if(logPd)
         qInfo() << QString::fromLatin1(s).trimmed();
 }
 
 void RwaRuntime::floatpd(const char *source, float value)
 {
-    if(!backend)
-        return;
-
-     if(backend->logPd)
+     if(logPd)
          qInfo() << source << " " << value;
 }
 
@@ -280,7 +275,7 @@ void RwaRuntime::bangpdHelp(int32_t patcherTag, std::map<string, RwaEntity::Asse
         {
             i = assetItemMap.erase(i);
             releasePatcherFromItem(item);
-            if(backend->logSim)
+            if(logSim)
                 qInfo() <<  "Released Asset" << ": " << QString::fromStdString(assetItem->fileName);
 
             return;
@@ -430,7 +425,7 @@ void *RwaRuntime::findFreeDynamicPatcher(RwaAsset1 *asset)
         {
              patcher->isBusy = true;
 
-             if(backend->logSim)
+             if(logSim)
                  qInfo() <<  "Found Dynamic PD Asset" << ": " << QString::fromStdString(patcher->name);
 
              return patcher->patcherTag;
@@ -455,7 +450,7 @@ void RwaRuntime::freeDynamicPdPatchers1()
 
     dynamicPatchers1.clear();
 
-    if(backend->logSim)
+    if(logSim)
         qDebug() << "Freed all dynamic Patchers";
 }
 
@@ -482,7 +477,7 @@ void RwaRuntime::initDynamicPdPatchers(RwaEntity *entitiy)
                         newPatcher->name = asset->fileName;
                         createAndBindPlayFinishedReceiver(newPatcher);
                         dynamicPatchers1.push_back(newPatcher);
-                        if(backend->logSim)
+                        if(logSim)
                             qInfo() <<  "Initialize Pd Asset" << ": " << QString::fromStdString(newPatcher->name);
                     }
                 }
@@ -544,7 +539,7 @@ void RwaRuntime::sendEnd2activeAssets(RwaEntity *entity)
             if(pdMutex != nullptr)
                 pdMutex->unlock();
 
-            if(backend->logSim)
+            if(logSim)
                 qInfo() <<  "End active asset: "  << QString::fromStdString(assetItem->fileName);
 
             ++i;
@@ -793,7 +788,7 @@ int32_t RwaRuntime::findFreePatcher(RwaAsset1 *asset)
 
 void RwaRuntime::sendInitValues2pd(RwaAsset1 *asset, int patcherTag)
 {
-    if(backend->logSim)
+    if(logSim)
         qDebug();
 
     char pdReceiver[50];
@@ -806,7 +801,7 @@ void RwaRuntime::sendInitValues2pd(RwaAsset1 *asset, int patcherTag)
         asset->playheadPosition = 0;
     else
     {
-        firstCrossfadeAfter-= (asset->playheadPosition/(backend->sampleRate/1000.));
+        firstCrossfadeAfter-= (asset->playheadPosition/(pdSampleRate/1000.));
 
         if(firstCrossfadeAfter <0)
         {
@@ -843,7 +838,7 @@ void RwaRuntime::sendInitValues2pd(RwaAsset1 *asset, int patcherTag)
 
      sprintf (pdReceiver, "%d-samplerate", patcherTag);
      pdMutex->lock();
-     libpd_float(pdReceiver, backend->sampleRate);
+     libpd_float(pdReceiver, pdSampleRate);
      pdMutex->unlock();
 
      sprintf (pdReceiver, "%d-dampingfunction", patcherTag);
@@ -1240,16 +1235,16 @@ void RwaRuntime::sendData2Asset(RwaEntity *entity, RwaEntity::AssetMapItem item)
     {
         asset->playheadPositionWithoutOffset += schedulerRate;
         if(asset->playheadPositionWithoutOffset >= asset->offset)
-            asset->playheadPosition += ((float)schedulerRate/1000. * backend->sampleRate);
+            asset->playheadPosition += ((float)schedulerRate/1000. * pdSampleRate);
 
-        if(asset->playheadPosition >= asset->fadeOutAfter/1000. * backend->sampleRate)
+        if(asset->playheadPosition >= asset->fadeOutAfter/1000. * pdSampleRate)
         {
             asset->playheadPosition = 0;
             if(!asset->getLoop())
                 asset->updatePlayheadPosition = false;
 
         }
-        if(asset->playheadPosition - lastP > backend->sampleRate)
+        if(asset->playheadPosition - lastP > pdSampleRate)
             lastP = asset->playheadPosition;
     }
 }
@@ -1365,7 +1360,7 @@ bool RwaRuntime::entityIsWithinArea(RwaEntity *entity, RwaArea *area, int offset
 
 void RwaRuntime::setScene(RwaEntity *entity, RwaScene *scene)
 {
-    if(backend->logSim)
+    if(logSim)
         qDebug() << "Enter New Scene: " << QString::fromStdString(scene->objectName());
 
     if(entity->getCurrentScene())
@@ -1548,7 +1543,7 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
                     entity->setTimeInCurrentState(0);
                     emit sendSelectedState(state);
 
-                    if(backend->logSim)
+                    if(logSim)
                         qInfo() << "Enter new State: " << QString::fromStdString(state->objectName());
 
                     break; // we can break here for now
@@ -1575,7 +1570,7 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
             newScene = QString::fromStdString(background->getNextScene());
             if(newScene.compare(""))
             {
-                if(backend->logSim)
+                if(logSim)
                     qInfo() << "Enter new Scene after timeout.";
 
                 sendEnd2activeAssets(entity);
@@ -1601,7 +1596,7 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
         if(entity->getTimeInCurrentState() > state->getTimeOut() && state->getTimeOut() > 0)
         {
             sendEnd2activeAssets(entity);
-            if(backend->logSim)
+            if(logSim)
                 qInfo() << "Will exit State after timeout.";
 
             exitState = true;
@@ -1690,7 +1685,7 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
                 entity->setCurrentState(nextState); // set to fallback state
                 entity->setTimeInCurrentState(0);
                 emit sendSelectedState(nextState);
-                if(backend->logSim)
+                if(logSim)
                     qInfo() << "Enter Fallback State";
             }
         }
@@ -1736,7 +1731,7 @@ void RwaRuntime::endBackgroundState()
             i = entity->backgroundAssets.erase(i);
             releasePatcherFromItem(item);
             resetPatcher(intPatcherTag);
-            if(backend->logSim)
+            if(logSim)
                 qInfo() << "Free Background Asset: " << intPatcherTag;
         }
     }

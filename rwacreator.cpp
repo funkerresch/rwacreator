@@ -338,9 +338,9 @@ void RwaCreator::selectSampleRate(qint32 index)
     QSettings settings;
 
     if(index == 0)
-        backend->sampleRate = 44100;
+        backend->setSampleRate(44100);
     if(index == 1)
-        backend->sampleRate = 48000;
+        backend->setSampleRate(48000);
 
     qInfo() << backend->sampleRate;
 
