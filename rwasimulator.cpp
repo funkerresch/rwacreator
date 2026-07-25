@@ -137,7 +137,7 @@ void RwaSimulator::receiveRegisterMessage(QVariant data)
     oscDevice *newDevice = new oscDevice;
     newDevice->name = data.toList().at(0).toString();
     newDevice->ip = data.toList().at(1).toString();
-    newDevice->oscClient =  new QOscClient( QHostAddress(newDevice->ip), 8000, nullptr ); //FOR MAX CHANGE THIS TO 8001
+    newDevice->oscClient =  new QOscClient( QHostAddress(newDevice->ip), 8001, nullptr );
     qDebug() << "Registered iOS Client " << newDevice->ip;
     devices.append(newDevice);
     devicesRegistered = true;
