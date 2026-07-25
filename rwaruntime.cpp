@@ -917,6 +917,9 @@ void RwaRuntime::sendInitValues2pd(RwaAsset1 *asset, int patcherTag)
      pdMutex->lock();
      libpd_symbol(pdReceiver, fullAssetPath.str().c_str());
      pdMutex->unlock();
+
+     if(logSim)
+         qDebug() << "Initialised asset: " << asset->fileName << " sent to patcher id " << patcherTag << ", gain: " << asset->gain;
 }
 
 void RwaRuntime::processAssets(RwaEntity *entity)
@@ -1374,6 +1377,7 @@ void RwaRuntime::setScene(RwaEntity *entity, RwaScene *scene)
     if(entity->getCurrentState())
         entity->getCurrentState()->setBlockUntilRadiusHasBeenLeft(false);
 
+    // switch to the new/first scene
     entity->setCurrentScene(scene);
     entity->setTimeInCurrentScene(0);
 
@@ -1411,12 +1415,16 @@ void RwaRuntime::startBackgroundState(RwaEntity *entity)
 
     entityState = entity->getCurrentScene()->getBackgroundState();
 
+    if(logSim)
+        qInfo() << "Starting Background State of " << QString::fromStdString((entity->getCurrentScene())->objectName());
+
     if(entityState == NULL)
         return;
 
     if(entityState->getAssets().empty())
         return;
 
+    // contrary to RwaRuntime::processAssets, this loads all assets in one go (no scheduler-tick between loads)
     foreach(asset, entityState->getAssets())
     {
         if(!asset->mute)
@@ -1427,11 +1435,10 @@ void RwaRuntime::startBackgroundState(RwaEntity *entity)
              pdMutex->lock();
              libpd_float(gain2pd, asset->gain);
              pdMutex->unlock();
-             qDebug() << "Send Values for Background Assets";
              sendInitValues2pd(asset, patcherTag);
              entity->addBackgroundAsset(asset->uniqueId, asset, patcherTag);
-           //  if(backend->getLogSim())
-               // qDebug() << "Add Background Asset: " << QString::fromStdString(asset->fileName);
+             if(logSim)
+                 qDebug() << "Add Background Asset: " << QString::fromStdString(asset->fileName);
         }
     }
 }
