@@ -303,7 +303,8 @@ void RwaRuntime::bangpd(const char *source)
 
     if(!strcmp(receiver, "playfinished"))
     {
-        qDebug() << "playfinished";
+        if(logSim)
+            qDebug() << "playfinished";
         RwaEntity *entity;
         RwaEntity::AssetMapItem item;
 
@@ -930,19 +931,18 @@ void RwaRuntime::processAssets(RwaEntity *entity)
     {
         if(!entity->isActiveAsset(asset->uniqueId) && !asset->getBlocked() && !asset->mute && !asset->getBlockedForever())
         {
-            qDebug() << asset->type;
-
             patcherTag = findFreePatcher(asset);
             sendInitValues2pd(asset, patcherTag);
+
             if(asset->playOnlyOnce)
-            {
                 asset->setBlockedForever(true);
-                qDebug() << "BLOCKFOREVER";
-            }
 
             entity->addActiveAsset(asset->uniqueId, asset, patcherTag);
 
-            qInfo() << "Add Active Asset: " << QString::fromStdString(asset->fileName);
+            if(logSim) {
+                qInfo() << "Add Active Asset: " << QString::fromStdString(asset->fileName);
+                qDebug() << asset->type;
+            }
 
             break;
         }
@@ -1361,7 +1361,7 @@ bool RwaRuntime::entityIsWithinArea(RwaEntity *entity, RwaArea *area, int offset
 void RwaRuntime::setScene(RwaEntity *entity, RwaScene *scene)
 {
     if(logSim)
-        qDebug() << "Enter New Scene: " << QString::fromStdString(scene->objectName());
+        qInfo() << "Enter New Scene: " << QString::fromStdString(scene->objectName());
 
     if(entity->getCurrentScene())
     {
