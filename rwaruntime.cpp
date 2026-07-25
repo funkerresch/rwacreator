@@ -884,12 +884,12 @@ void RwaRuntime::sendInitValues2pd(RwaAsset1 *asset, int patcherTag)
 
      sprintf(pdReceiver, "%d-fadeintime", patcherTag);
      pdMutex->lock();
-     libpd_float(pdReceiver, asset->fadeInTime);
+     libpd_float(pdReceiver, asset->getFadeInTime());
      pdMutex->unlock();
 
      sprintf(pdReceiver, "%d-fadeouttime", patcherTag);
      pdMutex->lock();
-     libpd_float(pdReceiver, asset->fadeOutTime);
+     libpd_float(pdReceiver, asset->getFadeOutTime());
      pdMutex->unlock();
 
      sprintf(pdReceiver, "%d-crossfadetime", patcherTag);
