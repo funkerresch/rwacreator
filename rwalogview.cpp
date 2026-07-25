@@ -1,6 +1,7 @@
 #include "rwalogview.h"
 #include <QMetaType>
 #include <QVBoxLayout>
+#include <QtLogging>
 #include "rwabackend.h"
 
 RwaLogWindow::RwaLogWindow(QWidget *parent) :
@@ -15,6 +16,7 @@ RwaLogWindow::RwaLogWindow(QWidget *parent) :
     setLayout(layout);
     logView = new QPlainTextEdit(this);
     logView->setReadOnly(true);
+    logView->setStyleSheet("QPlainTextEdit { font-family: 'Andale Mono', monospace; font-size: 12pt; }");
     layout->addWidget(logView);
 
     QHBoxLayout *buttonLayout = new QHBoxLayout;
@@ -94,32 +96,12 @@ void RwaLogWindow::outputMessage(QtMsgType type, const QMessageLogContext &conte
         return;
     }
 
-    // extract context safely
-    QString file = context.file ? QString::fromUtf8(context.file) : QString();
-    QString function = context.function ? QString::fromUtf8(context.function) : QString();
+    // extract filename safely
+    // quirky fix around qSetMessagePattern showing the whole path
+    QString file = (type == QtDebugMsg && context.file) ? QString::fromUtf8(context.file) : QString();
+    if (!file.isEmpty())
+        file = " (" + QFileInfo(file).fileName();
 
-    if (!file.isEmpty()) {
-        file = QFileInfo(file).fileName();
-    }
-
-    QString prefix;
-    switch (type) {
-        case QtDebugMsg:    prefix = QStringLiteral("Debug"); break;
-        case QtInfoMsg:     prefix = QStringLiteral("Info"); break;
-        case QtWarningMsg:  prefix = QStringLiteral("Warning"); break;
-        case QtCriticalMsg: prefix = QStringLiteral("Critical"); break;
-        case QtFatalMsg:    prefix = QStringLiteral("Fatal"); break;
-    }
-
-    QString output;
-    if (logLevel == msgSeverity(QtDebugMsg))
-        output = QStringLiteral("%1: %2 (%3:%4, %5)")
-                        .arg(prefix, msg, file)
-                        .arg(context.line)
-                        .arg(function);
-    else
-        output = QStringLiteral("%1: %2")
-                        .arg(prefix, msg);
-
-    logView->appendPlainText(output);
+    qSetMessagePattern("[%{time hh:mm:ss.zzz}] [%{type}]\t%{message}%{if-debug}:%{line}, %{function})%{endif}");
+    logView->appendPlainText(qFormatLogMessage(type, context, msg + file));
 }
