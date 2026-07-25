@@ -337,8 +337,52 @@ private:
     float movementSpeed = 20;
     float waitTimeBeforeMovement = 0;
 
+    /**
+     * @brief Defines the asset type
+     *
+     * Valid options defined by `RWAASSETTYPE_*`:
+     * - 1 WAV
+     * - 2 AIF
+     * - 3 PD
+     * - 4 ITEM
+     * - 5 ENTITY
+     * - 6 OGG
+     */
     int32_t type;
-    int32_t playbackType = -1; // binaural, stereo, mono, etc..
+
+    /**
+     * @brief Defines the audio output playback mode, i.e. PD patcher used for playback.
+     *
+     * Valid options defined by `RWAPLAYBACKTYPE_*`:
+     * - -1 Default / Unset
+     * - 0 (no define) Undetermined (label in rwaassetattributeview.cpp)
+     * - 1 MONO
+     * - 2 STEREO
+     * - 3 NATIVE: Auto
+     * - 4 BINAURAL / BINAURALMONO: Legacy
+     * - 5 BINAURALSTEREO: Legacy
+     * - 6 BINAURALAUTO: Legacy
+     * - 7 BINAURAL5CHANNEL: Legacy
+     *
+     * FABIAN HRTF (binaural) Types:
+     * - 8 BINAURAL_FABIAN / BINAURALMONO_FABIAN
+     * - 9 BINAURALSTEREO_FABIAN
+     * - 10 BINAURALAUTO_FABIAN
+     * - 11 BINAURAL5CHANNEL_FABIAN
+     * - 12 BINAURAL7CHANNEL_FABIAN
+     * - 13 BINAURALSPACE
+     *
+     * Custom Types:
+     * - 14-16 CUSTOM1..3: Custom IR-Set 1..3 (not implemented)
+     */
+    int32_t playbackType = -1;
+    /**
+     * @brief Damping Function for distance attenuation
+     *
+     * - 0 None
+     * - 1 Exponential (default)
+     * - 2 Linear
+     */
     int32_t dampingFunction = 1;
     int32_t fadeOutTime = 50;
     int32_t fadeInTime = 50;
@@ -353,7 +397,7 @@ private:
     bool mute = false;
     bool isExclusive = false; // no other asset at the same time
     bool isActive = false;    // currently active
-    bool isAlive = true;     // can be activated (in principle)
+    bool isAlive = true;      // can be activated (in principle)
     bool loop = false;        // start again automatically while within state radius
     bool blocked = false;     // blocked, can't be activated; for example: blocked by another client..
     bool blockedForever = false;
