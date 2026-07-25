@@ -99,6 +99,7 @@ void RwaEntity::addBackgroundAsset(string assetName, RwaAsset1 *item, int32_t pa
     this->backgroundAssets.insert(std::make_pair(assetName, newMapItem));
 }
 
+// when called by RwaRuntime::processAssets, argument assetName is set to asset->uniqueId
 bool RwaEntity::isActiveAsset(string assetName)
 {
     if(this->activeAssets.find(assetName) != this->activeAssets.end())

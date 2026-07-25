@@ -1773,6 +1773,9 @@ void RwaRuntime::emptyPdMessageQueue()
 #endif
 }
 
+/**
+ * RwaSimulator::gameLoopTimer (T = 25ms) -> RwaSimulator::updateRwaGameState() -> RwaRuntime::update()
+ */
 void RwaRuntime::update(RwaEntity *entity)
 {
     //if(!devicesRegistered)
