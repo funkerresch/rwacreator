@@ -1374,32 +1374,53 @@ bool RwaRuntime::entityIsWithinArea(RwaEntity *entity, RwaArea *area, int offset
     return false;
 }
 
+/**
+ * Transition entity into a new scene
+ *
+ * - end old bg assets
+ * - unblock old state
+ * - switch scene
+ * - if fallback activates: end old active assets, enter fallback state
+ * - else assets keep playing until new state is triggered
+ * - start new bg state.
+ */
 void RwaRuntime::setScene(RwaEntity *entity, RwaScene *scene)
 {
     if(logSim)
-        qInfo() << "Enter New Scene: " << QString::fromStdString(scene->objectName());
+        qInfo() << "Enter new scene: " << QString::fromStdString(scene->objectName());
 
-    if(entity->getCurrentScene())
-    {
-        // let bg assets of current scene fade out
-        sendEnd2backgroundAssets(entity);
+    // let bg assets of current scene fade out
+    sendEnd2backgroundAssets(entity);
 
-        // if fallback of new scene can be activated, notify active assets of previous state/scene to end
-        // (otherwhise, active assets stay active until a new state is triggered)
-        if(!scene->fallbackDisabled())
-        {
-            sendEnd2activeAssets(entity);
-            entity->setCurrentState(entity->getCurrentScene()->getStates().front());
-            entity->setTimeInCurrentState(0);
-        }
-    }
-
-    if(entity->getCurrentState())
+    // release the current state's re-entry latch
+    if(entity->getCurrentState()) {
         entity->getCurrentState()->setBlockUntilRadiusHasBeenLeft(false);
+        if(logSim)
+            qDebug() << "Unblocking state " << entity->getCurrentState()->objectName();
+    }
 
     // switch to the new/first scene
     entity->setCurrentScene(scene);
     entity->setTimeInCurrentScene(0);
+
+    // activate fallback
+    // if fallback of new scene can be activated, notify active assets of previous state/scene to end
+    // (otherwhise, active assets stay active until a new state is triggered)
+    if(!scene->fallbackDisabled())
+    {
+        if(scene->getStates().empty())
+            // this should be caught in the XML parseer (InsertDefaultFallbackState)
+            // enforcing presence of BG and FB states
+            qWarning() << "Scene " << QString::fromStdString(scene->objectName()) << " has fallback enabled but no states.";
+        else
+        {
+            RwaState *fallback = scene->getStates().front();
+            if(!fallback->getAssets().empty())
+                sendEnd2activeAssets(entity);
+            entity->setCurrentState(fallback);
+            entity->setTimeInCurrentState(0);
+        }
+    }
 
     startBackgroundState(entity);
     emit sendSelectedScene(scene);
