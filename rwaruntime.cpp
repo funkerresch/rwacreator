@@ -1263,9 +1263,11 @@ void RwaRuntime::sendData2activeAssets(RwaEntity *entity)
 
     foreach(entity, entities)
     {
+        // having an active state,
         entityState = entity->getCurrentState();
         if(entityState != NULL)
         {
+            // update active assets
             if(!entity->activeAssets.empty())
             {
                 std::map<string, RwaEntity::AssetMapItem>::iterator i;
@@ -1273,24 +1275,24 @@ void RwaRuntime::sendData2activeAssets(RwaEntity *entity)
                 {
                     key = i->first;
                     item = i->second;
-
                     sendData2Asset(entity, item);
                 }
                 step = 0;
             }
-        }
 
-        if(!entity->backgroundAssets.empty()) // background assets belong to the scene, update them even without a current state
-        {
-            std::map<string, RwaEntity::AssetMapItem>::iterator i = entity->backgroundAssets.begin();
-            while(i != entity->backgroundAssets.end())
+            // update background assets
+            if(!entity->backgroundAssets.empty())
             {
-                key = i->first;
-                item = i->second;
-                sendData2Asset(entity, item);
-                ++i;
+                std::map<string, RwaEntity::AssetMapItem>::iterator i = entity->backgroundAssets.begin();
+                while(i != entity->backgroundAssets.end())
+                {
+                    key = i->first;
+                    item = i->second;
+                    sendData2Asset(entity, item);
+                    ++i;
+                }
+                step = 0;
             }
-            step = 0;
         }
     }
     emit sendRedrawAssets();
@@ -1368,10 +1370,17 @@ void RwaRuntime::setScene(RwaEntity *entity, RwaScene *scene)
 
     if(entity->getCurrentScene())
     {
+        // let bg assets of current scene fade out
         sendEnd2backgroundAssets(entity);
 
+        // if fallback of new scene can be activated, notify active assets of previous state/scene to end
+        // (otherwhise, active assets stay active until a new state is triggered)
         if(!scene->fallbackDisabled())
+        {
             sendEnd2activeAssets(entity);
+            entity->setCurrentState(entity->getCurrentScene()->getStates().front());
+            entity->setTimeInCurrentState(0);
+        }
     }
 
     if(entity->getCurrentState())
@@ -1380,12 +1389,6 @@ void RwaRuntime::setScene(RwaEntity *entity, RwaScene *scene)
     // switch to the new/first scene
     entity->setCurrentScene(scene);
     entity->setTimeInCurrentScene(0);
-
-    if(!scene->fallbackDisabled() && !scene->getStates().empty())
-    {
-        entity->setCurrentState(scene->getStates().front());
-        entity->setTimeInCurrentState(0);
-    }
 
     startBackgroundState(entity);
     emit sendSelectedScene(scene);
