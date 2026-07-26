@@ -1283,13 +1283,12 @@ void RwaRuntime::sendData2activeAssets(RwaEntity *entity)
             // update background assets
             if(!entity->backgroundAssets.empty())
             {
-                std::map<string, RwaEntity::AssetMapItem>::iterator i = entity->backgroundAssets.begin();
-                while(i != entity->backgroundAssets.end())
+                std::map<string, RwaEntity::AssetMapItem>::iterator i;
+                for (i = entity->backgroundAssets.begin(); i != entity->backgroundAssets.end(); ++i)
                 {
                     key = i->first;
                     item = i->second;
                     sendData2Asset(entity, item);
-                    ++i;
                 }
                 step = 0;
             }
