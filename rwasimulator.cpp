@@ -103,9 +103,16 @@ void RwaSimulator::receiveCurrentStateFromRuntime(RwaState *state)
 
 void RwaSimulator::receiveLastTouchedScene(RwaScene *scene)
 {
+    // while simulating, GUI interactions that change
+    // scenes need to be ignored.
+    if(simulationIsRunning)
+        return;
+
     RwaEntity *entity;
     foreach(entity, entities)
     {
+        if(entity->getCurrentScene() == scene)
+            continue;
         entity->setCurrentScene(scene);
         entity->setTimeInCurrentScene(0);
         sendSelectedScene2Devices();
@@ -248,6 +255,7 @@ void RwaSimulator::setSchedulerRate(const qint32 &value)
     schedulerFrequency = value;
 }
 
+// this seems to be dead code (unused, no callers)
 void RwaSimulator::setCurrentScene(RwaScene *currentScene)
 {
     RwaEntity *entity = entities.front();

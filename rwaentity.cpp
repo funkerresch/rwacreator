@@ -161,6 +161,8 @@ RwaState *RwaEntity::getCurrentState()
 
 void RwaEntity::setCurrentScene(RwaScene *currentScene)
 {
+    if(this->currentScene == currentScene)
+            return;
     this->currentScene = currentScene;
     this->currentState = nullptr;
 }
