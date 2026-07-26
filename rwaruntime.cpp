@@ -811,13 +811,17 @@ void RwaRuntime::sendInitValues2pd(RwaAsset1 *asset, int patcherTag)
         }
     }
 
+    // ctor sets both startPosition and gpsLocation to "gps" vector argument
+    // creator allows to set new start position, at which point they differ
     if(asset->getMoveFromStartPosition())
     {
+        // RwaAsset1::currentPostion <- RwaAsset1::startPosition
         asset->setCurrentPosition(asset->getStartPosition());
         asset->setReachedEndPosition(false);
     }
     else
     {
+        // RwaAsset1::currentPostion <- RwaLocation1::gpsLocation
         asset->setCurrentPosition(asset->getCoordinates());
         asset->setReachedEndPosition(true);
     }
@@ -829,11 +833,13 @@ void RwaRuntime::sendInitValues2pd(RwaAsset1 *asset, int patcherTag)
 
      sprintf(pdReceiver, "%d-assetlon", patcherTag);
      pdMutex->lock();
+     // shouldn't this be asset->getCurrentPosition()? so that moving assets start  in the right place?
      libpd_float(pdReceiver, asset->getCoordinates()[0]);
      pdMutex->unlock();
 
      sprintf(pdReceiver, "%d-assetlat", patcherTag);
      pdMutex->lock();
+     // dito, see -assetlon above
      libpd_float(pdReceiver, asset->getCoordinates()[1]);
      pdMutex->unlock();
 
@@ -880,6 +886,12 @@ void RwaRuntime::sendInitValues2pd(RwaAsset1 *asset, int patcherTag)
      sprintf(pdReceiver, "%d-loop", patcherTag);
      pdMutex->lock();
      libpd_float(pdReceiver, asset->getLoop());
+     pdMutex->unlock();
+
+     // new, sync to RWA Player
+     sprintf(pdReceiver, "%d-gain", patcherTag);
+     pdMutex->lock();
+     libpd_float(pdReceiver, asset->getGain());
      pdMutex->unlock();
 
      sprintf(pdReceiver, "%d-fadeintime", patcherTag);
