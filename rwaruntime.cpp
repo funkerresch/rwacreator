@@ -1577,7 +1577,8 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
                     bool found = (std::find(entity->visitedStates.begin(), entity->visitedStates.end(), state->objectName()) != entity->visitedStates.end());
                     if(!found)
                     {
-                        qInfo() << "Append to visited states" << QString::fromStdString(state->objectName());
+                        if(logSim)
+                            qInfo() << "Append to visited states" << QString::fromStdString(state->objectName());
                         entity->visitedStates.push_back(state->objectName());
                     }
 
@@ -1648,7 +1649,8 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
         {
             if(entity->activeAssets.empty() )
             {
-                qInfo() << "EXIT STATE AFTER ASSETS FINISH";
+                if(logSim)
+                    qDebug() << "exit state after assets finish";
                 exitState = true;
             }
         }
@@ -1660,7 +1662,8 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
                 if( (!state->getLeaveOnlyAfterAssetsFinish() && !entity->getCurrentScene()->fallbackDisabled())
                      || state->stateWithinState)
                 {
-                    qInfo() << "EXIT STATE AFTER LEAVING STATE AREA";
+                    if(logSim)
+                        qDebug() << "exit state after leaving state area";
                     sendEnd2activeAssets(entity);
                     exitState = true;
                 }
@@ -1681,7 +1684,8 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
 
     if(exitState)
     {
-        qInfo() << "EXIT STATE";
+        if(logSim)
+            qInfo() << "Exit state";
         if(hint)
         {
              qDebug() << "auto hint state";
