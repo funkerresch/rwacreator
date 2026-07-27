@@ -34,6 +34,7 @@ add_compile_definitions(
     PUREDATA
     PD
     USINGQT
+    QT_MESSAGELOGCONTEXT
 )
 
 add_compile_options(
