@@ -1435,7 +1435,10 @@ void RwaRuntime::setEntityScene(RwaEntity *entity)
             if(scene != entity->getCurrentScene())
             {
                 if(entityIsWithinArea(entity, scene, RWAAREAOFFSETTYPE_ENTER))
+                {
                     setScene(entity, scene);
+                    return; // parity
+                }
             }
         }
     }
