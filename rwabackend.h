@@ -42,6 +42,14 @@ public:
 public slots:
     void process();
 
+signals:
+    /** Emitted from the httplib worker thread for every request a player makes -
+     *  once when it arrives and once when it has been answered (finished = true).
+     *  The receiver lives in the main thread, so the connection is queued and the
+     *  log view is never touched from the server thread. */
+    void clientRequest(QString clientAddress, QString method, QString path,
+                       bool finished, int status, qint64 bytes);
+
 private:
     httplib::Server *svr; // Reference is passed from backend in order to call stop() from main thread
     int port;
@@ -114,6 +122,11 @@ private:
 
     void StopHttpServer1();
 public slots:
+
+    /** ****************************** Sharing server ******************************************************* */
+
+    void receiveClientRequest(QString clientAddress, QString method, QString path,
+                              bool finished, int status, qint64 bytes);
 
     /** *********************************Undo read and write********************************************** */
 

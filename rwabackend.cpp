@@ -1,6 +1,7 @@
 #include "rwabackend.h"
 #include <QStandardPaths>
 #include <QThread>
+#include <QLocale>
 
 RwaBackend *RwaBackend::instance = nullptr;
 
@@ -30,6 +31,32 @@ void RwaGamesServer::process()
     else
         qDebug() << "Started static file server!";
 
+    // Report what connected players ask for. Both handlers run on an httplib worker
+    // thread and therefore only emit - formatting and the log view belong to the main
+    // thread, which the queued connection in StartHttpServer1 takes care of.
+
+    // Arrival: the download attempt itself. Logged separately because a large game
+    // takes a while to transfer and would otherwise show up only once it is through.
+    svr->set_pre_routing_handler([this](const Request &req, Response &) {
+        emit clientRequest(QString::fromStdString(req.remote_addr),
+                           QString::fromStdString(req.method),
+                           QString::fromStdString(req.path),
+                           false, 0, -1);
+        return Server::HandlerResponse::Unhandled;
+    });
+
+    // Outcome. httplib also calls the logger when writing the response failed, in
+    // which case the status is still the one it started sending - a client that walks
+    // out of wifi mid-download looks like a successful transfer here.
+    svr->set_logger([this](const Request &req, const Response &res) {
+        const std::string length = res.get_header_value("Content-Length");
+        emit clientRequest(QString::fromStdString(req.remote_addr),
+                           QString::fromStdString(req.method),
+                           QString::fromStdString(req.path),
+                           true, res.status,
+                           length.empty() ? -1 : QString::fromStdString(length).toLongLong());
+    });
+
     svr->listen("0.0.0.0", port);
 }
 
@@ -49,7 +76,38 @@ void RwaBackend::StartHttpServer1(qint32 port)
     worker->moveToThread(serverThread);
     connect( serverThread, &QThread::started, worker, &RwaGamesServer::process);
     connect( serverThread, &QThread::finished, worker, &QObject::deleteLater);
+    connect( worker, &RwaGamesServer::clientRequest, this, &RwaBackend::receiveClientRequest);
     serverThread->start();
+
+    qInfo() << "Sharing server listening on port" << port << "serving" << completeSharingServerPath;
+}
+
+/** Logs what the connected players do with the sharing server. Runs in the main thread. */
+
+void RwaBackend::receiveClientRequest(QString clientAddress, QString method, QString path,
+                                      bool finished, int status, qint64 bytes)
+{
+    // httplib percent-decodes req.path for us, so path is already the plain game
+    // name - decoding it a second time would mangle any name containing a '%'.
+
+    if(!finished)
+    {
+        qInfo().noquote() << QString("Player %1 requests %2 %3")
+                                 .arg(clientAddress, method, path);
+        return;
+    }
+
+    const QString size = bytes >= 0 ? QLocale().formattedDataSize(bytes) : QString("unknown size");
+
+    // One arg() call per message, never chained: chaining rescans what was already
+    // substituted, so a game called "50%20 off.zip" would eat the placeholder that
+    // the status goes into.
+    if(status >= 400)
+        qWarning().noquote() << QString("Player %1 could not get %2 (%3)")
+                                    .arg(clientAddress, path, QString::number(status));
+    else
+        qInfo().noquote() << QString("Player %1 got %2 (%3, %4)")
+                                 .arg(clientAddress, path, QString::number(status), size);
 }
 
 qint32 RwaBackend::getSampleRate() const

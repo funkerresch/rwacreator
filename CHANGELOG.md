@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- The sharing server now logs what connected players do, so a creator can see
+  whether a phone reached RWA Creator at all and which game it pulled. Two lines
+  per request — the attempt as it arrives and the outcome once answered:
+
+  ```
+  Player 192.168.1.42 requests GET /My Soundwalk.zip
+  Player 192.168.1.42 got /My Soundwalk.zip (200, 24.3 MiB)
+  Player 192.168.1.42 could not get /Typo.zip (404)
+  ```
+
+  The arrival line is separate on purpose: a game of that size takes a while to
+  transfer and would otherwise only show up once it is through. Starting the
+  server also logs its port and the directory it serves.
+
+  Note that httplib calls its logger even when writing the response failed, and
+  the status is by then already sent — a player who walks out of wifi mid-download
+  is logged as a completed transfer.
+
 ### Fixed
 
 - `build_debug.sh` aborted before signing the bundle when a Homebrew CppUnit is
