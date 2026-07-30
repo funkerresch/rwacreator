@@ -55,6 +55,11 @@ endif()
 # Subprojects (libpd, portaudio, taglib)
 # ------------------------------------------------------------------------------
 
+# We never run the vendored libraries' own test suites, and taglib's break the
+# build: it links them against a Homebrew CppUnit, which is arm64-only, so the
+# x86_64 half of our universal build fails to link.
+set(BUILD_TESTING OFF CACHE BOOL "Build the test suites of vendored libraries" FORCE)
+
 add_subdirectory(libpd)
 add_subdirectory(portaudio)
 add_subdirectory(taglib)

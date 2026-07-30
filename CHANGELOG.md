@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `build_debug.sh` aborted before signing the bundle when a Homebrew CppUnit is
+  installed: taglib then builds its own test suite, which links against an
+  arm64-only library and fails the x86_64 half of the universal build. The
+  vendored libraries' test suites are now off (`BUILD_TESTING`).
+
 ## [v1.3.1] - 2026-07-30
 
 ### Fixed
