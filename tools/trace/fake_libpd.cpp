@@ -54,6 +54,10 @@ extern "C" {
 
 int libpd_init(void) { return 0; }
 
+// No file system in the trace harness: nothing resolves paths, so recording the
+// search path would add nothing to a trace.
+void libpd_add_to_search_path(const char *path) { (void)path; }
+
 int libpd_queued_init(void) { return 0; }
 void libpd_queued_release(void) {}
 

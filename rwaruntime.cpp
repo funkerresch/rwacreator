@@ -55,6 +55,14 @@ RwaRuntime::RwaRuntime(const char *pdpath, const char *assetPath, float sampleRa
     libpd_set_banghook (static_cast<t_libpd_banghook>(RwaRuntime::bangpd));
     libpd_init();
 #endif
+    // Put the bundled Pd resources on Pd's search path. The FABIAN HRTF set
+    // (fabian_dir256.txt, 38 MB) lives there next to the playback patches, so the
+    // bundled patches find it by sitting in the same directory - a creator's own
+    // patcher, opened from the game's assets folder, does not. With the resources
+    // on the search path, [rwa_binauralsimple~ 256 fabian_dir256.txt] resolves from
+    // any patch and the file no longer has to be copied into every project.
+    libpd_add_to_search_path(pdpath);
+
     rwa_binauralsimple_tilde_setup();
     freeverb_tilde_setup();
     oggread_tilde_setup();

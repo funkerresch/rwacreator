@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- The FABIAN HRTF set no longer has to be copied into every project.
+  `[rwa_binauralsimple~ 256 fabian_dir256.txt]` resolved its IR file only next
+  to the patch that instantiated it: the bundled playback patches worked because
+  they sit beside `fabian_dir256.txt` in `Resources/puredata`, while a creator's
+  own Pd patcher — opened from the game's `assets/` folder — did not, unless the
+  38 MB file was copied in by hand. Two changes:
+  - `vas_library` (`vas_pdmaxobject_read`) now resolves the IR through
+    `open_via_path`: absolute path, then the patch's own directory, then Pd's
+    global search path. A missing file is reported by name instead of being
+    passed down as a bad path, and the path is bounded (`fullpath` is 512 bytes,
+    `MAXPDSTRING` is 1000).
+  - `RwaRuntime` registers the bundled `puredata` directory with
+    `libpd_add_to_search_path()`, so any patch resolves the HRTF set from there.
+
+  Existing games that carry their own copy keep working — the patch directory is
+  still searched first. **Engine parity**: mirrored in the Player, which adds
+  `Bundle.main.resourcePath` to the search path in `RwaGameLoop.init`; both apps
+  build the same `vas_library` sources, so the external side is shared.
+
+### Changed
+
+- `vas_library` now tracks `rnd-hsm-klassik/vas_library` (branch
+  `rwa-player-fixes`) instead of `funkerresch/vas_library`, the same fork the
+  Player already used — one lineage for both apps. The fork additionally carries
+  null-terminator fixes in three `vas_mem_alloc` calls, `pd_error` instead of the
+  deprecated `error`, and drops its stale bundled `m_pd.h` copies (Pd headers now
+  come from `libpd/pure-data/src`).
+
 ## [v1.3.0] - 2026-07-29
 
 **Engine parity updates**: align game engine behaviour between RWA Creator and RWA Player
