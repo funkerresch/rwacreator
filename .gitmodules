@@ -1,6 +1,7 @@
 [submodule "vas_library"]
 	path = vas_library
-	url = https://github.com/funkerresch/vas_library.git
+	url = https://github.com/rnd-hsm-klassik/vas_library.git
+	branch = rwa-player-fixes
 [submodule "portaudio"]
 	path = portaudio
 	url = https://github.com/PortAudio/portaudio.git

@@ -117,7 +117,6 @@ set(RWACREATOR_HEADERS
     rwaarea.h
     rwastateview.h
     clipper/clipper.hpp
-    vas_library/examples/PureData/m_pd.h
     vas_library/examples/PureData/rwa_binauralsimple~.h
     vas_library/source/vas_dynamicFirChannel.h
     vas_library/source/vas_fir.h
