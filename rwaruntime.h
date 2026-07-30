@@ -25,6 +25,7 @@
 #include "z_libpd.h"
 #include "m_pd.h"
 #include "util/z_queued.h"
+#include "util/z_print_util.h"
 #include "rwa_binauralsimple~.h"
 #include "rwapdextra~.h"
 

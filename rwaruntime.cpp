@@ -39,13 +39,18 @@ RwaRuntime::RwaRuntime(const char *pdpath, const char *assetPath, float sampleRa
     backend = _backend;
 #endif
 
+    // Pd emits a print in pieces ("print", ": ", "1", " ", "2", "\n"); route them
+    // through libpd's concatenator so printpd sees one complete line instead of
+    // one log entry per symbol plus a trailing empty one.
+    libpd_set_concatenated_printhook (static_cast<t_libpd_printhook>(RwaRuntime::printpd));
+
 #ifdef INIT_LIBPD_QUEUED
-    libpd_set_queued_printhook (static_cast<t_libpd_printhook>(RwaRuntime::printpd));
+    libpd_set_queued_printhook (libpd_print_concatenator);
     libpd_set_queued_floathook (static_cast<t_libpd_floathook>(RwaRuntime::floatpd));
     libpd_set_queued_banghook (static_cast<t_libpd_banghook>(RwaRuntime::bangpd));
     libpd_queued_init();
 #else
-    libpd_set_printhook (static_cast<t_libpd_printhook>(RwaRuntime::printpd));
+    libpd_set_printhook (libpd_print_concatenator);
     libpd_set_floathook (static_cast<t_libpd_floathook>(RwaRuntime::floatpd));
     libpd_set_banghook (static_cast<t_libpd_banghook>(RwaRuntime::bangpd));
     libpd_init();
@@ -157,14 +162,27 @@ void RwaRuntime::createAndBindPlayFinishedReceiver(pdPatcher *patcher)
 
 void RwaRuntime::printpd(const char *s)
 {
-    if(logPd)
-        qInfo() << QString::fromLatin1(s).trimmed();
+    if(!logPd)
+        return;
+
+    QString line = QString::fromUtf8(s).trimmed();
+    if(line.isEmpty())
+        return;
+
+    // the log view drops messages longer than 512 chars, so shorten here
+    // instead of losing the whole line
+    if(line.length() > 500)
+        line = line.left(500) + QStringLiteral("...");
+
+    // noquote(): keep the line as pd wrote it, no surrounding quotes and no
+    // backslash escaping of the contained symbols
+    qInfo().noquote() << "[pd]" << line;
 }
 
 void RwaRuntime::floatpd(const char *source, float value)
 {
      if(logPd)
-         qInfo() << source << " " << value;
+         qInfo().noquote() << "[pd]" << source << value;
 }
 
 pdPatcher *RwaRuntime::findDynamicPatcher(int32_t patcherTag)

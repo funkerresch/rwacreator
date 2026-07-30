@@ -8,6 +8,7 @@
 
 #include "z_libpd.h"
 #include "util/z_queued.h"
+#include "util/z_print_util.h"
 
 #include <deque>
 #include <map>
@@ -31,6 +32,7 @@ std::set<std::string> boundReceivers;
 std::deque<std::string> pendingBangs;
 
 t_libpd_printhook queuedPrintHook = nullptr;
+t_libpd_printhook concatenatedPrintHook = nullptr;
 t_libpd_floathook queuedFloatHook = nullptr;
 t_libpd_banghook queuedBangHook = nullptr;
 
@@ -58,6 +60,9 @@ void libpd_queued_release(void) {}
 void libpd_set_printhook(const t_libpd_printhook hook) { (void)hook; }
 void libpd_set_floathook(const t_libpd_floathook hook) { (void)hook; }
 void libpd_set_banghook(const t_libpd_banghook hook) { (void)hook; }
+
+void libpd_set_concatenated_printhook(const t_libpd_printhook hook) { concatenatedPrintHook = hook; }
+void libpd_print_concatenator(const char *s) { if(concatenatedPrintHook) concatenatedPrintHook(s); }
 
 void libpd_set_queued_printhook(const t_libpd_printhook hook) { queuedPrintHook = hook; }
 void libpd_set_queued_floathook(const t_libpd_floathook hook) { queuedFloatHook = hook; }
