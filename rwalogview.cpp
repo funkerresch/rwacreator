@@ -9,6 +9,7 @@ RwaLogWindow::RwaLogWindow(QWidget *parent) :
 {
     backend = RwaBackend::getInstance();
     qRegisterMetaType<QtMsgType>("QtMsgType");
+    qSetMessagePattern("[%{time hh:mm:ss.zzz}] [%{type}]\t%{message}%{if-debug}:%{line}, %{function})%{endif}");
     QVBoxLayout *layout = new QVBoxLayout;
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
@@ -102,6 +103,5 @@ void RwaLogWindow::outputMessage(QtMsgType type, const QMessageLogContext &conte
     if (!file.isEmpty())
         file = " (" + QFileInfo(file).fileName();
 
-    qSetMessagePattern("[%{time hh:mm:ss.zzz}] [%{type}]\t%{message}%{if-debug}:%{line}, %{function})%{endif}");
     logView->appendPlainText(qFormatLogMessage(type, context, msg + file));
 }
