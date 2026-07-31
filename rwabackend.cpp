@@ -26,10 +26,8 @@ void RwaGamesServer::process()
     auto ret = svr->set_mount_point("/", mountPoint);
 
     if (!ret) {
-        qDebug() << "Directory does not exist!";
+        qWarning() << "Sharing Server directory does not exist!";
     }
-    else
-        qDebug() << "Started static file server!";
 
     // Report what connected players ask for. Both handlers run on an httplib worker
     // thread and therefore only emit - formatting and the log view belong to the main
@@ -142,7 +140,7 @@ void RwaBackend::StartHttpServer(qint32 port)
     FILE* pipe = popen(httpServerStart.toStdString().c_str(), "r");
     if (!pipe)
     {
-       qDebug() << "Could not start http server";
+       qWarning() << "Could not start http server";
        return;
     }
 
