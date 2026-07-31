@@ -63,6 +63,7 @@ RwaCreator::RwaCreator(QWidget *parent)
     QObject::connect(backend, SIGNAL(sendWriteUndo(QString)), this, SLOT(writeUndo(QString)));
     QObject::connect(backend, SIGNAL(readUndoFile(QString )), this, SLOT(readUndoFile(QString )));
     QObject::connect(QApplication::instance(), SIGNAL(aboutToQuit()),this, SLOT(cleanUpBeforeQuit()));
+    QObject::connect(backend->simulator, SIGNAL(sendAudioDevicesChanged()), this, SLOT(receiveAudioDevicesChanged()));
     this->installEventFilter(this);
 
     setCentralWidget(backend);
@@ -367,12 +368,30 @@ void RwaCreator::audioPrefsSRHelper(int i, qint32 &sr_int, QString &sr)
 
 void RwaCreator::initAudioPreferencesMenu(QMenu *audioDeviceMenu)
 {
-    QActionGroup *selectSampleRateGroup = new QActionGroup(audioDeviceMenu);
-    QActionGroup *selectAudioOutputDeviceGroup = new QActionGroup(audioDeviceMenu);
-    QActionGroup *selectAudioInputDeviceGroup = new QActionGroup(audioDeviceMenu);
-    QSignalMapper* sampleRateSignalMapper = new QSignalMapper(audioDeviceMenu);
-    QSignalMapper* outputDeviceSignalMapper = new QSignalMapper(audioDeviceMenu);
-    QSignalMapper* inputDeviceSignalMapper = new QSignalMapper(audioDeviceMenu);
+    if(!audioDeviceMenu)
+        return;
+
+    audioPreferencesMenu = audioDeviceMenu;
+
+    // The menu is rebuilt on every rescan. QMenu::clear() drops the actions but not the action
+    // groups, so those are recreated here too, otherwise every rescan would leak a set of them.
+    audioDeviceMenu->clear();
+    delete selectSampleRateGroup;
+    delete selectAudioOutputDeviceGroup;
+    delete selectAudioInputDeviceGroup;
+
+    selectSampleRateGroup = new QActionGroup(audioDeviceMenu);
+    selectAudioOutputDeviceGroup = new QActionGroup(audioDeviceMenu);
+    selectAudioInputDeviceGroup = new QActionGroup(audioDeviceMenu);
+    selectSampleRateGroup->setExclusive(true);
+    selectAudioOutputDeviceGroup->setExclusive(true);
+    selectAudioInputDeviceGroup->setExclusive(true);
+
+    QAction *rescanDevicesAction = new QAction(audioDeviceMenu);
+    rescanDevicesAction->setText(tr("Rescan Audio Devices"));
+    connect(rescanDevicesAction, SIGNAL(triggered()), this, SLOT(rescanAudioDevices()));
+    audioDeviceMenu->addAction(rescanDevicesAction);
+    audioDeviceMenu->addSeparator();
 
     QAction *sampleRateLabel = new QAction(audioDeviceMenu);
     sampleRateLabel->setCheckable(false);
@@ -390,16 +409,13 @@ void RwaCreator::initAudioPreferencesMenu(QMenu *audioDeviceMenu)
         selectSampleRateAction = new QAction(audioDeviceMenu);
         selectSampleRateAction->setCheckable(true);
         selectSampleRateAction->setText(sr);
-        connect (selectSampleRateAction, SIGNAL(triggered()), sampleRateSignalMapper, SLOT(map())) ;
-        sampleRateSignalMapper->setMapping (selectSampleRateAction, i) ;
+        connect(selectSampleRateAction, &QAction::triggered, this, [this, i]{ selectSampleRate(i); });
         audioDeviceMenu->addAction(selectSampleRateAction );
         selectSampleRateGroup->addAction(selectSampleRateAction);
         if(backend->sampleRate == sr_int)
             selectSampleRateAction->setChecked(true);
     }
 
-    selectSampleRateGroup->setExclusive(true);
-    connect (sampleRateSignalMapper, SIGNAL(mappedInt(int)), this, SLOT(selectSampleRate(qint32))) ;
     audioDeviceMenu->addSeparator();
 
     QAction *outputDeviceLabel = new QAction(audioDeviceMenu);
@@ -408,6 +424,17 @@ void RwaCreator::initAudioPreferencesMenu(QMenu *audioDeviceMenu)
     outputDeviceLabel->setEnabled(false);
     audioDeviceMenu->addAction(outputDeviceLabel );
     audioDeviceMenu->addSeparator();
+
+    // System default option: Without this entry a single click on a device would opt the user
+    // out of following the system default for the rest of the session.
+    QAction *systemDefaultOutputAction = new QAction(audioDeviceMenu);
+    systemDefaultOutputAction->setCheckable(true);
+    systemDefaultOutputAction->setText(defaultDeviceMenuText(Pa_GetDefaultOutputDevice()));
+    connect(systemDefaultOutputAction, &QAction::triggered, this, [this]{ selectSystemDefaultOutputDevice(); });
+    audioDeviceMenu->addAction(systemDefaultOutputAction);
+    selectAudioOutputDeviceGroup->addAction(systemDefaultOutputAction);
+    if(!backend->simulator->ap->hasExplicitOutputDevice())
+        systemDefaultOutputAction->setChecked(true);
 
     const PaDeviceInfo* di;
     for(int i = 0;i < Pa_GetDeviceCount();i++)
@@ -418,17 +445,14 @@ void RwaCreator::initAudioPreferencesMenu(QMenu *audioDeviceMenu)
             selectAudioDeviceAction->setCheckable(true);
             di = Pa_GetDeviceInfo(i);
             selectAudioDeviceAction->setText(QString(di->name));
-            connect (selectAudioDeviceAction, SIGNAL(triggered()), outputDeviceSignalMapper, SLOT(map())) ;
-            outputDeviceSignalMapper->setMapping (selectAudioDeviceAction, i) ;
+            connect(selectAudioDeviceAction, &QAction::triggered, this, [this, i]{ selectOutputDevice(i); });
             audioDeviceMenu->addAction(selectAudioDeviceAction );
             selectAudioOutputDeviceGroup->addAction(selectAudioDeviceAction);
-            if(backend->simulator->ap->getOutputDevice() == i)
+            if(backend->simulator->ap->hasExplicitOutputDevice()
+               && backend->simulator->ap->getOutputDevice() == i)
                 selectAudioDeviceAction->setChecked(true);
         }
     }
-
-    selectAudioOutputDeviceGroup->setExclusive(true);
-    connect (outputDeviceSignalMapper, SIGNAL(mappedInt(int)), this, SLOT(selectOutputDevice(qint32))) ;
 
     audioDeviceMenu->addSeparator();
     QAction *inputDeviceLabel = new QAction(audioDeviceMenu);
@@ -438,6 +462,15 @@ void RwaCreator::initAudioPreferencesMenu(QMenu *audioDeviceMenu)
     audioDeviceMenu->addAction(inputDeviceLabel );
     audioDeviceMenu->addSeparator();
 
+    QAction *systemDefaultInputAction = new QAction(audioDeviceMenu);
+    systemDefaultInputAction->setCheckable(true);
+    systemDefaultInputAction->setText(defaultDeviceMenuText(Pa_GetDefaultInputDevice()));
+    connect(systemDefaultInputAction, &QAction::triggered, this, [this]{ selectSystemDefaultInputDevice(); });
+    audioDeviceMenu->addAction(systemDefaultInputAction);
+    selectAudioInputDeviceGroup->addAction(systemDefaultInputAction);
+    if(!backend->simulator->ap->hasExplicitInputDevice())
+        systemDefaultInputAction->setChecked(true);
+
     for(int i = 0;i < Pa_GetDeviceCount();i++)
     {
         if(backend->simulator->ap->isInputDevice(i))
@@ -446,16 +479,67 @@ void RwaCreator::initAudioPreferencesMenu(QMenu *audioDeviceMenu)
             selectAudioDeviceAction->setCheckable(true);
             di = Pa_GetDeviceInfo(i);
             selectAudioDeviceAction->setText(QString(di->name));
-            connect (selectAudioDeviceAction, SIGNAL(triggered()), inputDeviceSignalMapper, SLOT(map())) ;
-            inputDeviceSignalMapper->setMapping (selectAudioDeviceAction, i) ;
+            connect(selectAudioDeviceAction, &QAction::triggered, this, [this, i]{ selectInputDevice(i); });
             audioDeviceMenu->addAction(selectAudioDeviceAction );
             selectAudioInputDeviceGroup->addAction(selectAudioDeviceAction);
-            if(backend->simulator->ap->getInputDevice() == i)
+            if(backend->simulator->ap->hasExplicitInputDevice()
+               && backend->simulator->ap->getInputDevice() == i)
                 selectAudioDeviceAction->setChecked(true);
         }
     }
-    selectAudioInputDeviceGroup->setExclusive(true);
-    connect (inputDeviceSignalMapper, SIGNAL(mappedInt(int)), this, SLOT(selectInputDevice(qint32))) ;
+}
+
+/** Menu text of the "follow the system default" entry, naming the device it currently resolves to. */
+QString RwaCreator::defaultDeviceMenuText(int defaultDeviceIndex)
+{
+    const PaDeviceInfo* di = defaultDeviceIndex >= 0 ? Pa_GetDeviceInfo(defaultDeviceIndex) : nullptr;
+    if(!di)
+        return tr("Follow System Default");
+
+    return tr("Follow System Default (%1)").arg(QString(di->name));
+}
+
+/** ****************************************** Rescan the audio devices ************************************************ */
+
+/**
+  PortAudio only sees the devices that existed when it was initialized, so a headset connected
+  while the app is running neither shows up in the menu nor produces sound - the stored device
+  index has gone stale. Re-enumerating requires a PortAudio restart, therefore the simulation has
+  to be stopped first.
+*/
+void RwaCreator::rescanAudioDevices()
+{
+    backend->simulator->rescanAudioDevices();
+}
+
+void RwaCreator::selectSystemDefaultOutputDevice()
+{
+    if(backend->simulator->isSimulationRunning())
+        backend->simulator->stopRwaSimulation();
+
+    backend->simulator->ap->useSystemDefaultOutputDevice();
+    qInfo() << "Output device follows the system default:"
+            << backend->simulator->ap->getDeviceName(backend->simulator->ap->getOutputDevice());
+}
+
+void RwaCreator::selectSystemDefaultInputDevice()
+{
+    if(backend->simulator->isSimulationRunning())
+        backend->simulator->stopRwaSimulation();
+
+    backend->simulator->ap->useSystemDefaultInputDevice();
+    qInfo() << "Input device follows the system default:"
+            << backend->simulator->ap->getDeviceName(backend->simulator->ap->getInputDevice());
+}
+
+/** Rebuilds the audio preferences menu after the device list has changed. */
+void RwaCreator::receiveAudioDevicesChanged()
+{
+    // Rebuilding deletes the menu actions, among them the "Rescan Audio Devices" action whose
+    // triggered() signal usually gets us here. Deleting it while that signal is still being
+    // delivered would pull the ground from under QMenu, so the rebuild is deferred by one event
+    // loop cycle.
+    QTimer::singleShot(0, this, [this]{ initAudioPreferencesMenu(audioPreferencesMenu); });
 }
 
 /** ******************************** Set visiblity of closed RWA Views to true again ********************************** */

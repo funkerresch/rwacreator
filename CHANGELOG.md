@@ -27,7 +27,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the status is by then already sent — a player who walks out of wifi mid-download
   is logged as a completed transfer.
 
+- **Rescan Audio Devices** in the Audio Preferences menu. It re-enumerates the
+  audio hardware and rebuilds the menu, so a headset connected after the app was
+  started can be used without restarting RWA Creator. The scan also runs
+  automatically whenever the simulation is started, so in practice pressing play
+  is enough.
+
+- **Follow System Default (…)** at the top of both device lists in the Audio
+  Preferences menu, naming the device it currently resolves to. It is the state
+  RWA Creator starts in: macOS switches its default output to a headset when one
+  is connected, and following that is what a creator plugging in headphones
+  expects. Picking a device from the list opts out of this for that direction
+  until the entry is selected again — the pick is then remembered by name and
+  wins over the default whenever it is present, including after it was unplugged
+  and reconnected.
+
 ### Fixed
+
+- Connecting or removing an audio device while RWA Creator was running left the
+  app deaf: the simulation ran but no sound came out, and the Audio Preferences
+  menu still listed the devices from application start. PortAudio enumerates the
+  devices once in `Pa_Initialize()` and never updates that list, so the stored
+  device index pointed at whatever now sits at that index. The menu was built
+  once at startup and never rebuilt either. A rescan now restarts PortAudio
+  (`paWrapper::rescanDevices()`), which is the only way to pick up the new device
+  list, and repopulates the menu. Selections are tracked by device name rather
+  than by index, since the indices are reused: on the machine this was developed
+  on, index 2 was "Externe Kopfhörer" with the headset plugged in and
+  "MacBook Pro-Lautsprecher" without it.
+
+  Two things that made this hard to diagnose are fixed as well: a failing
+  `Pa_OpenStream()` was silently discarded when the simulation started, and is
+  now logged with the device name and a pointer to the rescan; and
+  `paWrapper::getDeviceName()` returned a dangling pointer into a destroyed
+  temporary (it now returns a `QString`).
 
 - `build_debug.sh` aborted before signing the bundle when a Homebrew CppUnit is
   installed: taglib then builds its own test suite, which links against an

@@ -69,6 +69,7 @@ public:
 signals:
     void updateScene();
     void sendRedrawAssets();
+    void sendAudioDevicesChanged();
     void sendSelectedScene(RwaScene *scene);
     void sendSelectedState(RwaState *state);
 
@@ -83,6 +84,7 @@ public slots:
     bool isSimulationRunning();
     void startRwaSimulation();
     void stopRwaSimulation();
+    int rescanAudioDevices();
     void clearGame();
     void setCurrentScene(RwaScene *scene);
     void receiveRegisterMessage(QVariant data);

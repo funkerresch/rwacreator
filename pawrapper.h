@@ -26,6 +26,7 @@ public:
     PaStream *stream;
 
     void initAudio();
+    int rescanDevices();
     int startAudio();
     int stopAudio();
     int runOnce();
@@ -66,22 +67,28 @@ public:
 
     //wrapper for devices
     inline int getDeviceCount()  { return Pa_GetDeviceCount();  }
-    const char* getDeviceName(int deviceIndex)
-    {
-        QString name;
-        name = Pa_GetHostApiInfo(Pa_GetDeviceInfo(deviceIndex)->hostApi)->name;
-        name += ": ";
-        name += Pa_GetDeviceInfo(deviceIndex)->name;
-        return name.toLatin1();
-    }
+
+    /** Host api and device name of a device, empty for an invalid index. */
+    QString getDeviceName(int deviceIndex);
+
+    /** Index of the device with the given getDeviceName(), -1 if it is gone. */
+    int findDeviceByName(const QString &name, bool output);
 
     inline int getOutputDevice()
     {
         return outputStreamParam.device;
     }
 
+    /** Picks a device explicitly, which from now on wins over the system default. */
     int setOutputDevice(int deviceIndex);
     int setInputDevice(int deviceIndex);
+
+    /** Gives up the explicit choice and follows the system default again. */
+    void useSystemDefaultOutputDevice();
+    void useSystemDefaultInputDevice();
+
+    inline bool hasExplicitOutputDevice() { return !explicitOutputDeviceName.isEmpty(); }
+    inline bool hasExplicitInputDevice()  { return !explicitInputDeviceName.isEmpty(); }
 
 
     inline int getInputDevice()
@@ -138,6 +145,17 @@ enum PawErrorCode
 } pawErrorCode;
 
 protected:
+  /** Takes over the current default devices of the system, see initAudio()/rescanDevices(). */
+  void applyDefaultDevices();
+
+  /** Fills the stream parameters without touching the remembered explicit choice. */
+  int applyOutputDevice(int deviceIndex);
+  int applyInputDevice(int deviceIndex);
+
+  /** Device picked by the user, empty means: follow the system default. */
+  QString explicitOutputDeviceName;
+  QString explicitInputDeviceName;
+
   PaTime suggestedLatency;
 
   PaHostApiIndex selectedHostApi;

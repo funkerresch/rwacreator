@@ -120,6 +120,10 @@ private:
     QSignalMapper *mapper = nullptr;
     QMenu *destroyDockWidgetMenu = nullptr;
     QMenu *headtrackerMenu = nullptr;
+    QMenu *audioPreferencesMenu = nullptr;
+    QActionGroup *selectSampleRateGroup = nullptr;
+    QActionGroup *selectAudioOutputDeviceGroup = nullptr;
+    QActionGroup *selectAudioInputDeviceGroup = nullptr;
     QAction *createDockWidgetAction = nullptr;
     QAction *defaultViewWidgetAction = nullptr;
     QAction *selectAudioDeviceAction = nullptr;
@@ -173,10 +177,12 @@ private:
     void initFileMenu(QMenu *fileMenu);
 
 /**
- * @brief Creates the audio prefs menu.<br>
+ * @brief Creates the audio prefs menu.
  * @param audioDeviceMenu The the new menu.
- * Creates the audio preferences menu. Enables the user <br>
- * to select input/output device and the sample rate.
+ * Creates the audio preferences menu. Enables the user
+ * to rescan the audio devices and to select input/output
+ * device and the sample rate. Can be called again to rebuild
+ * the menu from the current device list.
  */
 
     void initAudioPreferencesMenu(QMenu *audioDeviceMenu);
@@ -246,6 +252,14 @@ private:
  * an integer and a String.
  */
     void audioPrefsSRHelper(int i, qint32 &sr_int, QString &sr);
+
+/**
+ * @brief Menu text of the "follow the system default" device entry.
+ * @param defaultDeviceIndex Pa_GetDefaultOutputDevice() or Pa_GetDefaultInputDevice().
+ * Names the device the system default currently resolves to, so the menu
+ * shows what following it means right now.
+ */
+    QString defaultDeviceMenuText(int defaultDeviceIndex);
 
 /** ********** Create RWA directory in Applications Support/RWA and a filelist of RWA games as .txt file ************ */
 
@@ -422,6 +436,41 @@ private slots:
     void clear();
 
 /** **************************************** Main application menu SLOTS ****************************************** */
+
+/**
+ * @brief Re-enumerates the audio devices and rebuilds the audio prefs menu.
+ * PortAudio only knows the devices which were present when it was
+ * initialized, so devices connected or removed while the application
+ * is running are invisible and the selected device index goes stale
+ * (which silently kills the audio output). Called from the audio
+ * preferences menu and before the simulation is started. Stops a
+ * running simulation.
+ */
+
+    void rescanAudioDevices();
+
+/**
+ * @brief Rebuilds the audio prefs menu after the device list has changed.
+ * Connected to RwaSimulator::sendAudioDevicesChanged().
+ */
+
+    void receiveAudioDevicesChanged();
+
+/**
+ * @brief Follows the system default output device again. <br>
+ * Gives up a device explicitly picked from the menu, so that every <br>
+ * following rescan takes whatever macOS currently defaults to - which <br>
+ * is the connected headset, if there is one.
+ */
+
+    void selectSystemDefaultOutputDevice();
+
+/**
+ * @brief Follows the system default input device again. <br>
+ * The input counterpart of selectSystemDefaultOutputDevice().
+ */
+
+    void selectSystemDefaultInputDevice();
 
 /**
  * @brief Selects the audio output device. <br>

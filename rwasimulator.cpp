@@ -284,8 +284,38 @@ void RwaSimulator::clearGame()
     }
 }
 
+/**
+  @brief Re-enumerates the audio devices, see paWrapper::rescanDevices().
+  stops a running simulation, as PortAudio has to be restarted for this.
+*/
+int RwaSimulator::rescanAudioDevices()
+{
+    if(simulationIsRunning)
+        stopRwaSimulation();
+
+    int err = ap->rescanDevices();
+    if(err != paNoError)
+    {
+        qWarning() << "Could not rescan the audio devices:" << ap->getErrorText(err);
+        return err;
+    }
+
+    qDebug() << "Audio devices rescanned. Output device:"
+            << ap->getDeviceName(ap->getOutputDevice())
+            << "- input device:"
+            << ap->getDeviceName(ap->getInputDevice());
+
+    emit sendAudioDevicesChanged();
+
+    return err;
+}
+
 void RwaSimulator::startRwaSimulation()
 {
+    // Picks up devices which were connected or removed since the last scan.
+    // Without this the stored device indices can be stale and the simulation would run without any audio.
+    rescanAudioDevices();
+
     RwaEntity *entity = entities.front();
     RwaScene *startScene = backend->getLastTouchedScene();
     if(!startScene)
@@ -301,7 +331,12 @@ void RwaSimulator::startRwaSimulation()
     libpd_add_float(1.0f);
     libpd_finish_message("pd", "dsp");
 
-    ap->startAudio();
+    int err = ap->startAudio();
+    if(err != paNoError)
+        qWarning() << "No audio output:" << ap->getErrorText(err)
+                   << "- device:" << ap->getDeviceName(ap->getOutputDevice())
+                   << "- try Audio Preferences -> Rescan Audio Devices";
+
     gameLoopTimer->start();
     simulationIsRunning = true;
     sendSelectedScene2Devices();
