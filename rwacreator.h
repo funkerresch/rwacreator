@@ -261,6 +261,14 @@ private:
  */
     QString defaultDeviceMenuText(int defaultDeviceIndex);
 
+/**
+ * @brief Stores the selected audio devices in the settings.
+ * Stored by name, not by index, as PortAudio's device indices <br>
+ * are meaningless in the next session. An empty value means: <br>
+ * follow the system default. Read back in loadLayoutAndSettings().
+ */
+    void saveAudioDeviceSettings();
+
 /** ********** Create RWA directory in Applications Support/RWA and a filelist of RWA games as .txt file ************ */
 
 /**

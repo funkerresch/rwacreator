@@ -144,6 +144,11 @@ void RwaCreator::loadLayoutAndSettings()
     else
         backend->setSampleRate(48000);
 
+    // Absent or empty means: follow the system default. A stored device which is not connected
+    // right now stays remembered and is taken as soon as it shows up in a rescan.
+    backend->simulator->ap->setOutputDeviceByName(settings.value("audiooutputdevice").toString());
+    backend->simulator->ap->setInputDeviceByName(settings.value("audioinputdevice").toString());
+
     if(settings.contains("xcodeclientprojectpath"))
         backend->completeTransferToPlayerExportPath = (settings.value("xcodeclientprojectpath").toString());
     else
@@ -324,6 +329,7 @@ void RwaCreator::selectOutputDevice(qint32 index)
         backend->simulator->stopRwaSimulation();
 
     backend->simulator->ap->setOutputDevice(index);
+    saveAudioDeviceSettings();
 }
 
 void RwaCreator::selectInputDevice(qint32 index)
@@ -332,6 +338,20 @@ void RwaCreator::selectInputDevice(qint32 index)
         backend->simulator->stopRwaSimulation();
 
     backend->simulator->ap->setInputDevice(index);
+    saveAudioDeviceSettings();
+}
+
+/**
+  Devices are stored by name, not by index: PortAudio hands out the indices in the order it happens
+  to enumerate the hardware, so they mean nothing in the next session. An empty value is the
+  "follow the system default" state.
+*/
+void RwaCreator::saveAudioDeviceSettings()
+{
+    QSettings settings;
+    settings.setValue("audiooutputdevice", backend->simulator->ap->getExplicitOutputDeviceName());
+    settings.setValue("audioinputdevice", backend->simulator->ap->getExplicitInputDeviceName());
+    settings.sync(); // forces to write the settings to storage
 }
 
 void RwaCreator::selectSampleRate(qint32 index)
@@ -518,6 +538,7 @@ void RwaCreator::selectSystemDefaultOutputDevice()
         backend->simulator->stopRwaSimulation();
 
     backend->simulator->ap->useSystemDefaultOutputDevice();
+    saveAudioDeviceSettings();
     qInfo() << "Output device follows the system default:"
             << backend->simulator->ap->getDeviceName(backend->simulator->ap->getOutputDevice());
 }
@@ -528,6 +549,7 @@ void RwaCreator::selectSystemDefaultInputDevice()
         backend->simulator->stopRwaSimulation();
 
     backend->simulator->ap->useSystemDefaultInputDevice();
+    saveAudioDeviceSettings();
     qInfo() << "Input device follows the system default:"
             << backend->simulator->ap->getDeviceName(backend->simulator->ap->getInputDevice());
 }

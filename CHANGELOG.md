@@ -42,6 +42,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   wins over the default whenever it is present, including after it was unplugged
   and reconnected.
 
+  Both selections survive a restart (`audiooutputdevice` / `audioinputdevice` in
+  the settings). They are stored by name, not by index: PortAudio hands out
+  indices in whatever order it enumerates the hardware, so they mean nothing in
+  the next session. A stored device that is not connected at startup stays
+  remembered — RWA Creator runs on the system default until it appears.
+
 ### Fixed
 
 - Connecting or removing an audio device while RWA Creator was running left the

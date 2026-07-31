@@ -83,9 +83,20 @@ public:
     int setOutputDevice(int deviceIndex);
     int setInputDevice(int deviceIndex);
 
+    /**
+      Restores an explicit choice from its getDeviceName(), typically from the settings. A device
+      which is not connected right now stays remembered and is taken once it appears. An empty
+      name means: follow the system default.
+    */
+    void setOutputDeviceByName(const QString &name);
+    void setInputDeviceByName(const QString &name);
+
     /** Gives up the explicit choice and follows the system default again. */
     void useSystemDefaultOutputDevice();
     void useSystemDefaultInputDevice();
+
+    inline QString getExplicitOutputDeviceName() { return explicitOutputDeviceName; }
+    inline QString getExplicitInputDeviceName()  { return explicitInputDeviceName; }
 
     inline bool hasExplicitOutputDevice() { return !explicitOutputDeviceName.isEmpty(); }
     inline bool hasExplicitInputDevice()  { return !explicitInputDeviceName.isEmpty(); }

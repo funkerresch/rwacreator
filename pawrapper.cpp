@@ -64,6 +64,40 @@ int paWrapper::setOutputDevice(int deviceIndex)
     return err;
 }
 
+void paWrapper::setOutputDeviceByName(const QString &name)
+{
+    if(name.isEmpty())
+    {
+        useSystemDefaultOutputDevice();
+        return;
+    }
+
+    explicitOutputDeviceName = name;
+
+    int deviceIndex = findDeviceByName(name, true);
+    if(deviceIndex < 0)
+        deviceIndex = Pa_GetDefaultOutputDevice(); // remembered, but not connected right now
+
+    applyOutputDevice(deviceIndex);
+}
+
+void paWrapper::setInputDeviceByName(const QString &name)
+{
+    if(name.isEmpty())
+    {
+        useSystemDefaultInputDevice();
+        return;
+    }
+
+    explicitInputDeviceName = name;
+
+    int deviceIndex = findDeviceByName(name, false);
+    if(deviceIndex < 0)
+        deviceIndex = Pa_GetDefaultInputDevice(); // remembered, but not connected right now
+
+    applyInputDevice(deviceIndex);
+}
+
 void paWrapper::useSystemDefaultInputDevice()
 {
     explicitInputDeviceName.clear();
