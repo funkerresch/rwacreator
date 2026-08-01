@@ -9,6 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Key commands for the operations a creator repeats all day.
+
+  | Key command | Action | Menu |
+  | --- | --- | --- |
+  | Cmd-N | New | File |
+  | Cmd-O | Open | File |
+  | Cmd-S | Save | File (was a hidden shortcut before, now shown in the menu) |
+  | Cmd-Shift-S | Save Version as… | File |
+  | Cmd-Opt-S | Copy Project to… | File |
+  | Cmd-E | Export Project for transfer to RWA Player... | File |
+  | Cmd-Shift-E | Send Project to Sharing Server... | File |
+  | Cmd-R | Run Simulation, restarts a running one | Simulation |
+  | Cmd-K | Stop Simulation | Simulation |
+  | Cmd-Shift-L | Clear Log Window | View |
+
+- **Simulation** menu with *Run Simulation* and *Stop Simulation*, doing the same
+  as the start/stop buttons in the Map View toolbar - the only place from which
+  the simulation could be run until now, so there was nothing a key command could
+  hang on.
+
+  Cmd-R means "run from the top": on a running simulation it restarts it, taking
+  one keystroke for what the toolbar takes two clicks. The menu entry is called
+  *Restart Simulation* while the simulation runs, and *Stop Simulation* is greyed
+  out while it does not.
+
+- **Clear Log Window** in the View menu, the menu counterpart of the log view's
+  *clear* button.
+
 - The sharing server now logs what connected players do, so a creator can see
   whether a phone reached RWA Creator at all and which game it pulled. Two lines
   per request — the attempt as it arrives and the outcome once answered:
@@ -47,6 +75,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   indices in whatever order it enumerates the hardware, so they mean nothing in
   the next session. A stored device that is not connected at startup stays
   remembered — RWA Creator runs on the system default until it appears.
+
+### Changed
+
+- The File menu entry **Clear** is now called **New**: It clears out the current
+  project (without saving) and opens a file dialogue (now correctly titled
+  "New RWA Project" instead of "Copy entire RWA Project Folder") to save the new project.
+  The first save of a game that was never written to disk opens the same dialogue as
+  "Save RWA Project". "Copy Project to..." keeps its title. All three still write a
+  complete project folder, only the title of the dialogue differs.
+
+- The start button in the Map View toolbar now follows the state of the
+  simulation instead of only its own clicks — otherwise Cmd-R and Cmd-K would
+  start and stop the simulation with the button not moving at all. The state
+  comes from `RwaSimulator` itself, which announces every start and stop
+  (`sendSimulationRunningChanged`), so several open Map Views agree as well.
+
+  This also fixes the button staying pressed after a simulation was stopped by
+  something other than a click on it: rescanning the audio devices or picking an
+  input/output device stops the simulation, and the toolbar kept claiming it was
+  running.
 
 ### Fixed
 

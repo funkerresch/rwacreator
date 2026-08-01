@@ -44,6 +44,12 @@ public:
 
 public slots:
     void outputMessage(QtMsgType type, const QMessageLogContext &context, const QString &msg );
+
+/**
+ * @brief Empties the log window.
+ * Called by the clear button and from the View menu (Cmd-Shift-L).
+ */
+    void clearLog();
 };
 
 #endif // RWALOGWRAPPER_H

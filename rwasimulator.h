@@ -70,6 +70,13 @@ signals:
     void updateScene();
     void sendRedrawAssets();
     void sendAudioDevicesChanged();
+
+    /** The simulation was started or stopped, no matter from where: the toolbar
+     *  button, the Simulation menu and its key commands, or a rescan of the audio
+     *  devices, which has to stop a running simulation to restart PortAudio (see
+     *  rescanAudioDevices()) and leaves it stopped. Everything showing the state
+     *  of the simulation follows this. */
+    void sendSimulationRunningChanged(bool running);
     void sendSelectedScene(RwaScene *scene);
     void sendSelectedState(RwaState *state);
 

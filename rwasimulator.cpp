@@ -340,6 +340,7 @@ void RwaSimulator::startRwaSimulation()
     gameLoopTimer->start();
     simulationIsRunning = true;
     sendSelectedScene2Devices();
+    emit sendSimulationRunningChanged(true);
 }
 
 void RwaSimulator::stopRwaSimulation()

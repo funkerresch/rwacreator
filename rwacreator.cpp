@@ -71,10 +71,7 @@ RwaCreator::RwaCreator(QWidget *parent)
     loadDefaultViews();
     loadLayoutAndSettings();
     QTimer::singleShot(0, this, &RwaCreator::restoreFloatingViews);
-    setupMenuBar();
-
-    QShortcut *shortcut = new QShortcut(QKeySequence(tr("Ctrl+s", "Save")), this);
-    connect(shortcut, &QShortcut::activated, this, &RwaCreator::save);
+    setupMenuBar(); // the key commands live on the menu actions, see initFileMenu()
 }
 
 /** *************************** logMessages redirects qDebug() to rwalogview ***************************************** */
@@ -167,7 +164,7 @@ void RwaCreator::loadLayoutAndSettings()
     if(!open(settings.value("lastgame").toString(), false))
     {
         qWarning("Last game does not exist.");
-        clear();
+        newProject();
     }
 }
 
@@ -611,6 +608,29 @@ void RwaCreator::initViewMenu1(QMenu *fileMenu)
 
     action = fileMenu->addAction(tr("Log Window"));
     connect(action, SIGNAL(triggered()), this, SLOT(addLogView()));
+
+    action = fileMenu->addAction(tr("Clear Log Window"));
+    action->setShortcut(QKeySequence(tr("Ctrl+Shift+L", "Clear Log Window")));
+    connect(action, SIGNAL(triggered()), this, SLOT(clearLogWindow()));
+}
+
+/** ********************************************* Init Simulation Menu ************************************************ */
+
+void RwaCreator::initSimulationMenu(QMenu *simulationMenu)
+{
+    runSimulationAction = simulationMenu->addAction(tr("Run Simulation"));
+    runSimulationAction->setShortcut(QKeySequence(tr("Ctrl+R", "Run Simulation")));
+    connect(runSimulationAction, SIGNAL(triggered()), this, SLOT(runSimulation()));
+
+    stopSimulationAction = simulationMenu->addAction(tr("Stop Simulation"));
+    stopSimulationAction->setShortcut(QKeySequence(tr("Ctrl+K", "Stop Simulation")));
+    connect(stopSimulationAction, SIGNAL(triggered()), this, SLOT(stopSimulation()));
+
+    // The simulator announces every start and stop, whoever caused it - the toolbar
+    // button, this menu or an audio device rescan stopping the simulation.
+    connect(backend->simulator, SIGNAL(sendSimulationRunningChanged(bool)),
+            this, SLOT(updateSimulationMenu(bool)));
+    updateSimulationMenu(backend->isSimulationRunning());
 }
 
 /** ************************************************ Init RWA File Menu *********************************************** */
@@ -628,25 +648,32 @@ void RwaCreator::initFileMenu(QMenu *fileMenu)
     action = fileMenu->addAction(tr("Remove unused files from disk"));
     connect(action, SIGNAL(triggered()), this, SLOT(deleteUnusedAssetFiles()));
 
-    action = fileMenu->addAction(tr("Clear"));
-    connect(action, SIGNAL(triggered()), this, SLOT(clear()));
+    action = fileMenu->addAction(tr("New"));
+    action->setShortcut(QKeySequence::New);
+    connect(action, SIGNAL(triggered()), this, SLOT(newProject()));
 
     action = fileMenu->addAction(tr("Open"));
+    action->setShortcut(QKeySequence::Open);
     connect(action, SIGNAL(triggered()), this, SLOT(open()));
 
     action = fileMenu->addAction(tr("Save"));
+    action->setShortcut(QKeySequence::Save);
     connect(action, SIGNAL(triggered()), this, SLOT(save()));
 
     action = fileMenu->addAction(tr("Save Version as..."));
+    action->setShortcut(QKeySequence::SaveAs);
     connect(action, SIGNAL(triggered()), this, SLOT(saveAs()));
 
     action = fileMenu->addAction(tr("Copy Project to..."));
+    action->setShortcut(QKeySequence(tr("Ctrl+Alt+S", "Copy Project to")));
     connect(action, SIGNAL(triggered()), this, SLOT(exportProject()));
 
     action = fileMenu->addAction(tr("Export Project for transfer to RWA Player..."));
+    action->setShortcut(QKeySequence(tr("Ctrl+E", "Export Project for transfer to RWA Player")));
     connect(action, SIGNAL(triggered()), this, SLOT(exportForTransferToPlayer()));
 
     action = fileMenu->addAction(tr("Send Project to Sharing Server..."));
+    action->setShortcut(QKeySequence(tr("Ctrl+Shift+E", "Send Project to Sharing Server")));
     connect(action, SIGNAL(triggered()), this, SLOT(exportZip()));
 }
 
@@ -759,6 +786,9 @@ void RwaCreator::setupMenuBar()
 
     QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
     initFileMenu(fileMenu);
+
+    QMenu *simulationMenu = menuBar()->addMenu(tr("&Simulation"));
+    initSimulationMenu(simulationMenu);
 
     headtrackerMenu = menuBar()->addMenu(tr("&Headtracker"));
     initHeadtrackerMenu(headtrackerMenu);
@@ -893,12 +923,22 @@ void RwaCreator::exportZip()
 
 void RwaCreator::exportProject()
 {
+    exportProjectAs(tr("Copy entire RWA Project Folder"));
+}
+
+/**
+  Writing a complete project folder is the same operation for "Copy Project to...",
+  for a new game and for the first save of a game which has never been written to disk.
+  Only the title of the file dialogue differs, so that it names what the user asked for.
+*/
+void RwaCreator::exportProjectAs(const QString &dialogTitle)
+{
     qint32 flags = 0;
     flags |= RWAEXPORT_COPYASSETS
           | RWAEXPORT_SAVEAS
           | RWAEXPORT_CREATEFOLDERS;
 
-    QString fullpath = QFileDialog::getSaveFileName(this, tr("Copy entire RWA Project Folder"),
+    QString fullpath = QFileDialog::getSaveFileName(this, dialogTitle,
                                          QDir::homePath(),
                                          tr("RWA Files (*.rwa *.xml)"));
 
@@ -950,7 +990,7 @@ void RwaCreator::saveAs()
 void RwaCreator::save()
 {
     if(backend->completeFilePath.isEmpty())
-        exportProject();
+        exportProjectAs(tr("Save RWA Project"));
     else
       write1("File saved", 0, backend->completeFilePath);
 
@@ -1037,14 +1077,47 @@ void RwaCreator::emptyTmpDirectories()
     RwaUtilities::emtpyDirectory(backend->completeTmpPath);
 }
 
-void RwaCreator::clear()
+void RwaCreator::newProject()
 {
     qDebug();
     undoCounter = 0;
     emptyTmpDirectories();
     backend->reset();
     setWindowTitle("Not saved");
-    exportProject();
+    exportProjectAs(tr("New RWA Project"));
+}
+
+/** ******************************************* Simulation and log view ************************************************ */
+
+void RwaCreator::runSimulation()
+{
+    if(backend->isSimulationRunning())
+        backend->startStopSimulator(false);
+
+    backend->startStopSimulator(true);
+}
+
+void RwaCreator::stopSimulation()
+{
+    if(!backend->isSimulationRunning())
+        return;
+
+    backend->startStopSimulator(false);
+}
+
+void RwaCreator::updateSimulationMenu(bool running)
+{
+    if(!runSimulationAction || !stopSimulationAction)
+        return;
+
+    runSimulationAction->setText(running ? tr("Restart Simulation") : tr("Run Simulation"));
+    stopSimulationAction->setEnabled(running);
+}
+
+void RwaCreator::clearLogWindow()
+{
+    if(logWindow)
+        logWindow->clearLog();
 }
 
 /** *********************************************** Undo functionality *********************************************** */

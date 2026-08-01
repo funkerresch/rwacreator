@@ -28,7 +28,7 @@ RwaLogWindow::RwaLogWindow(QWidget *parent) :
     clearButton = new QPushButton(this);
     clearButton->setText("clear");
     buttonLayout->addWidget(clearButton);
-    connect(clearButton, SIGNAL (clicked()), logView, SLOT (clear()));
+    connect(clearButton, SIGNAL (clicked()), this, SLOT (clearLog()));
 
     buttonLayout->addStretch(1);
 
@@ -74,6 +74,11 @@ RwaLogWindow::RwaLogWindow(QWidget *parent) :
 RwaLogWindow::~RwaLogWindow()
 {
 
+}
+
+void RwaLogWindow::clearLog()
+{
+    logView->clear();
 }
 
 static int msgSeverity(QtMsgType type)

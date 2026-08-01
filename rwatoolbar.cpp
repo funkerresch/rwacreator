@@ -55,6 +55,7 @@ RwaViewToolbar::RwaViewToolbar(const QString &title, qint32 flags, RwaBackend *b
         connect (this, SIGNAL(sendCalibrateHeadtracker()), backend, SLOT(calibrateHeadtracker()));
         connect (this, SIGNAL(sendActivateClientSync(bool)), backend, SLOT(receiveActivateClientSync(bool)));
         connect (this, SIGNAL(sendSimulateHeadtrackerStep()), backend->simulator, SLOT(receiveStep()));
+        connect (backend->simulator, SIGNAL(sendSimulationRunningChanged(bool)), this, SLOT(receiveSimulationRunningChanged(bool)));
         initControls();
     }
 
@@ -430,6 +431,17 @@ void RwaViewToolbar::receiveTrashAssets(bool onOff)
 void RwaViewToolbar::receiveHeroFollowsSceneAndState(bool onOff)
 {
     emit sendHeroFollowsSceneAndState(onOff);
+}
+
+/**
+  Only reflects the state of the simulation in the button, without emitting
+  sendStartStopSimulator() again - that would send us straight back into the backend
+  which sent this signal in the first place.
+*/
+void RwaViewToolbar::receiveSimulationRunningChanged(bool running)
+{
+    if(startSimulatorButton)
+        startSimulatorButton->setChecked(running);
 }
 
 void RwaViewToolbar::receiveStopSimulator(bool startStopSimulator)

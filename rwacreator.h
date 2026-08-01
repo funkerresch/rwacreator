@@ -129,6 +129,8 @@ private:
     QAction *selectAudioDeviceAction = nullptr;
     QAction *selectSampleRateAction = nullptr;
     QAction *selectHeadtrackerAction = nullptr;
+    QAction *runSimulationAction = nullptr;
+    QAction *stopSimulationAction = nullptr;
     QString headtrackerSerialPort = QString();
     qint32 headtrackerSerialPortIndex = -1;
     bool allViewsLoaded = false;
@@ -175,6 +177,16 @@ private:
  */
 
     void initFileMenu(QMenu *fileMenu);
+
+/**
+ * @brief Creates the simulation menu.
+ * @param simulationMenu The the new menu.
+ * Creates the simulation menu, which starts and stops the
+ * simulation and carries the key commands for it. The same
+ * can be done with the start/stop buttons of the Map View toolbar.
+ */
+
+    void initSimulationMenu(QMenu *simulationMenu);
 
 /**
  * @brief Creates the audio prefs menu.
@@ -391,6 +403,16 @@ private slots:
     void exportProject();
 
 /**
+ * @brief Asks for a project location and writes the whole project there.
+ * @param dialogTitle Title of the file dialogue.
+ * The implementation behind exportProject(), new() and the first save()
+ * of an unsaved game - they only differ in what the file dialogue is
+ * called, so that its title says what the user is actually doing.
+ */
+
+    void exportProjectAs(const QString &dialogTitle);
+
+/**
  * @brief Exports (copies) a project for a mobile client. <br>
  * Copies the whole project with a new name/path <br>
  * to a new location without copying undo and
@@ -435,13 +457,45 @@ private slots:
     qint32 open(QString fileName = QString(""), bool throwDialogue = true);
 
 /**
- * @brief Clears the current game. <br>
- * Clears the current game and calls exportProject() <br>
- * which throws a save dialogue for a new project location <br>
- * and name.
+ * @brief Starts a new game.
+ * Clears the current game and asks for the location and
+ * name of the new project.
  */
 
-    void clear();
+    void newProject();
+
+/**
+ * @brief Starts the simulation, restarts it if it is already running. Cmd-R
+ * means "run the game from the top": on a running simulation it stops and
+ * starts it again.
+ */
+
+    void runSimulation();
+
+/**
+ * @brief Stops the simulation.
+ * Does nothing if the simulation is not running.
+ */
+
+    void stopSimulation();
+
+/**
+ * @brief Keeps the Simulation menu on the state of the simulation.
+ * @param running Whether the simulation is running now.
+ * A key command can not show what it is going to do, so the menu has to:
+ * "Run Simulation" becomes "Restart Simulation" while the simulation runs,
+ * and "Stop Simulation" is greyed out while it does not.
+ */
+
+    void updateSimulationMenu(bool running);
+
+/**
+ * @brief Empties the Log View.
+ * Clears the log window which is currently receiving the messages,
+ * i.e. the one added last.
+ */
+
+    void clearLogWindow();
 
 /** **************************************** Main application menu SLOTS ****************************************** */
 
