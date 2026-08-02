@@ -99,6 +99,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Saved `.rwa` files now reference assets as `assets/<filename>` instead of the
+  absolute path of the machine they were saved on. The Creator
+  (`rwaimport.cpp`), the Player (`RwaImport.swift`) and `validate_rwa.py`, take
+  only the basename of the `url` attribute and resolves it against the `assets/`
+  folder next to the `.rwa` file, which is why projects always opened fine on
+  other machines despite the paths. Undo snapshots use the same writer and now
+  carry the relative form as well. The new form says what actually happens and
+  keeps usernames and directory layouts out of shared game files.
+
+  Compatibility is unchanged in both directions: old files load as before, and
+  files saved with this version load in older Creators and in the Player, since
+  all of them discard everything but the filename.
+
 - The File menu entry **Clear** is now called **New**: It clears out the current
   project (without saving) and opens a file dialogue (now correctly titled
   "New RWA Project" instead of "Copy entire RWA Project Folder") to save the new project.

@@ -68,7 +68,7 @@ void RwaExport::writeAssetItem1(RwaAsset1 *item)
    }
 
    xml.writeStartElement("asset");
-   xml.writeAttribute("url", QString::fromStdString(item->getFullPath()) );
+   xml.writeAttribute("url", QString("assets/%1").arg(QString::fromStdString(item->getFileName())));
    xml.writeAttribute("uuid", QString::fromStdString(item->getUniqueId()));
    xml.writeAttribute("type", QString::number(item->getType()));
    xml.writeAttribute("gain", QString::number(static_cast<double>(item->getGain())));
