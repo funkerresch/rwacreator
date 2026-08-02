@@ -68,3 +68,6 @@ build/qmake-release
 build/debug
 build/cmake-debug
 build/qmake-debug
+
+# Python tool venvs
+tools/*/.venv/
