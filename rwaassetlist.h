@@ -53,6 +53,7 @@ protected:
     private:
         void setCurrentAssetFromCurrentItem();
         void findLastTouchedAsset(RwaAsset1 *asset);
+        void setAssetBadges(QListWidgetItem *item, RwaAsset1 *asset);
 signals:
         void deleteAsset(const QString &path);
         void newAsset(const QString &path);

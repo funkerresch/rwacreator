@@ -773,6 +773,16 @@ void RwaAsset1::setNumberOfChannels(const int64_t &value)
     numberOfChannels = value;
 }
 
+int32_t RwaAsset1::getOriginalSampleRate() const
+{
+    return originalSampleRate;
+}
+
+void RwaAsset1::setOriginalSampleRate(int32_t value)
+{
+    originalSampleRate = value;
+}
+
 void RwaAsset1::setChannelRadius(float value)
 {
     channelRadius = value;

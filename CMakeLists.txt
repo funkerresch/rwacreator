@@ -111,6 +111,7 @@ set(RWACREATOR_HEADERS
     ofq/libofqf/qoscserver.h
     ofq/libofqf/qosctypes.h
     rwalistview.h
+    rwalistbadgedelegate.h
     rwastatelist.h
     rwasceneview.h
     rwaattributeview.h
@@ -221,6 +222,7 @@ set(RWACREATOR_SOURCES
     ofq/libofqf/qoscserver.cpp
     ofq/libofqf/qosctypes.cpp
     rwalistview.cpp
+    rwalistbadgedelegate.cpp
     rwastatelist.cpp
     rwasceneview.cpp
     rwaattributeview.cpp

@@ -25,6 +25,7 @@
 #include "rwautilities.h"
 #include "rwabackend.h"
 #include "rwaview.h"
+#include "rwalistbadgedelegate.h"
 #include <QFileInfo>
 #include <QFile>
 

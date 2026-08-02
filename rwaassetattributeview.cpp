@@ -380,6 +380,8 @@ void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
                  if(asset)
                     asset->setLoop(value);
             }
+            if(QObject::sender() != this->backend)
+                emit sendCurrentState(currentState);
             break;
         }
 
@@ -402,6 +404,8 @@ void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
                  if(asset)
                     asset->setAutoRotate(value);
             }
+            if(QObject::sender() != this->backend)
+                emit sendCurrentState(currentState);
             break;
         }
 
@@ -1054,6 +1058,9 @@ void RwaAssetAttributeView::receiveComboBoxAttributeValue(int index)
                     asset->setPlaybackType(RWAPLAYBACKTYPE_CUSTOM3);
            }
         }
+
+        if(QObject::sender() != this->backend)
+            emit sendCurrentState(currentState);
     }
 
     if(!QObject::sender()->objectName().compare("Reflection Count"))

@@ -202,6 +202,9 @@ public:
     int64_t getNumberOfChannels() const;
     void setNumberOfChannels(const int64_t &value);
 
+    int32_t getOriginalSampleRate() const;
+    void setOriginalSampleRate(int32_t value);
+
     int64_t getDuration() const;
     void setDuration(const int64_t &value);
 
@@ -390,6 +393,7 @@ private:
     int32_t duration = 0;
     int64_t fadeOutAfter = 0;
     int32_t numberOfChannels = 0;
+    int32_t originalSampleRate = 0; // read from the audio file, 0 = not read yet; not serialised to the .rwa
     int32_t rotateOffset = 0;
     int32_t timeOut = 0;
     int32_t reflectionCount = 0;

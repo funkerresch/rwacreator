@@ -26,6 +26,7 @@ RwaListView::RwaListView(QWidget *parent, RwaScene *scene) :
     connect(backend, SIGNAL(sendLastTouchedAsset(RwaAsset1 *)),
               this, SLOT(setCurrentAsset(RwaAsset1*)));
 
+    setItemDelegate(new RwaListBadgeDelegate(this)); // must be installed before the closeEditor connect below
     connect(itemDelegate(), SIGNAL(closeEditor(QWidget*, QAbstractItemDelegate::EndEditHint)), this, SLOT(ListWidgetEditEnd(QWidget*, QAbstractItemDelegate::EndEditHint)));
     this->setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::EditKeyPressed);
 

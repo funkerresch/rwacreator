@@ -1,5 +1,27 @@
 #include "rwaassetlist.h"
 
+#include <tag.h>
+#include <fileref.h>
+
+struct PlaybackBadge { QString icon; QString label; };
+
+static PlaybackBadge playbackBadge(int32_t playbackType)
+{
+    switch(playbackType)
+    {
+        case RWAPLAYBACKTYPE_MONO: return {"playbackSpeaker1", "Mono"};
+        case RWAPLAYBACKTYPE_STEREO: return {"playbackSpeaker2", "Stereo"};
+        case RWAPLAYBACKTYPE_BINAURALMONO:
+        case RWAPLAYBACKTYPE_BINAURALMONO_FABIAN: return {"playbackHeadphones1", "Binaural Mono"};
+        case RWAPLAYBACKTYPE_BINAURALSTEREO:
+        case RWAPLAYBACKTYPE_BINAURALSTEREO_FABIAN: return {"playbackHeadphones2", "Binaural Stereo"};
+        case RWAPLAYBACKTYPE_BINAURAL5CHANNEL:
+        case RWAPLAYBACKTYPE_BINAURAL5CHANNEL_FABIAN: return {"playbackHeadphones5", "Binaural 5 channel"};
+        case RWAPLAYBACKTYPE_BINAURAL7CHANNEL_FABIAN: return {"playbackHeadphones7", "Binaural 7 channel"};
+        default: return {QString(), QString()}; // undetermined playback gets no badge
+    }
+}
+
 RwaAssetList::RwaAssetList(QWidget* parent, RwaScene *scene) :
     RwaListView(parent, scene)
 {
@@ -58,6 +80,7 @@ void RwaAssetList::setCurrentState(RwaState *state)
     {
         QListWidgetItem *item = new QListWidgetItem(RwaUtilities::getFileName(QString::fromStdString(asset->getFullPath())), this);
         item->setFlags( item->flags() | Qt::ItemIsEditable );
+        setAssetBadges(item, asset);
         addItem(item);
     }
 
@@ -77,6 +100,66 @@ void RwaAssetList::setCurrentScene(RwaScene *scene)
         setCurrentState(currentScene->getStates().front());
     else
         clear();
+}
+
+void RwaAssetList::setAssetBadges(QListWidgetItem *item, RwaAsset1 *asset)
+{
+    QStringList badges;
+    QStringList toolTipLines;
+    bool isPatch = (asset->getType() == RWAASSETTYPE_PD);
+
+    if(!isPatch)
+    {
+        if(asset->getOriginalSampleRate() == 0) // asset loaded from a .rwa, read the file once and cache
+        {
+            TagLib::FileRef f(asset->getFullPath().c_str());
+            if(!f.isNull() && f.audioProperties())
+                asset->setOriginalSampleRate(f.audioProperties()->sampleRate());
+        }
+
+        if(asset->getOriginalSampleRate() > 0 && asset->getOriginalSampleRate() != backend->getSampleRate())
+        {
+            badges << "badgeSamplerateMismatch";
+            toolTipLines << QString("Sample rate mismatch: %1 Hz (Pd: %2 Hz)")
+                            .arg(asset->getOriginalSampleRate()).arg(backend->getSampleRate());
+        }
+    }
+
+    if(isPatch)
+    {
+        badges << "badgePd";
+        toolTipLines << "Pd patch";
+    }
+    else
+    {
+        PlaybackBadge playback = playbackBadge(asset->getPlaybackType());
+        if(!playback.icon.isEmpty())
+        {
+            badges << playback.icon;
+            toolTipLines << "Playback: " + playback.label;
+        }
+    }
+
+    if(asset->getMute())
+    {
+        badges << "badgeMuted";
+        toolTipLines << "Muted";
+    }
+
+    if(asset->getLoop())
+    {
+        badges << "badgeLooped";
+        toolTipLines << "Looped";
+    }
+
+    if(asset->getMoveFromStartPosition() || asset->getAutoRotate())
+    {
+        badges << "badgeMoving";
+        toolTipLines << "Moving/rotating";
+    }
+
+    item->setData(RwaListBadgeDelegate::BadgeRole, badges);
+    item->setToolTip(toolTipLines.join("\n"));
 }
 
 int RwaAssetList::getNumberOfSelectedAssets()

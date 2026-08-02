@@ -9,6 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Status badges in the State View's asset list: small icons painted
+  right-aligned over the asset name, showing at a glance what would otherwise
+  require opening the asset's attribute view. An item's tooltip lists the
+  meaning of its badges.
+
+  Badges, right to left:
+
+  - **Sample rate mismatch**: the audio file's sample rate differs from the
+    project rate (48 kHz). The file's rate is read via TagLib when an asset is
+    added; for assets loaded from an existing `.rwa` it is read once on first
+    display and cached (new transient `RwaAsset1::originalSampleRate`, not
+    serialised to the `.rwa`).
+  - **Pd patch**: shown for Pd assets; plain audio assets get no type badge.
+  - **Playback type**: speaker icon with channel count for mono/stereo,
+    headphones icon with channel count for the binaural 1/2/5/7-channel modes
+    (legacy and Fabian variants share one icon). Undetermined, Auto/Native,
+    Binaural-Space and the Custom IR sets show no badge.
+  - **Muted**, **Looped**, **Moving** (one icon for moving and auto-rotating).
+
+  Implementation: new `RwaListBadgeDelegate` (`rwalistbadgedelegate.{h,cpp}`),
+  installed on the shared `RwaListView` base class. Which badges an item shows
+  is a `QStringList` of icon basenames under `RwaListBadgeDelegate::BadgeRole`;
+  unknown names are skipped. The game and scene lists inherit the delegate and
+  only need to fill that role to get badges of their own (planned follow-up).
+  New icons in `images/`: `badgeSamplerateMismatch`, `badgePd`, `badgeMuted`,
+  `badgeLooped`, `badgeMoving`, `playbackSpeaker1/2`,
+  `playbackHeadphones1/2/5/7` (Material Symbols, documented in the rwa-doc icon
+  translation table).
+
 - `.rwa` is now a registered macOS document type owned by RWA Creator. Opening
   an `.rwa` file in Finder opens the project in the running instance if the app
   is already open, otherwise it launches the app first. `.rwa` files get their
@@ -131,6 +160,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   running.
 
 ### Fixed
+
+- Changing Loop, Rotate or the Playback Mode in the asset attribute view now
+  re-broadcasts the state (`sendCurrentState`), like Mute and Automove already
+  did. Before, other views were not notified of these changes; visible now that
+  the asset list shows badges for them.
 
 - Connecting or removing an audio device while RWA Creator was running left the
   app deaf: the simulation ran but no sound came out, and the Audio Preferences
