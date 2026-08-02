@@ -46,5 +46,52 @@
 	<string>RWA Creator receives OSC messages from tracking devices on your local network.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>RWA Creator needs access to the microphone for audio recording features.</string>
+	<!-- .rwa document type. UTExportedTypeDeclarations defines the type,
+	CFBundleDocumentTypes claims it for this app. Conforming to public.xml
+	(not public.data) keeps Quick Look text preview and Spotlight content
+	indexing working on .rwa files. -->
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>com.fhnw.rwa.document</string>
+			<key>UTTypeDescription</key>
+			<string>RWA Project</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.xml</string>
+			</array>
+			<key>UTTypeIconFile</key>
+			<string>@BUNDLE_DOCUMENT_ICON_FILE@</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>rwa</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>application/x-rwa+xml</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>RWA Project</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.fhnw.rwa.document</string>
+			</array>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>CFBundleTypeIconFile</key>
+			<string>@BUNDLE_DOCUMENT_ICON_FILE@</string>
+		</dict>
+	</array>
 </dict>
 </plist>

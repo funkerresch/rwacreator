@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `.rwa` is now a registered macOS document type owned by RWA Creator. Opening
+  an `.rwa` file in Finder opens the project in the running instance if the app
+  is already open, otherwise it launches the app first. `.rwa` files get their
+  own document icon in Finder and RWA Creator appears as the default "Open With"
+  handler.
+
+  Details of the implementation:
+
+  - `Info.plist.in` exports the new UTI `com.fhnw.rwa.document`
+    (`UTExportedTypeDeclarations`) and claims it (`CFBundleDocumentTypes`, role
+    *Editor*, rank *Owner*). The type conforms to `public.xml`, so Quick Look
+    text preview and Spotlight indexing of `.rwa` files work for free.
+  - macOS never passes the double-clicked path via `argv`; it arrives as a
+    `QFileOpenEvent`. The new `RwaApplication` (QApplication subclass,
+    `rwaapplication.h`) catches it and queues requests that arrive before the
+    main window is ready. On Windows/Linux, `main()` now opens a project passed
+    as the first command-line argument.
+  - Opening via Finder replaces the currently loaded project, exactly the
+    behaviour of File > Open (which does not prompt for unsaved changes either).
+  - New document icon `images/rwa-document.icns`, copied into `Contents/Resources` by CMake.
+
 - Key commands for the operations a creator repeats all day.
 
   | Key command | Action | Menu |

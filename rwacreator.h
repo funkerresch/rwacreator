@@ -622,6 +622,16 @@ private slots:
 
 public slots:
 
+    /**
+    * @brief Opens an RWA game requested from outside the application.
+    * @param path Full path of the .rwa file to open.
+    * Entry point for document-open requests from the OS (macOS Finder
+    * double-click / Dock drop via RwaApplication) and from the command
+    * line on Windows/Linux. Replaces the currently loaded project,
+    * same as File > Open.
+    */
+    void openProject(const QString &path);
+
 /** *********************************************** Undo functionality *********************************************** */
 
 /**

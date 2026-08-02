@@ -103,6 +103,7 @@ set(RWACREATOR_HEADERS
     rwaattribute.h
     rwaentity.h
     rwasimulator.h
+    rwaapplication.h
     rwacreator.h
     rwastyles.h
     rwagraphicsview.h
@@ -301,6 +302,10 @@ set(BUNDLE_IDENTIFIER "com.fhnw.rwa.creator")
 
 set(BUNDLE_ICON_FILE "rwa-creator.icns")
 
+# Document icon for .rwa files (see UTExportedTypeDeclarations /
+# CFBundleDocumentTypes in Info.plist.in)
+set(BUNDLE_DOCUMENT_ICON_FILE "rwa-document.icns")
+
 # Get git commit hash
 execute_process(
     COMMAND git rev-parse --short HEAD
@@ -467,10 +472,11 @@ target_sources(rwacreator PRIVATE
 )
 
 set(APP_ICON ${CMAKE_SOURCE_DIR}/images/${BUNDLE_ICON_FILE})
-set_source_files_properties(${APP_ICON} PROPERTIES
+set(DOCUMENT_ICON ${CMAKE_SOURCE_DIR}/images/${BUNDLE_DOCUMENT_ICON_FILE})
+set_source_files_properties(${APP_ICON} ${DOCUMENT_ICON} PROPERTIES
     MACOSX_PACKAGE_LOCATION "Resources"
 )
-target_sources(rwacreator PRIVATE ${APP_ICON})
+target_sources(rwacreator PRIVATE ${APP_ICON} ${DOCUMENT_ICON})
 
 # ------------------------------------------------------------------------------
 # Install

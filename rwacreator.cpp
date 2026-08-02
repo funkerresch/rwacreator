@@ -1069,6 +1069,20 @@ qint32 RwaCreator::open(QString fileName, bool throwDialogue)
     return 1;
 }
 
+void RwaCreator::openProject(const QString &path)
+{
+    if (!QFile::exists(path))
+    {
+        QMessageBox::warning(this, tr("RWA Creator"),
+            tr("Could not open project:\n%1\nThe file does not exist.").arg(path));
+        return;
+    }
+
+    open(path, false);
+    raise();
+    activateWindow();
+}
+
 void RwaCreator::emptyTmpDirectories()
 {
     if (backend->completeUndoPath.isEmpty() || backend->completeTmpPath.isEmpty())
