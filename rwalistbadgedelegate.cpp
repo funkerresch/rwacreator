@@ -38,9 +38,11 @@ void RwaListBadgeDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
 
     // recolor only when the authored gray wouldn't read: on the selection
     // highlight or in dark mode. In light mode the palette's text color is
-    // plain black.
+    // plain black. State_Active is cleared while the view has no focus —
+    // the selection bar is then gray, not blue, and the icons follow the
+    // text back to its unselected color.
     QColor color;
-    if(option.state & QStyle::State_Selected)
+    if((option.state & QStyle::State_Selected) && (option.state & QStyle::State_Active))
         color = option.palette.color(QPalette::HighlightedText);
     else if(QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark)
         color = option.palette.color(QPalette::Text);
