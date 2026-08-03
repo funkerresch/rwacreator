@@ -7,38 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-
-- The Log View now follows the system's light/dark appearance. Its monospace
-  font was set via a stylesheet, and any stylesheet moves a widget from the
-  native style to `QStyleSheetStyle`, which stops tracking palette switches.
-  The font is now set with `QFont` (with a monospace style hint as fallback
-  should Andale Mono be missing) and no stylesheet remains on the widget.
-
-- Clicking empty space in the state or asset lists no longer clears the
-  selection. Previously the click deselected the last touched item while the
-  attribute form next to the list allowed changing of values. The empty-space
-  click is now simply ignored (`RwaListView::mousePressEvent`, shared by all
-  three lists).
-
-- The asset attribute form no longer shows stale values after switching states.
-  Previously it kept displaying the previous state's asset when the newly
-  selected state had no touched asset yet; edits then either went nowhere or —
-  when the new state contained an audio file of the same name — silently landed
-  in that other asset whose values were never shown. Now touching a state
-  defaults its touched asset to the first asset before the change is broadcast
-  (`RwaBackend::receiveLastTouchedState`), the asset list re-announces its
-  (possibly empty) selection on every state switch, and the form clears and
-  disables itself when the state has no assets
-  (`RwaAssetAttributeView::clearForm`).
-
-  The form's widgets fire their edit handlers on programmatic changes too
-  (`textChanged`, `idToggled`), so filling or clearing the form could write the
-  displayed values back into whatever assets were still listed as selected. A
-  new `RwaAttributeView::updatingForm` guard suppresses write-back while the
-  form is being populated or cleared. The state and scene attribute views share
-  the helpers with the same hazard and still need the equivalent guard
-  (follow-up).
+## [v1.4.0] - 2026-08-03
 
 ### Added
 
@@ -211,6 +180,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   running.
 
 ### Fixed
+
+- The Log View now follows the system's light/dark appearance. Its monospace
+  font was set via a stylesheet, and any stylesheet moves a widget from the
+  native style to `QStyleSheetStyle`, which stops tracking palette switches.
+  The font is now set with `QFont` (with a monospace style hint as fallback
+  should Andale Mono be missing) and no stylesheet remains on the widget.
+
+- Clicking empty space in the state or asset lists no longer clears the
+  selection. Previously the click deselected the last touched item while the
+  attribute form next to the list allowed changing of values. The empty-space
+  click is now simply ignored (`RwaListView::mousePressEvent`, shared by all
+  three lists).
+
+- The asset attribute form no longer shows stale values after switching states.
+  Previously it kept displaying the previous state's asset when the newly
+  selected state had no touched asset yet; edits then either went nowhere or —
+  when the new state contained an audio file of the same name — silently landed
+  in that other asset whose values were never shown. Now touching a state
+  defaults its touched asset to the first asset before the change is broadcast
+  (`RwaBackend::receiveLastTouchedState`), the asset list re-announces its
+  (possibly empty) selection on every state switch, and the form clears and
+  disables itself when the state has no assets
+  (`RwaAssetAttributeView::clearForm`).
+
+  The form's widgets fire their edit handlers on programmatic changes too
+  (`textChanged`, `idToggled`), so filling or clearing the form could write the
+  displayed values back into whatever assets were still listed as selected. A
+  new `RwaAttributeView::updatingForm` guard suppresses write-back while the
+  form is being populated or cleared. The state and scene attribute views share
+  the helpers with the same hazard and still need the equivalent guard
+  (follow-up).
 
 - Changing Loop, Rotate or the Playback Mode in the asset attribute view now
   re-broadcasts the state (`sendCurrentState`), like Mute and Automove already
