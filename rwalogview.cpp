@@ -17,7 +17,10 @@ RwaLogWindow::RwaLogWindow(QWidget *parent) :
     setLayout(layout);
     logView = new QPlainTextEdit(this);
     logView->setReadOnly(true);
-    logView->setStyleSheet("QPlainTextEdit { font-family: 'Andale Mono', monospace; font-size: 12pt; }");
+    QFont logFont("Andale Mono");
+    logFont.setStyleHint(QFont::Monospace); // fallback if Andale Mono is missing
+    logFont.setPointSize(12);
+    logView->setFont(logFont);
     layout->addWidget(logView);
 
     QHBoxLayout *buttonLayout = new QHBoxLayout;

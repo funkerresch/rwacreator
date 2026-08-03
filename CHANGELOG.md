@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The Log View now follows the system's light/dark appearance. Its monospace
+  font was set via a stylesheet, and any stylesheet moves a widget from the
+  native style to `QStyleSheetStyle`, which stops tracking palette switches.
+  The font is now set with `QFont` (with a monospace style hint as fallback
+  should Andale Mono be missing) and no stylesheet remains on the widget.
+
 - Clicking empty space in the state or asset lists no longer clears the
   selection. Previously the click deselected the last touched item while the
   attribute form next to the list allowed changing of values. The empty-space
