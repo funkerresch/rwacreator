@@ -14,6 +14,10 @@
  * don't resolve to an existing icon file are skipped, so lists can set
  * badge names before the corresponding icons ship.
  *
+ * The icons' neutral gray (#434343) is replaced with the palette's text
+ * color at render time, so badges stay visible in dark mode and on the
+ * selection highlight; semantic colors in the SVGs are left untouched.
+ *
  */
 
 #ifndef RWALISTBADGEDELEGATE_H
@@ -21,7 +25,7 @@
 
 #include <QStyledItemDelegate>
 #include <QHash>
-#include <QIcon>
+#include <QPixmap>
 
 class RwaListBadgeDelegate : public QStyledItemDelegate
 {
@@ -34,8 +38,8 @@ class RwaListBadgeDelegate : public QStyledItemDelegate
         void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
 
     private:
-        const QIcon &badgeIcon(const QString &name) const;
-        mutable QHash<QString, QIcon> iconCache;
+        QPixmap badgePixmap(const QString &name, const QColor &color, int size, qreal devicePixelRatio) const;
+        mutable QHash<QString, QPixmap> pixmapCache;
 };
 
 #endif // RWALISTBADGEDELEGATE_H

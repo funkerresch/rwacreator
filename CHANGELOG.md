@@ -60,6 +60,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   is a `QStringList` of icon basenames under `RwaListBadgeDelegate::BadgeRole`;
   unknown names are skipped. The game and scene lists inherit the delegate and
   only need to fill that role to get badges of their own (planned follow-up).
+  The icons' neutral gray (`#434343`) is replaced with the palette's text color
+  at render time (`QSvgRenderer` on the rewritten SVG bytes, cached per
+  name/color/size), so badges follow the system's light/dark appearance and
+  use the highlighted-text color on selected rows; semantic colors like the
+  mismatch red are left as authored.
   New icons in `images/`: `badgeSamplerateMismatch`, `badgePd`, `badgeMuted`,
   `badgeLooped`, `badgeMoving`, `playbackSpeaker1/2`,
   `playbackHeadphones1/2/5/7` (Material Symbols, documented in the rwa-doc icon
