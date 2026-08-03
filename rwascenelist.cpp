@@ -77,8 +77,7 @@ void RwaSceneList::setCurrentSceneFromCurrentItem()
 
 void RwaSceneList::mousePressEvent(QMouseEvent *event)
 {
-    QListWidget::mousePressEvent(event);
-    qDebug();
+    RwaListView::mousePressEvent(event);
     setCurrentSceneFromCurrentItem();
 }
 

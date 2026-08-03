@@ -118,6 +118,33 @@ void RwaAssetAttributeView::setCurrentState(RwaState *state)
 
     if(state->lastTouchedAsset)
         setCurrentAsset(state->lastTouchedAsset);
+    else
+        clearForm();
+}
+
+void RwaAssetAttributeView::clearForm()
+{
+    currentAsset = nullptr;
+    lastAsset = nullptr;
+    selectedAssets.clear();
+
+    updatingForm = true;
+
+    foreach(QLineEdit *lineEdit, findChildren<QLineEdit *>())
+        lineEdit->clear();
+
+    foreach(QComboBox *comboBox, findChildren<QComboBox *>())
+        comboBox->setCurrentIndex(-1);
+
+    foreach(QCheckBox *checkBox, findChildren<QCheckBox *>())
+        checkBox->setChecked(false);
+
+    reflectionCount->hide();
+    reflectionCountLabel->hide();
+    scrollArea->update();
+
+    setEnabled(false); // may focus-out a line edit and fire editingFinished, hence inside the updatingForm window
+    updatingForm = false;
 }
 
 void RwaAssetAttributeView::setCurrentAsset(RwaAsset1 *asset)
@@ -127,6 +154,9 @@ void RwaAssetAttributeView::setCurrentAsset(RwaAsset1 *asset)
 
     lastAsset = currentAsset;
     currentAsset = asset;
+
+    setEnabled(true); // undo a clearForm()
+    updatingForm = true;
 
     QCheckBox *attrCheckBox = nullptr;
     QComboBox *attrComboBox = nullptr;
@@ -295,10 +325,15 @@ void RwaAssetAttributeView::setCurrentAsset(RwaAsset1 *asset)
     attrCheckBox = this->findChild<QCheckBox *>("Always play from start");
     if(attrCheckBox)
         attrCheckBox->setChecked(asset->getAlwaysPlayFromBeginning());
+
+    updatingForm = false;
 }
 
 void RwaAssetAttributeView::receiveEditingFinished()
 {
+    if(updatingForm)
+        return;
+
     if(QObject::sender() != this->backend)
     {
         if(senderValue != lastSenderValue)
@@ -323,6 +358,8 @@ void RwaAssetAttributeView::receiveEditingFinished()
 
 void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
 {
+    if(updatingForm)
+        return;
     if(!currentState)
         return;
     if(selectedAssets.empty())
@@ -509,6 +546,8 @@ void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
 void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id)
 {
     bool value = assetAttributeGroup->button(id)->isChecked();
+    if(updatingForm)
+        return;
     if(!currentState)
         return;
     if(selectedAssets.empty())
@@ -689,6 +728,8 @@ void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id)
 
 void RwaAssetAttributeView::receiveLineEditAttributeValue(const QString &text)
 {
+    if(updatingForm)
+        return;
     if(!currentState)
         return;
     if(selectedAssets.empty())
@@ -902,6 +943,8 @@ void RwaAssetAttributeView::receiveComboBoxAttributeValue(int index)
     QComboBox *box = static_cast<QComboBox *>(QObject::sender());
     QString value = box->itemText(index);
 
+    if(updatingForm)
+        return;
     if(!currentState)
         return;
     if(selectedAssets.empty())

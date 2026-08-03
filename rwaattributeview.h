@@ -57,6 +57,7 @@ protected:
     QString senderName, lastSenderName;
     QString senderValue, lastSenderValue;
     QGridLayout *attributeGridLayout;
+    bool updatingForm = false; // widget signals fired while populating/clearing the form must not write back into assets
 
     void setLineEditSignal2editingFinished(QLineEdit *attrLineEdit);
     void addSeparator(QGridLayout *layout);

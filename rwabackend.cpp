@@ -272,6 +272,13 @@ void RwaBackend::receiveLastTouchedState(RwaState *state)
     if(lastTouchedScene)
         lastTouchedScene->lastTouchedState = state;
 
+    // default to the first asset before broadcasting, so every view agrees on
+    // the touched asset; null for states without assets (the asset views clear)
+    if(!state->lastTouchedAsset && !state->assets.empty())
+        state->lastTouchedAsset = state->assets.front();
+
+    lastTouchedAssetItem = state->lastTouchedAsset;
+
     emit sendLastTouchedState(state);
 }
 

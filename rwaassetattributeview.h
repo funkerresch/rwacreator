@@ -44,6 +44,8 @@ signals:
     void sendCurrentStateWithoutRepositioning(RwaState *state);
 
 private:
+   void clearForm();
+
    QStringList selectedAssets;
    QComboBox *reflectionCount;
    QLabel *reflectionCountLabel;

@@ -85,6 +85,7 @@ void RwaAssetList::setCurrentState(RwaState *state)
     }
 
     setCurrentAsset(state->getLastTouchedAsset());
+    emit sendSelectedAssets(getSelectedAssets()); // empties a stale selection when the state has no assets
 }
 
 void RwaAssetList::setCurrentScene(RwaScene *scene)
@@ -213,7 +214,7 @@ void RwaAssetList::mouseReleaseEvent(QMouseEvent *event)
 
 void RwaAssetList::mousePressEvent(QMouseEvent *event)
 {
-    QListWidget::mousePressEvent(event);
+    RwaListView::mousePressEvent(event);
     setCurrentAssetFromCurrentItem();
 }
 

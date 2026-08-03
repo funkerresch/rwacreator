@@ -105,7 +105,7 @@ void RwaStateList::setCurrentStateFromCurrentListItem()
 
 void RwaStateList::mousePressEvent(QMouseEvent *event)
 {
-    QListWidget::mousePressEvent(event);
+    RwaListView::mousePressEvent(event);
     if(currentScene)
         setCurrentStateFromCurrentListItem();
 }

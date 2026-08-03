@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Clicking empty space in the state or asset lists no longer clears the
+  selection. Previously the click deselected the last touched item while the
+  attribute form next to the list allowed changing of values. The empty-space
+  click is now simply ignored (`RwaListView::mousePressEvent`, shared by all
+  three lists).
+
+- The asset attribute form no longer shows stale values after switching states.
+  Previously it kept displaying the previous state's asset when the newly
+  selected state had no touched asset yet; edits then either went nowhere or —
+  when the new state contained an audio file of the same name — silently landed
+  in that other asset whose values were never shown. Now touching a state
+  defaults its touched asset to the first asset before the change is broadcast
+  (`RwaBackend::receiveLastTouchedState`), the asset list re-announces its
+  (possibly empty) selection on every state switch, and the form clears and
+  disables itself when the state has no assets
+  (`RwaAssetAttributeView::clearForm`).
+
+  The form's widgets fire their edit handlers on programmatic changes too
+  (`textChanged`, `idToggled`), so filling or clearing the form could write the
+  displayed values back into whatever assets were still listed as selected. A
+  new `RwaAttributeView::updatingForm` guard suppresses write-back while the
+  form is being populated or cleared. The state and scene attribute views share
+  the helpers with the same hazard and still need the equivalent guard
+  (follow-up).
+
 ### Added
 
 - Status badges in the State View's asset list: small icons painted

@@ -55,6 +55,16 @@ qint32 RwaListView::getSelectedIndex()
         return this->selectedIndexes().first().row();
 }
 
+void RwaListView::mousePressEvent(QMouseEvent *event)
+{
+    // a click on empty space must not clear the selection,
+    // the list would otherwise contradict the form next to it.
+    if(!indexAt(event->position().toPoint()).isValid())
+        return;
+
+    QListWidget::mousePressEvent(event);
+}
+
 void RwaListView::mouseMoveEvent(QMouseEvent *event)
 {
     QListWidget::mouseMoveEvent(event);

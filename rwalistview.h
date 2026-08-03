@@ -50,6 +50,7 @@ class RwaListView : public QListWidget
         virtual void setCurrentScene(qint32 sceneNumber);
 
     protected:
+        void mousePressEvent(QMouseEvent *event);
         void mouseMoveEvent(QMouseEvent *event);
         void dragMoveEvent(QDragMoveEvent *event);
         void dropEvent(QDropEvent *event);
