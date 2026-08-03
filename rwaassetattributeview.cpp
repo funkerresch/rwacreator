@@ -286,11 +286,11 @@ void RwaAssetAttributeView::setCurrentAsset(RwaAsset1 *asset)
     if(attrCheckBox)
         attrCheckBox->setChecked(asset->getLoopUntilEndPosition());
 
-    attrCheckBox = this->findChild<QCheckBox *>("Raw Sensors 2 Pd");
+    attrCheckBox = this->findChild<QCheckBox *>("Raw Sensors to Pd");
     if(attrCheckBox)
         attrCheckBox->setChecked(asset->getRawSensors2pd());
 
-    attrCheckBox = this->findChild<QCheckBox *>("GPS 2 Pd");
+    attrCheckBox = this->findChild<QCheckBox *>("GPS to Pd");
     if(attrCheckBox)
         attrCheckBox->setChecked(asset->getGps2pd());
 
@@ -310,7 +310,7 @@ void RwaAssetAttributeView::setCurrentAsset(RwaAsset1 *asset)
     if(attrCheckBox)
         attrCheckBox->setChecked(asset->getMute());
 
-    attrCheckBox = this->findChild<QCheckBox *>("Headtracker relative 2 source");
+    attrCheckBox = this->findChild<QCheckBox *>("Headtracker relative to source");
     if(attrCheckBox)
         attrCheckBox->setChecked(asset->getHeadtrackerRelative2Source());
 
