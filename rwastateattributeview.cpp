@@ -55,8 +55,8 @@ RwaStateAttributeView::RwaStateAttributeView(QWidget *parent, RwaScene *scene) :
     QLineEdit *requiredStates = addLineEditAndLabel(attributeGridLayout, "Required States");
     setLineEditSignal2editingFinished(requiredStates);
 
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Longitude");
     editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Latitude");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Longitude");
     editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "State Radius");
     editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "State Width");
     editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "State Height");

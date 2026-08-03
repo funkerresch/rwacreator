@@ -165,6 +165,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Swapped the sequence of the coordinate fields in the State View attribute
+  list, for consistent latitute/longitude sequence.
+
 - The Map View toolbar icons now follow the system's light/dark appearance: in
   dark mode the SVGs' neutral gray (`#434343`) is replaced with the palette's
   button-text color at paint time, so the icons stay visible on a dark toolbar;
