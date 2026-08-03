@@ -61,14 +61,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unknown names are skipped. The game and scene lists inherit the delegate and
   only need to fill that role to get badges of their own (planned follow-up).
   The icons' neutral gray (`#434343`) is replaced with the palette's text color
-  at render time (`QSvgRenderer` on the rewritten SVG bytes, cached per
-  name/color/size), so badges follow the system's light/dark appearance and
-  use the highlighted-text color on selected rows; semantic colors like the
-  mismatch red are left as authored.
-  New icons in `images/`: `badgeSamplerateMismatch`, `badgePd`, `badgeMuted`,
-  `badgeLooped`, `badgeMoving`, `playbackSpeaker1/2`,
-  `playbackHeadphones1/2/5/7` (Material Symbols, documented in the rwa-doc icon
-  translation table).
+  in dark mode and with the highlighted-text color on selected rows
+  (`QSvgRenderer` on the rewritten SVG bytes, cached per name/color/size); in
+  light mode the authored gray is kept (the palette color would be plain black).
+  Semantic colors like the mismatch red are left as authored. New icons in
+  `images/`: `badgeSamplerateMismatch`, `badgePd`, `badgeMuted`, `badgeLooped`,
+  `badgeMoving`, `playbackSpeaker1/2`, `playbackHeadphones1/2/5/7` (Material
+  Symbols, documented in the rwa-doc icon translation table).
 
 - `.rwa` is now a registered macOS document type owned by RWA Creator. Opening
   an `.rwa` file in Finder opens the project in the running instance if the app
@@ -159,6 +158,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   remembered — RWA Creator runs on the system default until it appears.
 
 ### Changed
+
+- The Map View toolbar icons now follow the system's light/dark appearance: in
+  dark mode the SVGs' neutral gray (`#434343`) is replaced with the palette's
+  button-text color at paint time, so the icons stay visible on a dark toolbar;
+  disabled buttons use the disabled color group. In light mode the authored gray
+  is kept, and semantic colors (the green start, red stop, blue asset icon) are
+  left as authored everywhere. Implemented as a custom `QIconEngine`
+  (`rwathemedicon.{h,cpp}`); the list badge delegate shares the same renderer.
+  Icons drawn onto the map are deliberately untouched: the map background does
+  not change with the theme. The one remaining `.png` toolbar icon
+  (`heroFollowsSceneAndStateButton`) cannot be recolored this way.
 
 - Saved `.rwa` files now reference assets as `assets/<filename>` instead of the
   absolute path of the machine they were saved on. The Creator

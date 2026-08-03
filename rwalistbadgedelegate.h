@@ -15,8 +15,9 @@
  * badge names before the corresponding icons ship.
  *
  * The icons' neutral gray (#434343) is replaced with the palette's text
- * color at render time, so badges stay visible in dark mode and on the
- * selection highlight; semantic colors in the SVGs are left untouched.
+ * color in dark mode and with the highlighted-text color on the selection
+ * highlight, so badges stay visible on both; in light mode the authored
+ * gray is kept. Semantic colors in the SVGs are left untouched.
  *
  */
 
