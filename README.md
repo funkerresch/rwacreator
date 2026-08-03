@@ -102,6 +102,12 @@ You may use the debugger facilities of you IDE instead of lldb. Configuration fo
 
 Run `./build_release.sh`, it will build and sign the app, and create a notarized DMG for distribution:
 
+> **Note:** The terminal or editor running the script needs the **App Management** permission
+> (System Settings → Privacy & Security → App Management). Without it, the DMG step fails with
+> `hdiutil: create failed - Operation not permitted`. macOS treats the previously launched app
+> bundle as an installed app and blocks `hdiutil` from copying it. This might have been
+> introduced with the `.rwa` file-type registration. OS updates may reset this permission.
+
 Or manually build using CMake (no notarization):
 
 ```bash
