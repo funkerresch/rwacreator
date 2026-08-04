@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- No microphone input in release builds (Pd patches using `[adc~]` received no
+  audio input). The release build signs with the hardened runtime (`--options
+  runtime`) but passed no entitlements, and the hardened runtime requires
+  `com.apple.security.device.audio-input` for audio capture. New
+  `release.entitlements` carries the entitlement and is applied when signing the
+  app bundle in `build_release.sh`; the first `Pa_OpenStream` after launch now
+  triggers the microphone permission prompt as intended. Debug builds were never
+  affected (ad-hoc signed without the hardened runtime).
+
+  `release.entitlements` also documents the App-Sandbox entitlements for
+  Bluetooth (headtracker) and network client/server (map tiles, OSC, the
+  project-sharing HTTP server). These are inert under the hardened runtime
+  alone, kept so intent is recorded should the app ever be sandboxed.
+
 ## [v1.4.0] - 2026-08-03
 
 ### Added

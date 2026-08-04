@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Hardened runtime: required for microphone capture ([adc~] in Pd
+	patches). Without it macOS denies input before TCC is consulted, so
+	the permission prompt never appears. -->
+	<key>com.apple.security.device.audio-input</key>
+	<true/>
+	<!-- The keys below are App Sandbox entitlements — inert under the
+	hardened runtime alone, kept to document intent should the app ever
+	be sandboxed. -->
+	<!-- Headtracker (CoreBluetooth) -->
+	<key>com.apple.security.device.bluetooth</key>
+	<true/>
+	<!-- Outgoing: map tiles, OSC -->
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<!-- Incoming: project-package sharing server (RwaBackend) -->
+	<key>com.apple.security.network.server</key>
+	<true/>
+</dict>
+</plist>

@@ -107,7 +107,11 @@ find "$APP_BUNDLE" -name "*.framework" -type d | sort -r | while IFS= read -r f;
 done
 
 echo "==> Signing app bundle..."
-codesign "${CODESIGN_ARGS[@]}" "$APP_BUNDLE"
+# Entitlements only apply to the main executable, so they are passed here
+# and not to the nested dylib/framework signing above.
+codesign "${CODESIGN_ARGS[@]}" \
+  --entitlements release.entitlements \
+  "$APP_BUNDLE"
 
 # Verify the signature
 codesign --verify --deep --strict "$APP_BUNDLE"
