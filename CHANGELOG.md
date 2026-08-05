@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The selected asset's auxiliary map icons (channel positions, the start
+  position and the current position of moving/rotating assets) now take on the
+  selection color (the orange of the selected-asset icon) in the Map View and
+  State Map View. Previously only the asset's location icon changed on
+  selection, so with several multichannel or moving assets in view it was hard
+  to tell which satellite icons belonged to the selected asset. The colored
+  variants are rendered from the same SVGs by substituting the fill color
+  (`rwaRenderRecoloredSvg`, which gained a `fromColor` parameter); no new icon
+  files were added.
+
 ## [v1.4.1] - 2026-08-04
 
 ### Fixed

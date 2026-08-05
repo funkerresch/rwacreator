@@ -102,6 +102,12 @@ protected:
     GeometryLayer *assetLayer;
     GeometryLayer *assetReflectionLayer;
 
+    // selection-colored variants of the asset layer's channel/start point/
+    // moving position pixmaps; must outlive the map items, which keep pointers
+    QPixmap selectedChannelPixmap;
+    QPixmap selectedStartPointPixmap;
+    QPixmap selectedMovingPositionPixmap;
+
     QmapPoint *currentRadiusPoint = nullptr;
     QmapPoint *currentScenePoint = nullptr;
     QmapPoint *currentStatePoint = nullptr;

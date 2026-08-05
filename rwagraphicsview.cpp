@@ -1,5 +1,6 @@
 #include "rwagraphicsview.h"
 #include "rwastyles.h"
+#include "rwathemedicon.h"
 #include <math.h>
 
 RwaGraphicsView::RwaGraphicsView(QWidget *parent, RwaScene *scene, QString name) :
@@ -60,6 +61,15 @@ RwaGraphicsView::RwaGraphicsView(QWidget *parent, RwaScene *scene, QString name)
     assetLayer->setPixmap4(QPixmap(path+"images/audiosourcestartpoint.svg").scaled(21, 21, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     assetLayer->setPixmap5(QPixmap(path+"images/audiosourcestartpoint1.svg").scaled(21, 21, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     mc->addLayer(assetLayer);
+
+    // channel/start point/moving position icons of the selected asset get the
+    // selection color of audiosourceselected.svg, so everything belonging to
+    // the selected asset reads as one group
+    QColor selectionColor("#F19E39");
+    QByteArray assetIconBlue("#2854C5");
+    selectedChannelPixmap = rwaRenderRecoloredSvg(path+"images/audiochannelsource.svg", selectionColor, QSize(21, 21), 1.0, assetIconBlue);
+    selectedMovingPositionPixmap = rwaRenderRecoloredSvg(path+"images/audiosourcestartpoint.svg", selectionColor, QSize(21, 21), 1.0, assetIconBlue);
+    selectedStartPointPixmap = rwaRenderRecoloredSvg(path+"images/audiosourcestartpoint1.svg", selectionColor, QSize(21, 21), 1.0, assetIconBlue);
 
     assetReflectionLayer = new GeometryLayer("Asset Reflection Layer", mapadapter);
     assetReflectionLayer->setActivePixmap(QPixmap(path+"images/audioreflectionactive.svg").scaled(21, 21, Qt::KeepAspectRatio, Qt::SmoothTransformation));
@@ -395,12 +405,21 @@ void RwaGraphicsView::updateAssetPixmaps()
     {
         RwaMapItem *point;
         point = static_cast<RwaMapItem *>(assetLayer->geometries.at(i));
-        if(point->getRwaType() == RWAPOSITIONTYPE_ASSET)
+        bool selected = (point->data == currentAsset);
+        switch(point->getRwaType())
         {
-            if(point->data == currentAsset)
-                point->setPixmap(assetLayer->getActivePixmap());
-            else
-                point->setPixmap(assetLayer->getPassivePixmap());
+            case RWAPOSITIONTYPE_ASSET:
+                point->setPixmap(selected ? assetLayer->getActivePixmap() : assetLayer->getPassivePixmap());
+                break;
+            case RWAPOSITIONTYPE_ASSETCHANNEL:
+                point->setPixmap(selected ? &selectedChannelPixmap : assetLayer->getPixmap3());
+                break;
+            case RWAPOSITIONTYPE_CURRENTASSETPOSITION:
+                point->setPixmap(selected ? &selectedMovingPositionPixmap : assetLayer->getPixmap4());
+                break;
+            case RWAPOSITIONTYPE_ASSETSTARTPOINT:
+                point->setPixmap(selected ? &selectedStartPointPixmap : assetLayer->getPixmap5());
+                break;
         }
     }
 
@@ -853,6 +872,10 @@ void RwaGraphicsView::drawAsset(RwaAsset1 *item, bool isActive)
     if(item->getMute())
         return;
 
+    QPixmap *channelPixmap = isActive ? &selectedChannelPixmap : assetLayer->getPixmap3();
+    QPixmap *movingPositionPixmap = isActive ? &selectedMovingPositionPixmap : assetLayer->getPixmap4();
+    QPixmap *startPointPixmap = isActive ? &selectedStartPointPixmap : assetLayer->getPixmap5();
+
     if(isActive)
         mapItem = new RwaMapItem(QPointF(item->getCoordinates()[0],item->getCoordinates()[1]), item, RWAPOSITIONTYPE_ASSET, assetLayer->getActivePixmap());
     else
@@ -868,7 +891,7 @@ void RwaGraphicsView::drawAsset(RwaAsset1 *item, bool isActive)
     {
         if(assetStartPointsVisible)
         {
-            mapItem = new RwaMapItem(QPointF(item->getStartPosition()[0], item->getStartPosition()[1]), item, RWAPOSITIONTYPE_ASSETSTARTPOINT, assetLayer->getPixmap5());
+            mapItem = new RwaMapItem(QPointF(item->getStartPosition()[0], item->getStartPosition()[1]), item, RWAPOSITIONTYPE_ASSETSTARTPOINT, startPointPixmap);
             mapItem->setAllowTouches(true);
             assetLayer->addGeometry(mapItem);
         }
@@ -877,7 +900,7 @@ void RwaGraphicsView::drawAsset(RwaAsset1 *item, bool isActive)
         {
             QPointF tmp = QPointF(item->getCurrentPosition()[0], item->getCurrentPosition()[1]);
             //qDebug() << tmp.x() << " " << tmp.y();
-            mapItem = new RwaMapItem(tmp, item, RWAPOSITIONTYPE_CURRENTASSETPOSITION, assetLayer->getPixmap4());
+            mapItem = new RwaMapItem(tmp, item, RWAPOSITIONTYPE_CURRENTASSETPOSITION, movingPositionPixmap);
             mapItem->setAllowTouches(false);
             assetLayer->addGeometry(mapItem);
         }
@@ -888,49 +911,49 @@ void RwaGraphicsView::drawAsset(RwaAsset1 *item, bool isActive)
         if(item->getPlaybackType() == RWAPLAYBACKTYPE_BINAURALMONO
         || item->getPlaybackType() == RWAPLAYBACKTYPE_BINAURALMONO_FABIAN)
         {
-            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[0][0], item->channelcoordinates[0][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, assetLayer->getPixmap3(), 0);
+            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[0][0], item->channelcoordinates[0][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, channelPixmap, 0);
             assetLayer->addGeometry(mapItem);
         }
 
         if(item->getPlaybackType() == RWAPLAYBACKTYPE_BINAURALSTEREO
         || item->getPlaybackType() == RWAPLAYBACKTYPE_BINAURALSTEREO_FABIAN)
         {
-            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[0][0], item->channelcoordinates[0][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL,assetLayer->getPixmap3(), 0);
+            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[0][0], item->channelcoordinates[0][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, channelPixmap, 0);
             assetLayer->addGeometry(mapItem);
-            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[1][0], item->channelcoordinates[1][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, assetLayer->getPixmap3(), 1);
+            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[1][0], item->channelcoordinates[1][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, channelPixmap, 1);
             assetLayer->addGeometry(mapItem);
         }
 
         if(item->getPlaybackType() == RWAPLAYBACKTYPE_BINAURAL5CHANNEL
         || item->getPlaybackType() == RWAPLAYBACKTYPE_BINAURAL5CHANNEL_FABIAN)
         {
-            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[0][0], item->channelcoordinates[0][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, assetLayer->getPixmap3(), 0);
+            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[0][0], item->channelcoordinates[0][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, channelPixmap, 0);
             assetLayer->addGeometry(mapItem);
-            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[1][0], item->channelcoordinates[1][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, assetLayer->getPixmap3(), 1);
+            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[1][0], item->channelcoordinates[1][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, channelPixmap, 1);
             assetLayer->addGeometry(mapItem);
-            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[2][0], item->channelcoordinates[2][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, assetLayer->getPixmap3(), 2);
+            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[2][0], item->channelcoordinates[2][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, channelPixmap, 2);
             assetLayer->addGeometry(mapItem);
-            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[3][0], item->channelcoordinates[3][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, assetLayer->getPixmap3(),3);
+            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[3][0], item->channelcoordinates[3][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, channelPixmap,3);
             assetLayer->addGeometry(mapItem);
-            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[4][0], item->channelcoordinates[4][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, assetLayer->getPixmap3(),4);
+            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[4][0], item->channelcoordinates[4][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, channelPixmap,4);
             assetLayer->addGeometry(mapItem);
         }
 
         if(item->getPlaybackType() == RWAPLAYBACKTYPE_BINAURAL7CHANNEL_FABIAN)
         {
-            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[0][0], item->channelcoordinates[0][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, assetLayer->getPixmap3(), 0);
+            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[0][0], item->channelcoordinates[0][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, channelPixmap, 0);
             assetLayer->addGeometry(mapItem);
-            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[1][0], item->channelcoordinates[1][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, assetLayer->getPixmap3(), 1);
+            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[1][0], item->channelcoordinates[1][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, channelPixmap, 1);
             assetLayer->addGeometry(mapItem);
-            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[2][0], item->channelcoordinates[2][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, assetLayer->getPixmap3(), 2);
+            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[2][0], item->channelcoordinates[2][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, channelPixmap, 2);
             assetLayer->addGeometry(mapItem);
-            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[3][0], item->channelcoordinates[3][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, assetLayer->getPixmap3(),3);
+            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[3][0], item->channelcoordinates[3][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, channelPixmap,3);
             assetLayer->addGeometry(mapItem);
-            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[4][0], item->channelcoordinates[4][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, assetLayer->getPixmap3(),4);
+            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[4][0], item->channelcoordinates[4][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, channelPixmap,4);
             assetLayer->addGeometry(mapItem);
-            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[5][0], item->channelcoordinates[5][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, assetLayer->getPixmap3(),5);
+            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[5][0], item->channelcoordinates[5][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, channelPixmap,5);
             assetLayer->addGeometry(mapItem);
-            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[6][0], item->channelcoordinates[6][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, assetLayer->getPixmap3(),6);
+            mapItem = new RwaMapItem(QPointF(item->channelcoordinates[6][0], item->channelcoordinates[6][1]), item, RWAPOSITIONTYPE_ASSETCHANNEL, channelPixmap,6);
             assetLayer->addGeometry(mapItem);
         }
     }

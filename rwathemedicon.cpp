@@ -9,7 +9,7 @@
 #include <QSvgRenderer>
 #include <QPixmapCache>
 
-QPixmap rwaRenderRecoloredSvg(const QString &svgPath, const QColor &color, const QSize &size, qreal devicePixelRatio)
+QPixmap rwaRenderRecoloredSvg(const QString &svgPath, const QColor &color, const QSize &size, qreal devicePixelRatio, const QByteArray &fromColor)
 {
     QPixmap pixmap;
     QFile file(svgPath);
@@ -18,7 +18,7 @@ QPixmap rwaRenderRecoloredSvg(const QString &svgPath, const QColor &color, const
     {
         QByteArray svg = file.readAll();
         if(color.isValid()) // invalid color = keep the authored colors
-            svg.replace("#434343", color.name().toLatin1()); // the neutral gray follows the palette, semantic colors stay
+            svg.replace(fromColor, color.name().toLatin1()); // only fromColor follows, other (semantic) colors stay
 
         QSvgRenderer renderer(svg);
         if(renderer.isValid() && !renderer.defaultSize().isEmpty())

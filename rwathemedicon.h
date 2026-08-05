@@ -24,8 +24,8 @@
 QIcon rwaThemedIcon(const QString &svgPath);
 
 // renders svgPath aspect-fitted and centered into a size*devicePixelRatio
-// pixmap, with the neutral gray replaced by color; used by rwaThemedIcon
-// and RwaListBadgeDelegate
-QPixmap rwaRenderRecoloredSvg(const QString &svgPath, const QColor &color, const QSize &size, qreal devicePixelRatio);
+// pixmap, with fromColor (default: the neutral gray) replaced by color; used
+// by rwaThemedIcon, RwaListBadgeDelegate and the map views
+QPixmap rwaRenderRecoloredSvg(const QString &svgPath, const QColor &color, const QSize &size, qreal devicePixelRatio, const QByteArray &fromColor = "#434343");
 
 #endif // RWATHEMEDICON_H
