@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [v1.4.3] - (ongoing engine parity implementation)
+## [v1.4.3]
 
 ### Fixed
 
