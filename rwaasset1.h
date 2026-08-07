@@ -118,6 +118,10 @@ public:
     void copyAttributes(RwaAsset1 *dest);
     void calculateChannelPositions();
 
+    // Number of spatial data channels (azimuthN/distanceN/elevationN) a playback
+    // mode implies; 0 for modes without per-channel spatialisation data.
+    static int32_t channelCountForPlaybackType(int32_t playbackType);
+
     void setChannelCoordinate(int32_t channelNumber, std::vector<double> coordinate);
     void setCustomChannelCoordinate(int32_t channelNumber, std::vector<double> coordinate);
     void setReflectionCoordinate(int32_t channelNumber, std::vector<double> coordinate);

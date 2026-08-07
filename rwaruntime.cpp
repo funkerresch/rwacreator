@@ -1152,82 +1152,32 @@ void RwaRuntime::sendData2Asset(RwaEntity *entity, RwaEntity::AssetMapItem item)
         pdMutex->unlock();
     }
 
-    if(asset->type == RWAASSETTYPE_PD)
+    if(asset->type == RWAASSETTYPE_PD && !asset->headtrackerRelative2Source)
     {
+        // The patch spatialises on its own from the raw head orientation:
+        // one set of data, azimuth/elevation are the head values, not source-relative.
         calculateChannelBearingAndDistance(entity, asset, 0);
-        double elevation = RwaUtilities::calculateElevationEasy(entity->getCoordinates(), asset->channelcoordinates[0], asset->getElevation(), entity->elevation());
         double totalDistance = RwaUtilities::calculateDistanceWithAltitude(asset->channelDistance[0], asset->getElevation());
         sendDistance(0, intPatcherTag, totalDistance);
-
-        if(asset->headtrackerRelative2Source)
-        {
-            sendBearing(0, intPatcherTag, asset->channelBearing[0]);
-            sendElevation(0, intPatcherTag, elevation);
-        }
-        else
-        {
-            sendBearing(0, intPatcherTag, entity->azimuth());
-            sendElevation(0, intPatcherTag, entity->elevation());
-        }
+        sendBearing(0, intPatcherTag, entity->azimuth());
+        sendElevation(0, intPatcherTag, entity->elevation());
     }
-
     else
     {
-        if(asset->playbackType == RWAPLAYBACKTYPE_BINAURALMONO
-          || asset->playbackType == RWAPLAYBACKTYPE_BINAURALMONO_FABIAN
-          || asset->playbackType == RWAPLAYBACKTYPE_MONO
-          || asset->playbackType == RWAPLAYBACKTYPE_STEREO
-          || asset->playbackType == RWAPLAYBACKTYPE_CUSTOM1
-          || asset->playbackType == RWAPLAYBACKTYPE_CUSTOM2
-          || asset->playbackType == RWAPLAYBACKTYPE_CUSTOM3 )
-        {
-            calculateChannelBearingAndDistance(entity, asset, 0);
-            double elevation = RwaUtilities::calculateElevationEasy(entity->getCoordinates(), asset->channelcoordinates[0], asset->getElevation(), entity->elevation());
-            double totalDistance = RwaUtilities::calculateDistanceWithAltitude(asset->channelDistance[0], asset->getElevation());
-            sendDistance(0, intPatcherTag, totalDistance);
-            sendBearing(0, intPatcherTag, asset->channelBearing[0]);
-            sendElevation(0, intPatcherTag, elevation);
-        }
+        int numChannels = RwaAsset1::channelCountForPlaybackType(asset->getPlaybackType());
 
-        if(asset->playbackType == RWAPLAYBACKTYPE_BINAURALSTEREO
-           || asset->playbackType == RWAPLAYBACKTYPE_BINAURALSTEREO_FABIAN)
-        {
-            for(int i = 0;i < 2; i++)
-            {
-                calculateChannelBearingAndDistance(entity, asset, i);
-                double elevation = RwaUtilities::calculateElevationEasy(entity->getCoordinates(), asset->channelcoordinates[i], asset->getElevation(), entity->elevation());
-                double totalDistance = RwaUtilities::calculateDistanceWithAltitude(asset->channelDistance[i], asset->getElevation());
-                sendDistance(i, intPatcherTag, totalDistance);
-                sendBearing(i, intPatcherTag, asset->channelBearing[i]);
-                sendElevation(i, intPatcherTag, elevation);
-            }
-        }
+        // Patches always get at least channel 1 data, whatever the playback mode says.
+        if(asset->type == RWAASSETTYPE_PD && numChannels < 1)
+            numChannels = 1;
 
-        if(asset->playbackType == RWAPLAYBACKTYPE_BINAURAL5CHANNEL
-           || asset->playbackType == RWAPLAYBACKTYPE_BINAURAL5CHANNEL_FABIAN)
+        for(int i = 0; i < numChannels; i++)
         {
-            for(int i = 0;i < 5; i++)
-            {
-                calculateChannelBearingAndDistance(entity, asset, i);
-                double elevation = RwaUtilities::calculateElevationEasy(entity->getCoordinates(), asset->channelcoordinates[i], asset->getElevation(), entity->elevation());
-                double totalDistance = RwaUtilities::calculateDistanceWithAltitude(asset->channelDistance[i], asset->getElevation());
-                sendDistance(i, intPatcherTag, totalDistance);
-                sendBearing(i, intPatcherTag, asset->channelBearing[i]);
-                sendElevation(i, intPatcherTag, elevation);
-            }
-        }
-
-        if(asset->playbackType == RWAPLAYBACKTYPE_BINAURAL7CHANNEL_FABIAN)
-        {
-            for(int i = 0;i < 7; i++)
-            {
-                calculateChannelBearingAndDistance(entity, asset, i);
-                double elevation = RwaUtilities::calculateElevationEasy(entity->getCoordinates(), asset->channelcoordinates[i], asset->getElevation(), entity->elevation());
-                double totalDistance = RwaUtilities::calculateDistanceWithAltitude(asset->channelDistance[i], asset->getElevation());
-                sendDistance(i, intPatcherTag, totalDistance);
-                sendBearing(i, intPatcherTag, asset->channelBearing[i]);
-                sendElevation(i, intPatcherTag, elevation);
-            }
+            calculateChannelBearingAndDistance(entity, asset, i);
+            double elevation = RwaUtilities::calculateElevationEasy(entity->getCoordinates(), asset->channelcoordinates[i], asset->getElevation(), entity->elevation());
+            double totalDistance = RwaUtilities::calculateDistanceWithAltitude(asset->channelDistance[i], asset->getElevation());
+            sendDistance(i, intPatcherTag, totalDistance);
+            sendBearing(i, intPatcherTag, asset->channelBearing[i]);
+            sendElevation(i, intPatcherTag, elevation);
         }
     }
 

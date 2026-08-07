@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- The Playback Mode of Pd-patch assets now determines how many channels of
+  spatial data the patch receives. Previously the runtime ignored the playback
+  mode for patch assets entirely and always sent a single data set
+  (`$0-distance1`, `$0-azimuth1`, `$0-elevation1`), so multichannel patches
+  could never be driven from the Creator. Now the mode selects the channel count
+  (binaural stereo → 2, binaural 5 channel → 5, binaural 7 channel → 7, all
+  mono-ish modes → 1) and the runtime sends
+  `$0-distanceN`/`$0-azimuthN`/`$0-elevationN` per channel, honoring channel
+  radius, rotate offset and custom channel positions exactly like for audio
+  assets. Patches that only listen to the `...1` receivers are unaffected;
+  "Headtracker relative to source" off still sends the raw head
+  azimuth/elevation on channel 1 only, as before. The per-playback-type fan-out
+  in `RwaRuntime::sendData2Asset` was unified into a single loop over
+  `RwaAsset1::channelCountForPlaybackType`; behaviour for audio-file assets is
+  unchanged (including AUTO/NATIVE modes not sending spatial data, and the
+  missing 7-channel angular offsets, both pre-existing issues left as is for
+  now). **Engine parity:** the same change needs to be mirrored in the Player's
+  `RwaGameLoop.swift` (its `sendData2Asset` has the identical single-channel Pd
+  branch); until then, exported games with multichannel patch assets will behave
+  differently on the Player.
+
 ## [v1.4.2] - 2026-08-07
 
 ### Changed

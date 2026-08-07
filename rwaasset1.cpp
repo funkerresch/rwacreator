@@ -179,6 +179,37 @@ void RwaAsset1::setReflectionCount(const int32_t &value)
     reflectionCount = value;
 }
 
+int32_t RwaAsset1::channelCountForPlaybackType(int32_t playbackType)
+{
+    switch(playbackType)
+    {
+        case RWAPLAYBACKTYPE_MONO:
+        case RWAPLAYBACKTYPE_STEREO:
+        case RWAPLAYBACKTYPE_BINAURALMONO:
+        case RWAPLAYBACKTYPE_BINAURALMONO_FABIAN:
+        case RWAPLAYBACKTYPE_CUSTOM1:
+        case RWAPLAYBACKTYPE_CUSTOM2:
+        case RWAPLAYBACKTYPE_CUSTOM3:
+            return 1;
+
+        case RWAPLAYBACKTYPE_BINAURALSTEREO:
+        case RWAPLAYBACKTYPE_BINAURALSTEREO_FABIAN:
+            return 2;
+
+        case RWAPLAYBACKTYPE_BINAURAL5CHANNEL:
+        case RWAPLAYBACKTYPE_BINAURAL5CHANNEL_FABIAN:
+            return 5;
+
+        case RWAPLAYBACKTYPE_BINAURAL7CHANNEL_FABIAN:
+            return 7;
+
+        // AUTO/NATIVE dispatch on the file's channel count at patcher selection,
+        // but the runtime has never sent spatial data for them
+        default: // AUTO, NATIVE, BINAURALSPACE, RWA_UNDETERMINED
+            return 0;
+    }
+}
+
 void RwaAsset1::calculateChannelPositions()
 {
     std::vector<double> tmp(2, 0.0);
