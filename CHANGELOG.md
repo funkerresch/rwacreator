@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Debug builds are now signed with the Developer ID identity (`TEAM_ID` from
+  `.env`, same as release builds) instead of ad-hoc, falling back to ad-hoc
+  with a warning when no identity is available. The macOS application
+  firewall identifies apps by code signature and its "automatically allow
+  downloaded signed software" option only covers identified-developer
+  signatures, so an ad-hoc debug build could never be durably allowed —
+  every rebuild produced a new signature, and once the allow/deny prompt
+  stopped appearing (e.g. after an MDM policy sync rewrote the firewall
+  rules), incoming OSC from RWA Players on UDP :8000 was silently dropped
+  while loopback traffic kept working. `debug.entitlements`
+  (`get-task-allow`) is still applied, so lldb can attach as before.
+
 - Three asset attribute checkboxes ("Raw Sensors to Pd", "GPS to Pd",
   "Headtracker relative to source") no longer displayed the asset's actual
   value when an asset was selected. Most visibly, "Headtracker relative to

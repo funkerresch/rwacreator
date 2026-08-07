@@ -34,18 +34,46 @@ cmake --build "$BUILD_DIR" --config Debug \
 
 # Re-sign the assembled .app bundle.
 #
-# An ad-hoc bundle sign binds the Info.plist (so NSBluetoothAlwaysUsageDescription
+# A bundle sign binds the Info.plist (so NSBluetoothAlwaysUsageDescription
 # is trusted and the com.fhnw.rwa.creator bundle id is used) and seals resources,
 # giving CoreBluetooth a stable, valid identity. The debug.entitlements file keeps
 # com.apple.security.get-task-allow so lldb can still attach.
+#
+# Prefer the Developer ID identity (TEAM_ID from .env, same as the release
+# build): the application firewall's "automatically allow downloaded signed
+# software" then covers the debug build, so incoming UDP/TCP (OSC on :8000,
+# project sharing) works without a per-rebuild firewall prompt — an ad-hoc
+# signature changes with every build and can never be durably allowed.
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 APP_BUNDLE="$BUILD_DIR/RWA Creator.app"
-echo "==> Ad-hoc signing debug bundle for CoreBluetooth..."
-codesign --force --sign - \
-  --entitlements "$SCRIPT_DIR/debug.entitlements" \
-  --timestamp=none \
-  "$APP_BUNDLE"
-codesign -dv "$APP_BUNDLE" 2>&1 | grep -E "Identifier|Signature|Sealed" || true
+
+if [ -f "$SCRIPT_DIR/.env" ]; then
+  set -a
+  source "$SCRIPT_DIR/.env"
+  set +a
+fi
+SIGN_IDENTITY="${TEAM_ID:-}"
+if [ -z "$SIGN_IDENTITY" ]; then
+  SIGN_IDENTITY="$(security find-identity -v -p codesigning 2>/dev/null \
+    | sed -n 's/.*"\(Developer ID Application[^"]*\)".*/\1/p' | head -n1)"
+fi
+
+if [ -n "$SIGN_IDENTITY" ]; then
+  echo "==> Signing debug bundle with \"$SIGN_IDENTITY\"..."
+  codesign --force --sign "$SIGN_IDENTITY" \
+    --entitlements "$SCRIPT_DIR/debug.entitlements" \
+    --timestamp=none \
+    "$APP_BUNDLE"
+else
+  echo "==> No signing identity found (.env TEAM_ID or keychain), ad-hoc signing..."
+  echo "    Note: the firewall will not auto-allow incoming connections (OSC :8000);"
+  echo "    expect an allow/deny prompt or silently dropped packets."
+  codesign --force --sign - \
+    --entitlements "$SCRIPT_DIR/debug.entitlements" \
+    --timestamp=none \
+    "$APP_BUNDLE"
+fi
+codesign -dv "$APP_BUNDLE" 2>&1 | grep -E "Identifier|Signature|Authority|Sealed" || true
 
 echo "Ready to launch in debugger"
 exit 0
