@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Three asset attribute checkboxes ("Raw Sensors to Pd", "GPS to Pd",
+  "Headtracker relative to source") no longer displayed the asset's actual
+  value when an asset was selected. Most visibly, "Headtracker relative to
+  source" showed unchecked although the field defaults to enabled. Attribute
+  widgets are found by their label string (`findChild` on the `objectName` set
+  in `addAttrCheckbox`), and the label update in `fb11ef7` renamed only the
+  lookup strings in `setCurrentAsset`, not the labels the checkboxes are
+  created with, so the lookups silently returned null. The constructor labels
+  now match the lookups. Stored values and export were never affected; only
+  the display was stale.
+
 ### Changed
 
 - The selected asset's auxiliary map icons (channel positions, the start

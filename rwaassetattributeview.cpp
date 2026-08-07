@@ -65,14 +65,14 @@ RwaAssetAttributeView::RwaAssetAttributeView(QWidget *parent, RwaScene *scene) :
 
     addAttrCheckbox(attributeGridLayout, "Exclusive", RWAASSETATTRIBUTE_ISEXCLUSIVE);
     addAttrCheckbox(attributeGridLayout, "Loop", RWAASSETATTRIBUTE_LOOP);
-    addAttrCheckbox(attributeGridLayout, "Raw Sensors 2 Pd", RWAASSETATTRIBUTE_RAWSENSORS2PD);
-    addAttrCheckbox(attributeGridLayout, "GPS 2 Pd", RWAASSETATTRIBUTE_GPS2PD);
+    addAttrCheckbox(attributeGridLayout, "Raw Sensors to Pd", RWAASSETATTRIBUTE_RAWSENSORS2PD);
+    addAttrCheckbox(attributeGridLayout, "GPS to Pd", RWAASSETATTRIBUTE_GPS2PD);
     addAttrCheckbox(attributeGridLayout, "Play only once", RWAASSETATTRIBUTE_PLAYONCE);
     addAttrCheckbox(attributeGridLayout, "Rotating asset", RWAASSETATTRIBUTE_AUTOROTATE);
     addAttrCheckbox(attributeGridLayout, "Moving asset", RWAASSETATTRIBUTE_AUTOMOVE);
     addAttrCheckbox(attributeGridLayout, "Stop loop at end-position", RWAASSETATTRIBUTE_LOOPUNTILENDPOSITION);
     addAttrCheckbox(attributeGridLayout, "Mute/Disable", RWAASSETATTRIBUTE_MUTE);
-    addAttrCheckbox(attributeGridLayout, "Headtracker relative 2 source", RWAASSETATTRIBUTE_HEADTRACKERRELATIVE2SOURCE);
+    addAttrCheckbox(attributeGridLayout, "Headtracker relative to source", RWAASSETATTRIBUTE_HEADTRACKERRELATIVE2SOURCE);
     addAttrCheckbox(attributeGridLayout, "Lock asset position", RWAASSETATTRIBUTE_LOCKPOSITION);
     addAttrCheckbox(attributeGridLayout, "Enable custom channel-positions", RWAASSETATTRIBUTE_ALLOWINDIVIDUELLCHANNELPOSITIONS);
     addAttrCheckbox(attributeGridLayout, "Always play from start", RWAASSETATTRIBUTE_ALWAYSPLAYFROMBEGINNING);
