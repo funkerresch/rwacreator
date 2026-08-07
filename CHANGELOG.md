@@ -23,12 +23,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   azimuth/elevation on channel 1 only, as before. The per-playback-type fan-out
   in `RwaRuntime::sendData2Asset` was unified into a single loop over
   `RwaAsset1::channelCountForPlaybackType`; behaviour for audio-file assets is
-  unchanged (including AUTO/NATIVE modes not sending spatial data, and the
-  missing 7-channel angular offsets, both pre-existing issues left as is for
-  now). **Engine parity:** the same change needs to be mirrored in the Player's
-  `RwaGameLoop.swift` (its `sendData2Asset` has the identical single-channel Pd
-  branch); until then, exported games with multichannel patch assets will behave
-  differently on the Player.
+  unchanged (including AUTO/NATIVE modes not sending spatial data, a
+  pre-existing issue left as is for now). **Engine parity:** the same change
+  needs to be mirrored in the Player's `RwaGameLoop.swift` (its `sendData2Asset`
+  has the identical single-channel Pd branch); until then, exported games with
+  multichannel patch assets will behave differently on the Player.
+
+- Binaural 7-channel assets no longer collapse all seven channels onto one point
+  during simulation. The engine's per-tick channel placement
+  (`RwaRuntime::getOffsetForChannel`) had no case for
+  `RWAPLAYBACKTYPE_BINAURAL7CHANNEL_FABIAN` and returned offset 0 for every
+  channel, so the authored spread (−40/0/40/−80/80/−120/120°, which
+  `RwaAsset1::calculateChannelPositions` used for the initial map display) was
+  overwritten with identical coordinates on the first tick. The three
+  independent copies of the channel-angle tables (runtime, initial placement,
+  map channel handles in `RwaGraphicsView`) are now one:
+  `RwaAsset1::channelOffsetForPlaybackType` + `channelCountForPlaybackType` +
+  `playbackTypeHasChannelPositions` replace `getOffsetForChannel` and the
+  per-mode if-chains in `calculateChannelPositions` and the map view. Map
+  behaviour is unchanged (channel handles for the binaural modes when channel
+  radius > 0; none for mono/stereo/custom, whose radius the engine ignores).
+  **Engine parity:** the Player mirrors the same 7-channel gap in
+  `RwaGameLoop.swift` (`getOffsetForChannel`); to be fixed together with the
+  multichannel-patch mirror.
+
+### Added
+
+- `tools/trace/pdmodes/` + `tools/trace/scenarios/pdmodes.scenario.json`:
+  checked-in regression fixture for the two engine changes above — four dummy Pd
+  patches (binaural stereo, binaural mono, binaural stereo with "headtracker
+  relative to source" off, binaural 7 channel) whose expected per-channel
+  `azimuthN`/`distanceN`/`elevationN` sends are documented in
+  `tools/trace/README.md`.
 
 ## [v1.4.2] - 2026-08-07
 

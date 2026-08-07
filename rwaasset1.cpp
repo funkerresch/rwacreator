@@ -210,103 +210,60 @@ int32_t RwaAsset1::channelCountForPlaybackType(int32_t playbackType)
     }
 }
 
+int32_t RwaAsset1::channelOffsetForPlaybackType(int32_t playbackType, int32_t channel)
+{
+    static const int32_t stereoOffsets[2] = {-60, 60};
+    static const int32_t fiveChannelOffsets[5] = {-60, 0, 60, -120, 120};
+    static const int32_t sevenChannelOffsets[7] = {-40, 0, 40, -80, 80, -120, 120};
+
+    int32_t count = channelCountForPlaybackType(playbackType);
+    if(channel < 0 || channel >= count)
+        return 0;
+
+    switch(count)
+    {
+        case 2: return stereoOffsets[channel];
+        case 5: return fiveChannelOffsets[channel];
+        case 7: return sevenChannelOffsets[channel];
+        default: return 0;
+    }
+}
+
+bool RwaAsset1::playbackTypeHasChannelPositions(int32_t playbackType)
+{
+    switch(playbackType)
+    {
+        case RWAPLAYBACKTYPE_BINAURALMONO:
+        case RWAPLAYBACKTYPE_BINAURALMONO_FABIAN:
+        case RWAPLAYBACKTYPE_BINAURALSTEREO:
+        case RWAPLAYBACKTYPE_BINAURALSTEREO_FABIAN:
+        case RWAPLAYBACKTYPE_BINAURAL5CHANNEL:
+        case RWAPLAYBACKTYPE_BINAURAL5CHANNEL_FABIAN:
+        case RWAPLAYBACKTYPE_BINAURAL7CHANNEL_FABIAN:
+            return true;
+
+        default:
+            return false;
+    }
+}
+
 void RwaAsset1::calculateChannelPositions()
 {
+    if(!playbackTypeHasChannelPositions(getPlaybackType()))
+        return;
+
     std::vector<double> tmp(2, 0.0);
     int offset = 360-rotateOffset;
+    int32_t count = channelCountForPlaybackType(getPlaybackType());
 
-    if(this->getPlaybackType() == RWAPLAYBACKTYPE_BINAURALMONO ||
-       this->getPlaybackType() == RWAPLAYBACKTYPE_BINAURALMONO_FABIAN)
+    for(int32_t i = 0; i < count; i++)
     {
-        if(!hasCustomChannelPosition[0])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (0+offset)%360);
-            setChannelCoordinate(0, tmp);
-        }
-    }
+        if(hasCustomChannelPosition[i])
+            continue;
 
-    if(this->getPlaybackType() == RWAPLAYBACKTYPE_BINAURALSTEREO ||
-       this->getPlaybackType() == RWAPLAYBACKTYPE_BINAURALSTEREO_FABIAN)
-    {
-        if(!hasCustomChannelPosition[0])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (-60+offset)%360);
-            setChannelCoordinate(0, tmp);
-        }
-        if(!hasCustomChannelPosition[1])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (60+offset)%360);
-            setChannelCoordinate(1, tmp);
-        }
-    }
-
-    if(this->getPlaybackType() == RWAPLAYBACKTYPE_BINAURAL5CHANNEL ||
-       this->getPlaybackType() == RWAPLAYBACKTYPE_BINAURAL5CHANNEL_FABIAN)
-    {
-        if(!hasCustomChannelPosition[0])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (-60 + offset)%360);
-            setChannelCoordinate(0, tmp);
-        }
-        if(!hasCustomChannelPosition[1])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (0 + offset)%360);
-            setChannelCoordinate(1, tmp);
-        }
-        if(!hasCustomChannelPosition[2])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (60 + offset)%360);
-            setChannelCoordinate(2, tmp);
-        }
-        if(!hasCustomChannelPosition[3])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (-120 + offset)%360);
-            setChannelCoordinate(3, tmp);
-        }
-        if(!hasCustomChannelPosition[4])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (120 + offset)%360);
-            setChannelCoordinate(4, tmp);
-        }
-    }
-
-    if(this->getPlaybackType() == RWAPLAYBACKTYPE_BINAURAL7CHANNEL_FABIAN)
-    {
-        if(!hasCustomChannelPosition[0])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (-40 + offset)%360);
-            setChannelCoordinate(0, tmp);
-        }
-        if(!hasCustomChannelPosition[1])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (0 + offset)%360);
-            setChannelCoordinate(1, tmp);
-        }
-        if(!hasCustomChannelPosition[2])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (40 + offset)%360);
-            setChannelCoordinate(2, tmp);
-        }
-        if(!hasCustomChannelPosition[3])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (-80 + offset)%360);
-            setChannelCoordinate(3, tmp);
-        }
-        if(!hasCustomChannelPosition[4])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (80 + offset)%360);
-            setChannelCoordinate(4, tmp);
-        }
-        if(!hasCustomChannelPosition[5])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (-120 + offset)%360);
-            setChannelCoordinate(5, tmp);
-        }
-        if(!hasCustomChannelPosition[6])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (120 + offset)%360);
-            setChannelCoordinate(6, tmp);
-        }
+        int32_t angle = channelOffsetForPlaybackType(getPlaybackType(), i);
+        tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (angle+offset)%360);
+        setChannelCoordinate(i, tmp);
     }
 }
 

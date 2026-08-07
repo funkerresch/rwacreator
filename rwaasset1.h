@@ -122,6 +122,15 @@ public:
     // mode implies; 0 for modes without per-channel spatialisation data.
     static int32_t channelCountForPlaybackType(int32_t playbackType);
 
+    // Angular offset (degrees, clockwise from the asset's forward direction) of
+    // a channel's default position around the asset.
+    static int32_t channelOffsetForPlaybackType(int32_t playbackType, int32_t channel);
+
+    // Whether the mode places its channels around the asset (the binaural
+    // families); mono/stereo/custom modes have one data channel but no
+    // positioned satellites (no map handles, radius ignored where applicable).
+    static bool playbackTypeHasChannelPositions(int32_t playbackType);
+
     void setChannelCoordinate(int32_t channelNumber, std::vector<double> coordinate);
     void setCustomChannelCoordinate(int32_t channelNumber, std::vector<double> coordinate);
     void setReflectionCoordinate(int32_t channelNumber, std::vector<double> coordinate);

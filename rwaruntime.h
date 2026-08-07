@@ -150,7 +150,6 @@ RwaRuntime(QObject *parent, const char *pdpath, const char *assetPath, float sam
     void sendData2activeAssets(RwaEntity *entity);
     void sendData2Asset(RwaEntity *entity, RwaEntity::AssetMapItem item);
     void calculateChannelBearingAndDistance(RwaEntity *entity, RwaAsset1 *asset, int channel);
-    int getOffsetForChannel(int channel, int playbackType);
     void sendDistance(int channel, int patcherTag, float distance);
     void sendBearing(int channel, int patcherTag, float bearing);
     void sendElevation(int channel, int patcherTag, float elevation);

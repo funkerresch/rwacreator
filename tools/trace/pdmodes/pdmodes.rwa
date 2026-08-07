@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE rwa>
+<rwa version="1.0">
+    <game currentscene="Scene 0"/>
+    <scene currentstate="BACKGROUND" name="Scene 0" lon="7.58600000" lat="47.57700000" zoom="19" numberofstates="2" areatype="1" radius="500" width="-1" height="-1" level="1" exitoffset="0" fallbackdisabled="0" minstaytime="0">
+        <corners>
+            <lon>7.58600000</lon>
+            <lat>47.57700000</lat>
+            <lon>7.58600000</lon>
+            <lat>47.57700000</lat>
+            <lon>7.58600000</lon>
+            <lat>47.57700000</lat>
+            <lon>7.58600000</lon>
+            <lat>47.57700000</lat>
+        </corners>
+        <exitoffsetcorners/>
+        <state name="FALLBACK" type="1" areatype="1" zoom="17" assetsfollowstate="1" defaultplaybacktype="3" lockposition="0" statewithinstate="0" leaveafterassetsfinish="0" leaveonlyafterassetsfinish="0" enteronlyonce="0" timeout="0" minstaytime="0">
+            <enterconditions>
+                <gps isgps="0" lon="7.58600000" lat="47.57700000" radius="10" width="-1" height="-1" exitoffset="0"/>
+                <requiredstates/>
+                <corners/>
+                <exitoffsetcorners/>
+            </enterconditions>
+            <actions/>
+            <assets/>
+        </state>
+        <state currentAsset="sevenpatch.pd" name="BACKGROUND" type="2" areatype="1" zoom="17" assetsfollowstate="1" defaultplaybacktype="3" lockposition="0" statewithinstate="0" leaveafterassetsfinish="0" leaveonlyafterassetsfinish="0" enteronlyonce="0" timeout="0" minstaytime="0">
+            <enterconditions>
+                <gps isgps="0" lon="7.58600000" lat="47.57700000" radius="10" width="-1" height="-1" exitoffset="0"/>
+                <requiredstates/>
+                <corners/>
+                <exitoffsetcorners/>
+            </enterconditions>
+            <actions/>
+            <assets>
+                <asset url="assets/stereopatch.pd" uuid="{aaaaaaaa-0000-0000-0000-000000000001}" type="3" gain="0.5" elevation="0" lon="7.58610000" lat="47.57710000" playbacktype="9" damping="1" dampingfactor="30" dampingtrim="2" dampingmin="0" dampingmax="1" smoothdist="10" mindistance="-1" fadein="1000" fadeout="1000" crossfadetime="100" duration="0" channelcount="0" lockposition="0" alwaysplayfrombeginning="1" loop="1" mute="0" headtrackerrelative2source="1" hascoordinates="0" loopuntilendposition="0" gps2pd="0" isexclusive="0" channelradius="20" rawsensors2pd="0" playonlyonce="0" speed="20" move="0" rotateoffset="0" rotatefrequency="0" rotate="0" fixedazimuth="-1" fixeddistance="-1" fixedelevation="-1" startpositionlon="7.58610000" startpositionlat="47.57710000" offset="0" reflectioncount="0" individualchannelpositions="0">
+                    <channelpositions/>
+                    <reflectionpositions/>
+                </asset>
+                <asset url="assets/monopatch.pd" uuid="{aaaaaaaa-0000-0000-0000-000000000002}" type="3" gain="0.5" elevation="0" lon="7.58590000" lat="47.57690000" playbacktype="8" damping="1" dampingfactor="30" dampingtrim="2" dampingmin="0" dampingmax="1" smoothdist="10" mindistance="-1" fadein="1000" fadeout="1000" crossfadetime="100" duration="0" channelcount="0" lockposition="0" alwaysplayfrombeginning="1" loop="1" mute="0" headtrackerrelative2source="1" hascoordinates="0" loopuntilendposition="0" gps2pd="0" isexclusive="0" channelradius="20" rawsensors2pd="0" playonlyonce="0" speed="20" move="0" rotateoffset="0" rotatefrequency="0" rotate="0" fixedazimuth="-1" fixeddistance="-1" fixedelevation="-1" startpositionlon="7.58590000" startpositionlat="47.57690000" offset="0" reflectioncount="0" individualchannelpositions="0">
+                    <channelpositions/>
+                    <reflectionpositions/>
+                </asset>
+                <asset url="assets/rawpatch.pd" uuid="{aaaaaaaa-0000-0000-0000-000000000003}" type="3" gain="0.5" elevation="0" lon="7.58620000" lat="47.57690000" playbacktype="9" damping="1" dampingfactor="30" dampingtrim="2" dampingmin="0" dampingmax="1" smoothdist="10" mindistance="-1" fadein="1000" fadeout="1000" crossfadetime="100" duration="0" channelcount="0" lockposition="0" alwaysplayfrombeginning="1" loop="1" mute="0" headtrackerrelative2source="0" hascoordinates="0" loopuntilendposition="0" gps2pd="0" isexclusive="0" channelradius="20" rawsensors2pd="0" playonlyonce="0" speed="20" move="0" rotateoffset="0" rotatefrequency="0" rotate="0" fixedazimuth="-1" fixeddistance="-1" fixedelevation="-1" startpositionlon="7.58620000" startpositionlat="47.57690000" offset="0" reflectioncount="0" individualchannelpositions="0">
+                    <channelpositions/>
+                    <reflectionpositions/>
+                </asset>
+                <asset url="assets/sevenpatch.pd" uuid="{aaaaaaaa-0000-0000-0000-000000000004}" type="3" gain="0.5" elevation="0" lon="7.58580000" lat="47.57710000" playbacktype="12" damping="1" dampingfactor="30" dampingtrim="2" dampingmin="0" dampingmax="1" smoothdist="10" mindistance="-1" fadein="1000" fadeout="1000" crossfadetime="100" duration="0" channelcount="0" lockposition="0" alwaysplayfrombeginning="1" loop="1" mute="0" headtrackerrelative2source="1" hascoordinates="0" loopuntilendposition="0" gps2pd="0" isexclusive="0" channelradius="20" rawsensors2pd="0" playonlyonce="0" speed="20" move="0" rotateoffset="0" rotatefrequency="0" rotate="0" fixedazimuth="-1" fixeddistance="-1" fixedelevation="-1" startpositionlon="7.58580000" startpositionlat="47.57710000" offset="0" reflectioncount="0" individualchannelpositions="0">
+                    <channelpositions/>
+                    <reflectionpositions/>
+                </asset>
+            </assets>
+        </state>
+    </scene>
+</rwa>

@@ -58,3 +58,11 @@ walkthrough and the list of currently known divergences.
   `getInstance()` returns nullptr, routing `RwaImport` through its fallbacks
 - `rwatracemain.cpp` — scenario runner / trace writer
 - `scenarios/` — shared scenario scripts
+- `pdmodes/` — fixture game for playback-mode-dependent spatial data to
+  Pd-patch assets (`scenarios/pdmodes.scenario.json`): four dummy patches in a
+  BACKGROUND state — binaural stereo (expect `azimuth1`+`azimuth2`), binaural
+  mono (`azimuth1` only), binaural stereo with "headtracker relative to
+  source" off (`azimuth1` only, raw head azimuth/elevation) and binaural
+  7 channel (`azimuth1`–`azimuth7` at distinct angular offsets). Run with
+  `--game tools/trace/pdmodes/pdmodes.rwa`; the game paths in scenario files
+  are informational, only the CLI options count.

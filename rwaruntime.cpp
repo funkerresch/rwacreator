@@ -990,70 +990,9 @@ void RwaRuntime::processAssets(RwaEntity *entity)
     }
 }
 
-int RwaRuntime::getOffsetForChannel(int channel, int playbackType)
-{
-    switch (playbackType) {
-    case RWAPLAYBACKTYPE_BINAURALMONO:
-        return 0;
-
-    case RWAPLAYBACKTYPE_BINAURALMONO_FABIAN:
-        return 0;
-
-    case RWAPLAYBACKTYPE_BINAURALSTEREO:
-        if(channel == 0)
-            return -60;
-        if(channel == 1)
-            return 60;
-        break;
-
-    case RWAPLAYBACKTYPE_BINAURALSTEREO_FABIAN:
-        if(channel == 0)
-            return -60;
-        if(channel == 1)
-            return 60;
-        break;
-
-    case RWAPLAYBACKTYPE_BINAURAL5CHANNEL:
-        if(channel == 0)
-            return -60;
-        if(channel == 1)
-            return 0;
-        if(channel == 2)
-            return 60;
-        if(channel == 3)
-            return -120;
-        if(channel == 4)
-            return 120;
-        break;
-
-    case RWAPLAYBACKTYPE_BINAURAL5CHANNEL_FABIAN:
-        if(channel == 0)
-            return -60;
-        if(channel == 1)
-            return 0;
-        if(channel == 2)
-            return 60;
-        if(channel == 3)
-            return -120;
-        if(channel == 4)
-            return 120;
-        break;
-
-    case RWAPLAYBACKTYPE_BINAURALAUTO:
-
-        break;
-    case RWAPLAYBACKTYPE_STEREO:
-
-        break;
-    default:
-        return 0;//
-    }
-    return 0;
-}
-
 void RwaRuntime::calculateChannelBearingAndDistance(RwaEntity *entity, RwaAsset1 *asset, int channel)
 {
-    int offset = getOffsetForChannel(channel, asset->getPlaybackType());
+    int offset = RwaAsset1::channelOffsetForPlaybackType(asset->getPlaybackType(), channel);
     offset += (360-asset->getRotateOffset()) % 360;
 
     if(!asset->hasCustomChannelPosition[channel])

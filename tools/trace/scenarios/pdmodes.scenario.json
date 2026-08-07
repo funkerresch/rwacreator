@@ -1,0 +1,12 @@
+{
+  "schema": "rwa-scenario/1",
+  "description": "Three pd assets: stereo mode (expect ch1+ch2), mono mode (ch1 only), stereo mode with headtrackerRelative2Source off (raw head data on ch1 only); 7-channel mode (ch1-7 with distinct angular offsets).",
+  "game": "pdmodes/pdmodes.rwa",
+  "startScene": "Scene 0",
+  "durationMs": 3000,
+  "timeline": [
+    { "t": 0,    "pos": { "lon": 7.58600000, "lat": 47.57700000 } },
+    { "t": 1000, "azimuth": 90 },
+    { "t": 2000, "elevation": 10 }
+  ]
+}
