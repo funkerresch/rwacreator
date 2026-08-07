@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.4.3] - (ongoing engine parity implementation)
+
 ### Fixed
 
 - The Playback Mode of Pd-patch assets now determines how many channels of
@@ -24,10 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   in `RwaRuntime::sendData2Asset` was unified into a single loop over
   `RwaAsset1::channelCountForPlaybackType`; behaviour for audio-file assets is
   unchanged (including AUTO/NATIVE modes not sending spatial data, a
-  pre-existing issue left as is for now). **Engine parity:** the same change
-  needs to be mirrored in the Player's `RwaGameLoop.swift` (its `sendData2Asset`
-  has the identical single-channel Pd branch); until then, exported games with
-  multichannel patch assets will behave differently on the Player.
+  pre-existing issue left as is for now). **Engine parity:** mirrored in the
+  Player (`RwaGameLoop.sendData2Asset` / new `RwaAsset.playbackChannelCount`,
+  see rwa-player `CHANGELOG.md` [Unreleased]); the Player's Pd branch also
+  aligned its distance/elevation math with the Creator's in the process.
 
 - Binaural 7-channel assets no longer collapse all seven channels onto one point
   during simulation. The engine's per-tick channel placement
@@ -43,9 +45,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   per-mode if-chains in `calculateChannelPositions` and the map view. Map
   behaviour is unchanged (channel handles for the binaural modes when channel
   radius > 0; none for mono/stereo/custom, whose radius the engine ignores).
-  **Engine parity:** the Player mirrors the same 7-channel gap in
-  `RwaGameLoop.swift` (`getOffsetForChannel`); to be fixed together with the
-  multichannel-patch mirror.
+  **Engine parity:** the Player had the same 7-channel gap in
+  `RwaGameLoop.swift` (`getOffsetForChannel`); fixed there in the same way
+  (shared tables hand-mirrored as `RwaAsset.channelCountForPlaybackType` /
+  `channelOffsetForPlaybackType`).
 
 - Pd-patch assets no longer inherit a neighbouring audio asset's channel count
   and duration on project load. The importer's `channels`/`length` locals were
@@ -73,8 +76,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   relative to source" off (always 1 raw data set). Patches can use it to adapt
   their receiver wiring; it is deliberately not the unreliable `channelcount`
   XML attribute. Audio assets get the value too; the built-in player patches
-  simply have no receiver for it. **Engine parity:** to be mirrored in the
-  Player together with the other multichannel-patch changes.
+  simply have no receiver for it. **Engine parity:** mirrored in the Player
+  (`sendInitValues2Pd`).
 
 - The Playback Mode dropdown hides "Auto" and "Binaural-Auto" for Pd-patch
   assets. Both dispatch on the audio file's channel count, which a patch does

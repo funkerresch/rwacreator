@@ -66,11 +66,15 @@ position preview; HTTP :8088 transfers game files.
 | `<tag>-azimuth<n>` | degrees | bearing relative to head azimuth |
 | `<tag>-elevation<n>` | degrees | |
 
-Channel count N depends on `playbackType`: mono/stereo/binaural-mono = 1,
-binaural-stereo = 2, 5-channel = 5, 7-channel "Fabian" = 7. Channels are
+Channel count N depends on `playbackType` for audio *and* (since the
+multichannel-patch change) Pd-patch assets: mono/stereo/binaural-mono = 1,
+binaural-stereo = 2, 5-channel = 5, 7-channel "Fabian" = 7
+(`RwaAsset1::channelCountForPlaybackType`; the effective per-asset count
+incl. the Pd minimum of 1 is `RwaAsset1::playbackChannelCount`). Channels are
 spread on a circle of `channelRadius` around the source with fixed per-channel
-angular offsets (`getOffsetForChannel`, rwaruntime.cpp:957-1016; e.g. binaural
-stereo ±60°, 5-ch −60/0/60/−120/120) plus asset `rotateOffset`.
+angular offsets (`RwaAsset1::channelOffsetForPlaybackType`; binaural stereo
+±60°, 5-ch −60/0/60/−120/120, 7-ch −40/0/40/−80/80/−120/120) plus asset
+`rotateOffset`.
 Geometry per channel (`calculateChannelBearingAndDistance`,
 rwaruntime.cpp:1018-1057): channel coord = `calculateDestination1(assetPos,
 channelRadius, offset)`; distance = `calculateDistance1(entity, channelCoord)`
@@ -86,9 +90,10 @@ end position, loop-until-end (`-end` bang), auto-stop of non-looping assets at
 
 ### One-time init on activation (`sendInitValues2pd`, rwaruntime.cpp:794-924)
 
-`-assetlon -assetlat -samplerate -dampingfunction -dampingfactor -dampingtrim
--dampingmin -dampingmax -smoothdist -offset -loop -fadeintime -fadeouttime
--crossfadetime -crossfadeafter -firstcrossfade -playheadposition`, then
+`-assetlon -assetlat -samplerate -numchannels -dampingfunction -dampingfactor
+-dampingtrim -dampingmin -dampingmax -smoothdist -offset -loop -fadeintime
+-fadeouttime -crossfadetime -crossfadeafter -firstcrossfade
+-playheadposition`, then
 `libpd_symbol("<tag>-play", <full asset path>)` loads and starts the file.
 
 ### Stop / release
