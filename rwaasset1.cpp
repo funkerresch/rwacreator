@@ -229,6 +229,20 @@ int32_t RwaAsset1::channelOffsetForPlaybackType(int32_t playbackType, int32_t ch
     }
 }
 
+int32_t RwaAsset1::playbackChannelCount() const
+{
+    // A patch spatialising on its own from raw head data gets exactly one set
+    if(type == RWAASSETTYPE_PD && !headtrackerRelative2Source)
+        return 1;
+
+    int32_t count = channelCountForPlaybackType(playbackType);
+
+    if(type == RWAASSETTYPE_PD && count < 1)
+        count = 1;
+
+    return count;
+}
+
 bool RwaAsset1::playbackTypeHasChannelPositions(int32_t playbackType)
 {
     switch(playbackType)

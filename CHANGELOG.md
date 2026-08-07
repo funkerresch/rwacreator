@@ -47,7 +47,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `RwaGameLoop.swift` (`getOffsetForChannel`); to be fixed together with the
   multichannel-patch mirror.
 
+- Pd-patch assets no longer inherit a neighbouring audio asset's channel count
+  and duration on project load. The importer's `channels`/`length` locals were
+  only assigned inside the TagLib block, which is skipped for patch assets, so a
+  patch following an audio asset in the `.rwa` silently took over that asset's
+  values and wrote them back on the next save (visible in the example corpus,
+  e.g. patches with `channelcount="2"` or five-digit durations they never had).
+  Both are now reset per asset; patch assets deterministically save
+  `channelcount="0"` / `duration="0"`. Harmless either way: the Creator re-reads
+  audio properties via TagLib on every load and ignores the XML attributes,
+  patches are excluded from the duration-based end-of-asset check, and the
+  Player's importer ignores `channelcount` entirely. The importer's dead non-Qt
+  `#else` branch (never compiled; read the wrong attribute and had a
+  `.tofloat()` typo) was removed with it. The `pdmodes` trace fixture was
+  normalised to `channelcount="0"`/`duration="0"` to match what the Creator
+  itself writes.
+
 ### Added
+
+- Pd-patch assets receive a `$0-numchannels` init value (sent alongside
+  `$0-samplerate` etc. on state entry): the number of
+  `azimuthN`/`distanceN`/`elevationN` channels the engine will actually stream
+  — derived from the playback mode via new
+  `RwaAsset1::playbackChannelCount()`, which also accounts for "headtracker
+  relative to source" off (always 1 raw data set). Patches can use it to adapt
+  their receiver wiring; it is deliberately not the unreliable `channelcount`
+  XML attribute. Audio assets get the value too; the built-in player patches
+  simply have no receiver for it. **Engine parity:** to be mirrored in the
+  Player together with the other multichannel-patch changes.
+
+- The Playback Mode dropdown hides "Auto" and "Binaural-Auto" for Pd-patch
+  assets. Both dispatch on the audio file's channel count, which a patch does
+  not have (TagLib cannot read `.pd` files), so on a patch they were
+  meaningless (the patch plays regardless and falls back to a single data
+  channel). Already-authored patch assets with an Auto mode still display it;
+  only the dropdown choices are filtered.
 
 - `tools/trace/pdmodes/` + `tools/trace/scenarios/pdmodes.scenario.json`:
   checked-in regression fixture for the two engine changes above — four dummy Pd

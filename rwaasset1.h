@@ -131,6 +131,12 @@ public:
     // positioned satellites (no map handles, radius ignored where applicable).
     static bool playbackTypeHasChannelPositions(int32_t playbackType);
 
+    // The number of spatial data channels the runtime actually streams to this
+    // asset: channelCountForPlaybackType, except Pd-patch assets never get less
+    // than 1, and only 1 (raw head data) when "headtracker relative to source"
+    // is off.
+    int32_t playbackChannelCount() const;
+
     void setChannelCoordinate(int32_t channelNumber, std::vector<double> coordinate);
     void setCustomChannelCoordinate(int32_t channelNumber, std::vector<double> coordinate);
     void setReflectionCoordinate(int32_t channelNumber, std::vector<double> coordinate);

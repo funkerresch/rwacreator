@@ -63,6 +63,7 @@ walkthrough and the list of currently known divergences.
   BACKGROUND state — binaural stereo (expect `azimuth1`+`azimuth2`), binaural
   mono (`azimuth1` only), binaural stereo with "headtracker relative to
   source" off (`azimuth1` only, raw head azimuth/elevation) and binaural
-  7 channel (`azimuth1`–`azimuth7` at distinct angular offsets). Run with
-  `--game tools/trace/pdmodes/pdmodes.rwa`; the game paths in scenario files
-  are informational, only the CLI options count.
+  7 channel (`azimuth1`–`azimuth7` at distinct angular offsets). Each patch
+  also gets a `numchannels` init value matching the number of streamed
+  channels (2/1/1/7). Run with `--game tools/trace/pdmodes/pdmodes.rwa`; the
+  game paths in scenario files are informational, only the CLI options count.

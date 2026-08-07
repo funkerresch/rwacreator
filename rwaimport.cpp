@@ -715,9 +715,14 @@ void RwaImport::readAssets()
                 if(xml.attributes().hasAttribute("fixeddistance"))
                     item->setFixedDistance(xml.attributes().value("fixeddistance").toInt());
 
+                // TagLib is the source of truth for channel count and duration;
+                // the channelcount/duration XML attributes are only written, never
+                // read back. Pd patches have neither, they stay at 0.
+                channels = 0;
+                length = 0;
+
                 if(type != RWAASSETTYPE_PD)
                 {
-#ifdef QT_VERSION
                     TagLib::FileRef f(path.toStdString().c_str());
 
                     if(!f.isNull() && f.audioProperties())
@@ -725,13 +730,6 @@ void RwaImport::readAssets()
                         channels = f.audioProperties()->channels();
                         length = f.audioProperties()->lengthInMilliseconds();
                     }
-#else
-                    if(xml.attributes().hasAttribute("channelcount"))
-                        channels = (xml.attributes().value("channels").toInt());
-
-                    if(xml.attributes().hasAttribute("duration"))
-                        length = (xml.attributes().value("duration").tofloat());
-#endif
                 }
 
                 item->setNumberOfChannels(channels);

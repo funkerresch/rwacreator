@@ -874,6 +874,14 @@ void RwaRuntime::sendInitValues2pd(RwaAsset1 *asset, int patcherTag)
      libpd_float(pdReceiver, pdSampleRate);
      pdMutex->unlock();
 
+     // how many azimuthN/distanceN/elevationN channels this asset will be
+     // streamed, so patches can adapt (derived from the playback mode; the
+     // channelcount XML attribute is unreliable and not used)
+     sprintf(pdReceiver, "%d-numchannels", patcherTag);
+     pdMutex->lock();
+     libpd_float(pdReceiver, asset->playbackChannelCount());
+     pdMutex->unlock();
+
      sprintf (pdReceiver, "%d-dampingfunction", patcherTag);
      pdMutex->lock();
      libpd_float(pdReceiver, asset->getDampingFunction());
@@ -1103,11 +1111,7 @@ void RwaRuntime::sendData2Asset(RwaEntity *entity, RwaEntity::AssetMapItem item)
     }
     else
     {
-        int numChannels = RwaAsset1::channelCountForPlaybackType(asset->getPlaybackType());
-
-        // Patches always get at least channel 1 data, whatever the playback mode says.
-        if(asset->type == RWAASSETTYPE_PD && numChannels < 1)
-            numChannels = 1;
+        int numChannels = asset->playbackChannelCount();
 
         for(int i = 0; i < numChannels; i++)
         {

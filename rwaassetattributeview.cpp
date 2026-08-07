@@ -168,6 +168,13 @@ void RwaAssetAttributeView::setCurrentAsset(RwaAsset1 *asset)
     if(attrComboBox)
     {
         attrComboBox->setCurrentIndex(asset->getPlaybackType());
+
+        // Auto modes dispatch on the audio file's channel count, which a Pd
+        // patch doesn't have: hide them for patch assets.
+        bool isPatch = (asset->getType() == RWAASSETTYPE_PD);
+        qobject_cast<QListView *>(attrComboBox->view())->setRowHidden(RWAPLAYBACKTYPE_NATIVE, isPatch);
+        qobject_cast<QListView *>(attrComboBox->view())->setRowHidden(RWAPLAYBACKTYPE_BINAURALAUTO_FABIAN, isPatch);
+
         if(asset->getPlaybackType() == RWAPLAYBACKTYPE_BINAURALSPACE)
         {
             reflectionCount->show();
