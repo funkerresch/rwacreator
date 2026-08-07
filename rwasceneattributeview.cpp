@@ -19,8 +19,13 @@ RwaSceneAttributeView::RwaSceneAttributeView(QWidget *parent, RwaScene *scene) :
 
     addComboBoxAndLabel(attributeGridLayout, "Next Scene", nextScenes);
     addLineEditAndLabel(attributeGridLayout, "Time Out");
-    QLineEdit *requiredScenes = addLineEditAndLabel(attributeGridLayout, "Required Scenes");
-    setLineEditSignal2editingFinished(requiredScenes);
+
+    // "Required Scenes" is an unfinished scene-entry condition: neither engine
+    // evaluates RwaScene::requiredScenes and it is never serialised, so anything
+    // entered here was silently lost. Field hidden until the feature exists —
+    // see docs/planned-features.md.
+    // QLineEdit *requiredScenes = addLineEditAndLabel(attributeGridLayout, "Required Scenes");
+    // setLineEditSignal2editingFinished(requiredScenes);
 
     addLineEditAndLabel(attributeGridLayout, "Level");
     addLineEditAndLabel(attributeGridLayout, "Scene Radius");
@@ -57,16 +62,21 @@ void RwaSceneAttributeView::setCurrentScene(RwaScene *scene)
     updateSceneComboBox(attrComboBox);
     updateSceneAttr(attrComboBox, QString::fromStdString(currentScene->getNextScene()));
 
-    attrLineEdit = this->findChild<QLineEdit *>("Required States");
-    if(attrLineEdit)
-    {
-        QString requiredStatesText;
-        attrLineEdit->clear();
-        foreach(std::string state, currentState->requiredStates)
-            requiredStatesText.append(QString::fromStdString(state)).append(", ");
-
-        attrLineEdit->setText(requiredStatesText);
-    }
+    // Display block for the hidden "Required Scenes" field (see constructor /
+    // docs/planned-features.md). Never executed even when the field existed: it
+    // looks up the wrong widget name, and it reads the globally last-touched
+    // state's requiredStates instead of currentScene->requiredScenes — a real
+    // implementation must not resurrect it as-is.
+    // attrLineEdit = this->findChild<QLineEdit *>("Required States");
+    // if(attrLineEdit)
+    // {
+    //     QString requiredStatesText;
+    //     attrLineEdit->clear();
+    //     foreach(std::string state, currentState->requiredStates)
+    //         requiredStatesText.append(QString::fromStdString(state)).append(", ");
+    //
+    //     attrLineEdit->setText(requiredStatesText);
+    // }
 
     attrLineEdit = this->findChild<QLineEdit *>("Level");
     if(attrLineEdit)
@@ -176,26 +186,30 @@ void RwaSceneAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
 
 void RwaSceneAttributeView::receiveLineEditAttributeValue()
 {
-    if(!currentState)
-        return;
-
-    if(!QObject::sender()->objectName().compare("Required Scenes"))
-    {
-        QLineEdit *attrLineEdit = (QLineEdit *)QObject::sender();
-        QStringList requiredScenes = attrLineEdit->text().split(",",Qt::SkipEmptyParts);
-
-        currentScene->requiredScenes.clear();
-        QString requiredScene;
-        foreach(requiredScene, requiredScenes)
-        {
-            foreach(RwaScene *scene, backend->getScenes() )
-            {
-                if(!requiredScene.trimmed().compare(QString::fromStdString(scene->objectName())))
-                    currentScene->requiredScenes.push_back(scene->objectName());
-
-            }
-        }
-    }
+    // Write-back for the hidden "Required Scenes" field (see constructor /
+    // docs/planned-features.md). RwaScene::requiredScenes is not serialised and
+    // not evaluated by either engine, so this only ever filled an in-memory
+    // list that was lost on save.
+    // if(!currentState)
+    //     return;
+    //
+    // if(!QObject::sender()->objectName().compare("Required Scenes"))
+    // {
+    //     QLineEdit *attrLineEdit = (QLineEdit *)QObject::sender();
+    //     QStringList requiredScenes = attrLineEdit->text().split(",",Qt::SkipEmptyParts);
+    //
+    //     currentScene->requiredScenes.clear();
+    //     QString requiredScene;
+    //     foreach(requiredScene, requiredScenes)
+    //     {
+    //         foreach(RwaScene *scene, backend->getScenes() )
+    //         {
+    //             if(!requiredScene.trimmed().compare(QString::fromStdString(scene->objectName())))
+    //                 currentScene->requiredScenes.push_back(scene->objectName());
+    //
+    //         }
+    //     }
+    // }
 }
 
 void RwaSceneAttributeView::receiveEditingFinished()

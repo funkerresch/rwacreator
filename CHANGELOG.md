@@ -20,6 +20,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   now match the lookups. Stored values and export were never affected; only
   the display was stale.
 
+### Removed
+
+- The "Required Scenes" field in the Scene view. It was scaffolding for a
+  never-implemented scene-entry condition: `RwaScene::requiredScenes` is not
+  serialised to the `.rwa` and is evaluated by neither engine, so anything a
+  creator entered was silently lost on save. Its display code was additionally
+  broken (wrong widget lookup, read the last-touched state's required states
+  instead of the scene's) and had never executed. The field is commented out,
+  not deleted; what a real implementation needs (visited-scene tracking, a
+  gate in `setEntityScene`, serialisation and Player parity) is recorded in
+  `docs/planned-features.md`. No existing game is affected: the value was
+  never written to disk, and the example corpus uses neither this field nor
+  the (working) state-level Required States.
+
 ### Changed
 
 - The selected asset's auxiliary map icons (channel positions, the start
