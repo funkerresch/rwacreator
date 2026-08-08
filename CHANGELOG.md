@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.4.4] - 2026-08-08
+
 ### Fixed
 
 - Fixed a crash (use-after-free) when clicking a stale asset marker in the
@@ -51,7 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `activeAssets` map holds raw pointers and could otherwise tick a freed asset.
   `deleteAssetItem` also guards against the asset no longer being found.
 
-## [v1.4.3]
+## [v1.4.3] - 2026-08-07
 
 ### Fixed
 
