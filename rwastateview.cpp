@@ -476,9 +476,15 @@ void RwaStateView::addAssetItem(const QString &path, qint32 type)
 
 void RwaStateView::deleteAssetItem(const QString &path)
 {
+    if(backend->isSimulationRunning()) // the runtime's activeAssets would keep a pointer to the deleted asset
+        return;
+
     if(currentState)
     {
         RwaAsset1 *item = currentState->getAsset(path.toStdString());
+        if(!item)
+            return;
+
         QFile file(QString::fromStdString(item->getFullPath()));
 
         if(backend->trashAsset && !backend->fileUsedByAnotherAsset(item))

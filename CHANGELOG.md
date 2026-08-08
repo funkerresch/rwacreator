@@ -32,6 +32,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   pointer), and `RwaAssetList` resets its `currentAsset` when the list is
   rebuilt and guards the rename handler against a null current asset.
 
+- Deleting an asset from the asset list no longer leaks the `RwaAsset1` object:
+  `RwaState::deleteAsset` only removed it from the state's list and never freed
+  it (the object was only ever deleted with the whole state). It now also
+  resets the state's `lastTouchedAsset` reference before deleting; the backend
+  and the views drop their references through the existing
+  `sendCurrentState` → `receiveLastTouchedState` refresh that deletion already
+  triggers. Since the object is now actually freed, deleting assets is refused
+  while the simulation is running (same rule as dragging them) — the runtime's
+  `activeAssets` map holds raw pointers and could otherwise tick a freed asset.
+  `deleteAssetItem` also guards against the asset no longer being found.
+
 ## [v1.4.3]
 
 ### Fixed

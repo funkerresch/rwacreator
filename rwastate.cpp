@@ -132,6 +132,9 @@ void RwaState::deleteAsset(const std::string &path)
         if(item->getFileName() == path)
         {
             assets.remove (item);
+            if(lastTouchedAsset == item)
+                lastTouchedAsset = nullptr;
+            delete item;
             qDebug() << "remove Asset";
             break;
         }
