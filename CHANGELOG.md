@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed a crash (use-after-free) when clicking a stale asset marker in the
+  State View map. `RwaGraphicsView::redrawAssetsOfCurrentState` returned early
+  when the newly selected state had no assets — *before* clearing the asset
+  layers — so the previous state's markers stayed on the map, each still
+  holding a raw pointer to its `RwaAsset1`. Once those assets were destroyed
+  (deleting the state, undo restore, or game reload all destroy states, whose
+  destructor deletes their assets), clicking a leftover marker dereferenced
+  freed memory in `RwaAssetList::setCurrentAsset` and segfaulted. Typical
+  trigger: select an empty fallback/background state, delete the previously
+  shown state, click one of its still-visible asset dots. The layers are now
+  cleared before the empty-assets early return.
+
 ## [v1.4.3]
 
 ### Fixed

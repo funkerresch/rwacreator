@@ -992,11 +992,12 @@ void RwaGraphicsView::redrawAssetsOfCurrentState()
     if(!currentState)
         return;
 
+    assetLayer->clearGeometries();
+    assetReflectionLayer->clearGeometries();
+
     if(currentState->getAssets().empty())
         return;
 
-    assetLayer->clearGeometries();
-    assetReflectionLayer->clearGeometries();
     RwaAsset1 *item;
 
     foreach (item, currentState->getAssets())
