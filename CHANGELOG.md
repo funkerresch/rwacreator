@@ -21,6 +21,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   shown state, click one of its still-visible asset dots. The layers are now
   cleared before the empty-assets early return.
 
+- Closed the remaining stale-asset-pointer holes of the same class as the crash
+  above. `RwaGraphicsView::redrawAssets` only cleared the asset layers when the
+  corresponding visibility flag was on, so toggling assets/reflections off left
+  old markers on the (hidden) layers — and hidden layers still hit-test their
+  geometries, since `Layer::setVisible` does not propagate to geometry
+  visibility. Both layers are now cleared unconditionally. Additionally,
+  `RwaView::setCurrentState` now resets `currentAsset` to null when the new
+  state has no assets (it used to silently keep the previous state's asset
+  pointer), and `RwaAssetList` resets its `currentAsset` when the list is
+  rebuilt and guards the rename handler against a null current asset.
+
 ## [v1.4.3]
 
 ### Fixed

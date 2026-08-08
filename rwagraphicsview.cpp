@@ -952,12 +952,13 @@ void RwaGraphicsView::redrawAssets()
     if(!currentScene)
         return;
 
-    if(assetReflectionsVisible)
-        assetReflectionLayer->clearGeometries();
+    // always clear both layers: hidden layers still hit-test their geometries,
+    // so leftovers would keep raw pointers to possibly deleted assets
+    assetLayer->clearGeometries();
+    assetReflectionLayer->clearGeometries();
 
     if(assetsVisible && !onlyAssetsOfCurrentStateVisible)
     {
-        assetLayer->clearGeometries();
         RwaState *state;
         RwaAsset1 *item;
 

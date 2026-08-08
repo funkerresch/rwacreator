@@ -43,6 +43,9 @@ void RwaAssetList::ListWidgetEditEnd(QWidget *editor, QAbstractItemDelegate::End
     (void) hint;
     QString newName = reinterpret_cast<QLineEdit*>(editor)->text();
 
+    if(!currentAsset || !currentItem())
+        return;
+
     if(currentAsset->objectName() != newName.toStdString())
     {
         QString path = backend->completeAssetPath;
@@ -74,6 +77,7 @@ void RwaAssetList::setCurrentState(RwaState *state)
 
     currentState = state;
 
+    currentAsset = nullptr;
     clear();
 
     foreach(RwaAsset1 *asset , state->getAssets() )

@@ -142,6 +142,8 @@ void RwaView::setCurrentState(RwaState *state)
 
         currentAsset = currentState->getLastTouchedAsset();
     }
+    else
+        currentAsset = nullptr; // keeping the old pointer risks a dangling asset after deletion
 }
 
 void RwaView::setCurrentState(qint32 stateNumber)
