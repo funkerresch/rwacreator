@@ -238,6 +238,8 @@ void RwaAssetList::keyPressEvent(QKeyEvent *event)
           qDebug() << "Insert";
           break;
         case 16777219:
+          if(!currentItem())
+              break;
           qDebug() << "ITEM TEXT" << currentItem()->text();
           emit deleteAsset(currentItem()->text());
           emit sendWriteUndo("Delete Asset");

@@ -32,6 +32,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   pointer), and `RwaAssetList` resets its `currentAsset` when the list is
   rebuilt and guards the rename handler against a null current asset.
 
+- Fixed a crash when pressing Backspace in an empty asset list. The delete
+  branch of `RwaAssetList::keyPressEvent` dereferenced `currentItem()` without a
+  null check. After deleting an asset the backend re-selects the state's first
+  remaining asset, so deleting assets one after another works, but once the last
+  asset is gone the rebuilt list is empty and `currentItem()` is null; one
+  further Backspace press (an extra keystroke or key auto-repeat delivering a
+  second event) crashed the app.
+
 - Deleting an asset from the asset list no longer leaks the `RwaAsset1` object:
   `RwaState::deleteAsset` only removed it from the state's list and never freed
   it (the object was only ever deleted with the whole state). It now also
