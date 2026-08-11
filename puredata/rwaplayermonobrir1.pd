@@ -1,4 +1,4 @@
-#N canvas 334 23 1346 949 16;
+#N canvas 166 38 1346 916 16;
 #X obj 96 914 throw~ out1;
 #X obj 254 914 throw~ out2;
 #X obj 96 879 *~ 0;
@@ -28,8 +28,6 @@
 #X obj 372 336 r \$0-play;
 #X obj 318 304 r \$0-playfinished;
 #X obj 281 268 r \$0-free;
-#X obj 481 447 print "switchon";
-#X obj 290 513 print "switchoff";
 #X connect 2 0 0 0;
 #X connect 2 1 1 0;
 #X connect 3 0 2 0;
@@ -54,11 +52,8 @@
 #X connect 19 0 18 0;
 #X connect 20 0 18 0;
 #X connect 21 0 20 0;
-#X connect 21 0 24 0;
 #X connect 22 0 19 0;
-#X connect 22 0 25 0;
 #X connect 23 0 19 0;
-#X connect 23 0 25 0;
 #X restore 333 716 pd latereflections;
 #X msg 84 492 start;
 #X obj 47 32 r \$0-play;
@@ -339,7 +334,7 @@
 #X connect 23 0 21 1;
 #X coords 0 644 1 643 200 60 0;
 #X restore 84 622 pd 2chfadeinfadeout;
-#N canvas 771 265 909 758 binaural256vs 1;
+#N canvas 603 196 909 758 binaural256vs 0;
 #X obj 87 82 inlet~;
 #X obj 187 82 inlet;
 #X obj 307 86 inlet;

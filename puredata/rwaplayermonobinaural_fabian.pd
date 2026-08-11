@@ -1,12 +1,11 @@
-#N canvas 319 80 1346 916 16;
+#N canvas 166 38 1346 916 16;
 #X obj 96 914 throw~ out1;
 #X obj 254 914 throw~ out2;
 #X obj 96 879 *~ 0;
 #X obj 254 878 *~ 0;
 #X obj 148 682 delwrite~ \$0-groundreflection 1000;
 #N canvas 316 82 1067 900 groundreflection 0;
-#X obj 461 316 expr 2 * sqrt( pow( ($f1/2) \, 2) + pow($f2 \, 2) )
-;
+#X obj 461 316 expr 2 * sqrt( pow( ($f1/2) \, 2) + pow($f2 \, 2) );
 #X obj 461 346 -;
 #X obj 461 207 t f f b;
 #X obj 461 376 / 340;
@@ -101,8 +100,6 @@
 #X obj 372 336 r \$0-play;
 #X obj 318 304 r \$0-playfinished;
 #X obj 281 268 r \$0-free;
-#X obj 481 447 print "switchon";
-#X obj 290 513 print "switchoff";
 #X connect 2 0 0 0;
 #X connect 2 1 1 0;
 #X connect 3 0 2 0;
@@ -127,11 +124,8 @@
 #X connect 19 0 18 0;
 #X connect 20 0 18 0;
 #X connect 21 0 20 0;
-#X connect 21 0 24 0;
 #X connect 22 0 19 0;
-#X connect 22 0 25 0;
 #X connect 23 0 19 0;
-#X connect 23 0 25 0;
 #X restore 333 716 pd latereflections;
 #X msg 84 492 start;
 #X obj 402 219 s \$0-playfinished;
@@ -424,7 +418,7 @@
 #X restore 57 434 pd generateopenmessage;
 #X msg 250 64 stop;
 #X obj 47 32 r \$0-play;
-#N canvas 310 133 859 691 calculatedamping 1;
+#N canvas 310 133 859 691 calculatedamping 0;
 #X obj 39 306 dbtorms;
 #X obj 39 438 clip 0 1;
 #X obj 40 219 + 1;

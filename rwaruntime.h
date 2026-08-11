@@ -137,6 +137,7 @@ RwaRuntime(QObject *parent, const char *pdpath, const char *assetPath, float sam
     void *findFreeMonoOggPatcher();
     void resetPatcher(int intPatcherTag);
     void freeAllPatchers();
+    void resetAllPatchers();
     void endBackgroundState();
 
     void sendEnd2activeAssets(RwaEntity *entity);

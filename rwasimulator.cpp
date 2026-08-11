@@ -353,12 +353,51 @@ void RwaSimulator::stopRwaSimulation()
     ap->stopAudio();
 
     runtime->freeAllPatchers();
+
+    // Complete the release protocol for the whole pool, not only the active assets: a
+    // patcher whose asset ended but is still fading out has left activeAssets, and its
+    // pending [delay] would otherwise survive the stop and fire into the next simulation
+    // (the pooled patchers are never closed, so their clocks persist). See
+    // RwaRuntime::resetAllPatchers().
+    runtime->resetAllPatchers();
+
     libpd_start_message(1);
     libpd_add_float(0.0f);
     libpd_finish_message("pd", "dsp");
+
+    // Every pooled patcher now has a zero-length fade pending. Pd clocks only advance
+    // inside libpd_process_float(), i.e. in the audio callback, and the stream is already
+    // closed - so turn 30 ms of blocks over by hand to let every "<tag>-end" [delay]
+    // mature here instead of on the first blocks of the next run. 30 ms covers the
+    // zero-length fades as well as the fixed [delay 10] some patches use, and costs no
+    // waiting: the blocks are computed as fast as the CPU can, into a buffer nobody hears.
+    flushPdScheduler(30);
+
+    // The "<tag>-playfinished" bangs the flush produced are in libpd's receive queue.
+    // Dispatching them now is harmless - activeAssets is empty and every patcher idle -
+    // and it keeps them out of the next simulation. This replaces a drain that was
+    // scheduled 100 ms after the stop and could land inside the next run. Teardown log
+    // lines reach the Log View at once as well.
+    runtime->emptyPdMessageQueue();
+
     runtime->freeDynamicPdPatchers1();
     clearGame();
-    QTimer::singleShot(100, [this]{ runtime->emptyPdMessageQueue();});
+    emit sendSimulationRunningChanged(false);
+}
+
+void RwaSimulator::flushPdScheduler(int milliseconds)
+{
+    const int blockSize = libpd_blocksize();
+    const int sampleRate = backend->sampleRate > 0 ? backend->sampleRate : 48000;
+    const int blocks = qMax(1, qRound((milliseconds / 1000.0) * sampleRate / blockSize));
+
+    std::vector<float> in(size_t(blockSize) * size_t(qMax(1, ap->inputChannelCount())), 0.0f);
+    std::vector<float> out(size_t(blockSize) * size_t(qMax(1, ap->outputChannelCount())), 0.0f);
+
+    ap->pdMutex.lock();
+    for(int i = 0; i < blocks; i++)
+        libpd_process_float(1, in.data(), out.data());
+    ap->pdMutex.unlock();
 }
 
 void RwaSimulator::setMainVolume(float volume)

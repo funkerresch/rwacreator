@@ -48,6 +48,23 @@ public:
     void clearEntities();
     void initGandalf();
 
+    /**
+    * @brief Runs Pd's scheduler for a stretch of logical time, with no audio device.
+    * @param milliseconds How much Pd time to advance.
+    *
+    * Only to be called once the PortAudio stream is closed (Pa_AbortStream +
+    * Pa_CloseStream), so we are the only ones calling into libpd and nothing is
+    * racing the audio callback.
+    *
+    * Pd's clocks only advance inside libpd_process_float(), which normally runs
+    * in the audio callback. After the audio stream is closed nothing advances
+    * them any more, so a [delay] scheduled during the teardown of a simulation
+    * would stay in the clock queue and fire into the next one. Turning the
+    * blocks over by hand lets those clocks finish here, and costs no waiting: a
+    * block is 64 samples of logical time and a few microseconds of real time.
+    */
+    void flushPdScheduler(int milliseconds);
+
     static QList<RwaEntity *> entities;
     audioProcessor *ap;
     QTimer *gameLoopTimer;

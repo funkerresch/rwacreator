@@ -1733,6 +1733,48 @@ void RwaRuntime::freeAllPatchers()
         entity->reset();
 }
 
+/**
+  Sends the release protocol ("<tag>-free", "<tag>-fadeouttime 0", "<tag>-end") to every
+  pooled patcher, busy or not, and clears the busy flags.
+
+  freeAllPatchers() resets only the patchers of *active* assets. A patcher whose asset
+  already ended but is still fading out has left activeAssets, so nothing re-arms its
+  [delay] on stop - its clock survives in Pd's clock queue (the pooled patchers are never
+  closed) and fires the remaining fade time into the *next* simulation, switching the
+  patch off and sending "<tag>-playfinished" for a tag a fresh asset may own by then.
+  Addressing the whole pool forces every pending fade to zero length; the simulator then
+  advances Pd's scheduler so all of them mature at stop (RwaSimulator::flushPdScheduler).
+
+  Only messages from the existing patcher protocol are used, so every patch that follows
+  it ends cleanly without patch-side changes. The dynamic patchers are not swept: they
+  are closed on stop, and closing a canvas frees its objects' pending clocks with them.
+*/
+void RwaRuntime::resetAllPatchers()
+{
+    const struct { pdPatcher *pool; int count; } pools[] = {
+        { monoPatchers, RWARUNTIME_MAXNUMBEROFPATCHERS },
+        { monoPatchersOgg, RWARUNTIME_MAXNUMBEROFPATCHERS },
+        { stereoPatchers, RWARUNTIME_MAXNUMBEROFPATCHERS },
+        { stereoPatchersOgg, RWARUNTIME_MAXNUMBEROFPATCHERS },
+        { binauralMonoPatchers_fabian, RWARUNTIME_MAXNUMBEROFPATCHERS },
+        { binauralMonoPatchersOgg_fabian, RWARUNTIME_MAXNUMBEROFPATCHERS },
+        { binauralStereoPatchers_fabian, RWARUNTIME_MAXNUMBEROFPATCHERS },
+        { binauralStereoPatchersOgg_fabian, RWARUNTIME_MAXNUMBEROFPATCHERS },
+        { binaural5channelPatchers_fabian, RWARUNTIME_MAXNUMBEROF5CHANNELPATCHERS },
+        { binaural7channelPatchers_fabian, RWARUNTIME_MAXNUMBEROF7CHANNELPATCHERS },
+    };
+
+    for(const auto &p : pools)
+    {
+        for(int i = 0; i < p.count; i++)
+        {
+            if(p.pool[i].patcherTag)
+                resetPatcher(libpd_getdollarzero(p.pool[i].patcherTag));
+            p.pool[i].isBusy = false;
+        }
+    }
+}
+
 void RwaRuntime::emptyPdMessageQueue()
 {
 #ifdef INIT_LIBPD_QUEUED
