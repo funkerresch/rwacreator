@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Update `vas_library` to `7368810`: the filter-loading log lines in the Log
+  View are now self-identifying (`vas_fir: <key>: use cached filter / new filter
+  from file / new filter from arrays / replacing previous filter`, and `read <n>
+  samples from array <name>`). The cache lookup's per-node debug post is gone
+  (lines like `1342-reverbL /…/fabian_dir256.txt` that looked as if an IR array
+  had been mapped to the HRTF file and twice misled debugging). No functional
+  change; details in the vas_library's CHANGELOG.
+
 ### Fixed
 
 - Update `vas_library` to `f77e306`: a `set` message with unresolvable arrays
