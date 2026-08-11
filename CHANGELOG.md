@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Update `vas_library` to `f77e306`: a `set` message with unresolvable arrays
+  (array-loaded IRs) no longer corrupts the heap, it posts `vas_fir: <name>: no
+  such array` / `... missing or empty array, filter unchanged` and keeps the
+  current filter. Observed as a crash in Qt painting long after the corruption,
+  triggered by a creator patch using `$0-arrayL` in *message boxes*: message-box
+  `$0` never expands to the canvas id (only object-box arguments expand), so
+  `soundfiler read` and `set` targeted arrays that do not exist. Details in the
+  CHANGELOG of vas_library.
+
 - Restarting a simulation no longer re-parses the HRTF filter file for every
   `[rwa_binauralsimple~]` in the game's own Pd patches. Loaded filters are
   shared through `vas_library`'s global `IRs` cache, but the externals never
