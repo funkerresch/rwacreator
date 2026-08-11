@@ -126,6 +126,7 @@ set(RWACREATOR_HEADERS
     rwastateview.h
     clipper/clipper.hpp
     vas_library/examples/PureData/rwa_binauralsimple~.h
+    vas_library/examples/PureData/vas_reverb~.h
     vas_library/source/vas_dynamicFirChannel.h
     vas_library/source/vas_fir.h
     vas_library/source/vas_fir_binaural.h
@@ -238,6 +239,7 @@ set(RWACREATOR_SOURCES
     rwastateview.cpp
     clipper/clipper.cpp
     vas_library/examples/PureData/rwa_binauralsimple~.c
+    vas_library/examples/PureData/vas_reverb~.c
     vas_library/source/vas_dynamicFirChannel.c
     vas_library/source/vas_fir.c
     vas_library/source/vas_fir_binaural.c

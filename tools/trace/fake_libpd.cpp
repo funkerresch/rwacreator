@@ -138,6 +138,7 @@ int libpd_symbol(const char *recv, const char *symbol)
 
 // Externals registered by the RwaRuntime constructor — no-ops without DSP.
 void rwa_binauralsimple_tilde_setup(void) {}
+void vas_reverb_tilde_setup(void) {}
 void freeverb_tilde_setup(void) {}
 void oggread_tilde_setup(void) {}
 

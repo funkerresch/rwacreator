@@ -64,6 +64,7 @@ RwaRuntime::RwaRuntime(const char *pdpath, const char *assetPath, float sampleRa
     libpd_add_to_search_path(pdpath);
 
     rwa_binauralsimple_tilde_setup();
+    vas_reverb_tilde_setup();
     freeverb_tilde_setup();
     oggread_tilde_setup();
 

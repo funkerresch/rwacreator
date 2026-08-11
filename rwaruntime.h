@@ -27,6 +27,7 @@
 #include "util/z_queued.h"
 #include "util/z_print_util.h"
 #include "rwa_binauralsimple~.h"
+#include "vas_reverb~.h"
 #include "rwapdextra~.h"
 
 #ifdef QT_VERSION
