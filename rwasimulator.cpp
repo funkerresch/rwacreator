@@ -6,8 +6,6 @@
 #include "rwaimport.h"
 #include "rwa_binauralsimple~.h"
 
-extern vas_fir_list IRs;
-
 QList <RwaEntity *> RwaSimulator::entities;
 
 RwaSimulator::RwaSimulator(QObject *parent, RwaBackend *backend) :
@@ -359,13 +357,6 @@ void RwaSimulator::stopRwaSimulation()
     libpd_add_float(0.0f);
     libpd_finish_message("pd", "dsp");
     runtime->freeDynamicPdPatchers1();
-
-    // Cleared after the patches, and only frees the cache nodes - the filters they point
-    // to are refcounted by the channels using them. The externals never remove their
-    // nodes from this list, so between closefile and here the nodes point at freed
-    // engines; clearing last removes the window in which a lookup would touch them.
-    vas_fir_list_clear(&IRs);
-
     clearGame();
     QTimer::singleShot(100, [this]{ runtime->emptyPdMessageQueue();});
 }

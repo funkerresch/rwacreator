@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Restarting a simulation no longer re-parses the HRTF filter file for every
+  `[rwa_binauralsimple~]` in the game's own Pd patches. Loaded filters are
+  shared through `vas_library`'s global `IRs` cache, but the externals never
+  removed their cache entry when they were freed, so as a workaround
+  `stopRwaSimulation()` wiped the whole cache (`vas_fir_list_clear()`) to avoid
+  entries pointing at freed engines. That wipe also discarded the pooled
+  patchers' entry for `fabian_dir256.txt`, so from the second run on, every
+  creator patch with a file-loading binaural object parsed the 38 MB HRTF file
+  again instead of sharing the filter already in memory (visible in the Log
+  View: "Load Filter from File" instead of "Use existing filter"). The
+  `vas_library` submodule (bumped) now deregisters an engine from the cache in
+  `vas_fir_binaural_free()` — and fixes a latent bug in the list's remove
+  functions that lost all subsequent nodes when the first one was removed — so
+  the wipe in the stop path is gone and the cache survives for the whole
+  session. Details in the fork's CHANGELOG; teardown background in
+  `docs/teardown-investigation.md`.
+
 - Fixed crash (heap corruption, `SIGTRAP` in `free_medium`) when stopping a
   simulation whose game contained a `[vas_reverb~]` patch with array-loaded IRs
   (the externals I'm currently integrating into RWA Creator). The deterministic
