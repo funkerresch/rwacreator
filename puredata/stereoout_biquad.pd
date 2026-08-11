@@ -1,4 +1,4 @@
-#N canvas 712 65 997 817 10;
+#N canvas 30 60 800 800 12;
 #X obj 38 24 catch~ out1;
 #X obj 134 24 catch~ out2;
 #X obj 155 116 receive rwamainvolume;

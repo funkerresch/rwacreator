@@ -58,6 +58,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   patchers \* per-patch prints, delivered at once by the immediate drain). The
   didactic prints in `rwaReferencePatch.pd` stay.
 
+- Cleanup-pass on the shipped Pd patches: Many of the patches open with negative
+  offsets, requiring to scroll the object into view every time one want to read
+  them. Also reset the patcher zoom levels to a common denominator, close open
+  subpatcher windows, and move/resize the patcher windows to a (smaller) main
+  screen.
+
 - Update `vas_library` to `7368810`: the filter-loading log lines in the Log
   View are now self-identifying (`vas_fir: <key>: use cached filter / new filter
   from file / new filter from arrays / replacing previous filter`, and `read <n>
