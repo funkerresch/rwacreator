@@ -345,16 +345,28 @@ void RwaSimulator::startRwaSimulation()
 
 void RwaSimulator::stopRwaSimulation()
 {
-    vas_fir_list_clear(&IRs);
+    gameLoopTimer->stop();
+    simulationIsRunning = false;
+
+    // The audio callback calls libpd_process_float() until Pa_AbortStream() returns, and
+    // only the message sends in RwaRuntime take pdMutex - closing patches, "dsp 0" and
+    // clearing the IR list do not. They must therefore come after stopAudio(), which
+    // makes everything below single-threaded. See docs/teardown-investigation.md.
+    ap->stopAudio();
+
     runtime->freeAllPatchers();
     libpd_start_message(1);
     libpd_add_float(0.0f);
     libpd_finish_message("pd", "dsp");
-    gameLoopTimer->stop();
-    simulationIsRunning = false;
     runtime->freeDynamicPdPatchers1();
+
+    // Cleared after the patches, and only frees the cache nodes - the filters they point
+    // to are refcounted by the channels using them. The externals never remove their
+    // nodes from this list, so between closefile and here the nodes point at freed
+    // engines; clearing last removes the window in which a lookup would touch them.
+    vas_fir_list_clear(&IRs);
+
     clearGame();
-    ap->stopAudio();
     QTimer::singleShot(100, [this]{ runtime->emptyPdMessageQueue();});
 }
 

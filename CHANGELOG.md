@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed crash (heap corruption, `SIGTRAP` in `free_medium`) when stopping a
+  simulation whose game contained a `[vas_reverb~]` patch with array-loaded IRs
+  (the externals I'm currently integrating into RWA Creator). The deterministic
+  cause was a double free in the externals themselves: `vas_reverb~`,
+  `vas_partconv~` and `vas_dynconv~` freed the garray buffers they had only
+  borrowed via `garray_getfloatwords()`, so `libpd_closefile → garray_free`
+  freed each buffer a second time. Fixed in `vas_library` (submodule bumped to
+  `d81d8b6`, see the fork's CHANGELOG for the full story).
+
+- Hardened the same stop path against a second, independent hazard: heap
+  corruption from tearing libpd down while the audio callback is live.
+  `RwaSimulator::stopRwaSimulation()` sent `pd dsp 0` and ran
+  `freeDynamicPdPatchers1()`'s `libpd_closefile()` and `vas_fir_list_clear()`
+  *before* stopping the PortAudio stream, and none of those calls take
+  `pdMutex`. The audio callback kept calling `libpd_process_float()`
+  concurrently, so it could execute objects and DSP chains the main thread was
+  freeing at that moment: same trap signature as the double free above, which
+  is why both were suspects for the observed crash. The teardown now runs
+  strictly after `stopAudio()` (`Pa_AbortStream()` guarantees the callback has
+  returned), which makes every libpd call in the stop path single-threaded.
+
+  `vas_fir_list_clear()` additionally moved to after the patches are closed.
+  Not because the old order corrupted memory (the teardown never reads the
+  `IRs` list, and `clear` frees only the cache nodes, never the engines or
+  filter data they point to) but as an invariant: the externals' free routines
+  never remove their nodes from the list, so after `libpd_closefile()` the
+  nodes point at freed engines until the clear. Clearing last removes the
+  window in which a lookup would touch freed memory.
+
+  **Engine parity**: Creator-simulator stop path only (`RwaSimulator`), no
+  tick-loop behaviour changed, nothing to mirror in the Player's
+  `RwaGameLoop.swift`, though the Player's own stop/teardown ordering deserves
+  the same audit.
+
 ## [v1.4.4] - 2026-08-08
 
 ### Fixed
