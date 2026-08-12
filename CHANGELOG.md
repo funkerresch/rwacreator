@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Deleting an asset no longer takes a second, unrelated entry out of the asset
+  list.** The Backspace handler emitted `deleteAsset`, which removes the asset
+  from the model and rebuilds the whole list via the state broadcast (during
+  which the backend re-points the state's `lastTouchedAsset` to
+  `assets.front()`, selecting row 0), and then *also* called
+  `takeItem(getSelectedIndex())`, removing row 0 of the freshly rebuilt list
+  from the widget. The first-added asset (typically the Pd patch) vanished from
+  view while remaining in the game, and reappeared on the next rebuild (adding
+  an asset, switching states, reloading the project), perceived as "deleted
+  assets come back". The stray `takeItem` is gone; the rebuild is the single
+  source of truth.
+
 
 ### Added
 

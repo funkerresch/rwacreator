@@ -495,5 +495,6 @@ void RwaStateView::deleteAssetItem(const QString &path)
 
         currentState->deleteAsset(path.toStdString());
         emit sendCurrentState(currentState);
+        emit sendWriteUndo("Delete Asset");
     }
 }

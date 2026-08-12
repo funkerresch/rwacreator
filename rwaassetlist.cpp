@@ -245,14 +245,13 @@ void RwaAssetList::keyPressEvent(QKeyEvent *event)
         case Qt::Key_Insert:
           qDebug() << "Insert";
           break;
-        case 16777219:
-          if(!currentItem())
-              break;
-          qDebug() << "ITEM TEXT" << currentItem()->text();
-          emit deleteAsset(currentItem()->text());
-          emit sendWriteUndo("Delete Asset");
-          takeItem(getSelectedIndex());
-          break;
+        case Qt::Key_Backspace:
+        case Qt::Key_Delete:
+            qDebug() << "Delete";
+            if(!currentItem())
+                break;
+            emit deleteAsset(currentItem()->text());
+            break;
         case 16777237:
             setCurrentAssetFromCurrentItem();
             break;
