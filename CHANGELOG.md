@@ -21,6 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   assets come back". The stray `takeItem` is gone; the rebuild is the single
   source of truth.
 
+- **Deleting an asset while the simulation runs is now visibly refused.** The
+  handler silently returned (the runtime's active assets would keep a dangling
+  pointer) but the widget still removed the row, so the entry looked deleted
+  until the next rebuild or reload resurrected it. The row now stays and a
+  warning is logged.
+
 - **Undo restore / opening a project no longer re-broadcasts stale objects.**
   `RwaBackend::clearScenes()` deletes every state but kept the
   `lastTouchedScene`/`lastTouchedState`/`lastTouchedAssetItem` pointers, so the

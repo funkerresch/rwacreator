@@ -477,7 +477,10 @@ void RwaStateView::addAssetItem(const QString &path, qint32 type)
 void RwaStateView::deleteAssetItem(const QString &path)
 {
     if(backend->isSimulationRunning()) // the runtime's activeAssets would keep a pointer to the deleted asset
+    {
+        qWarning() << "Cannot delete an asset while the simulation is running.";
         return;
+    }
 
     if(currentState)
     {
