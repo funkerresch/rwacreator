@@ -186,6 +186,9 @@ void RwaBackend::updateLastTouchedSceneStateAndAsset()
 {
     emit updateGame();
 
+    if(scenes.empty()) // e.g. an undo file failed to parse
+        return;
+
     if(!lastTouchedScene)
         lastTouchedScene = scenes.front();
 
@@ -509,6 +512,9 @@ void RwaBackend::clearScenes()
         scene->clear();
 
     scenes.clear();
+    lastTouchedScene = nullptr;
+    lastTouchedState = nullptr;
+    lastTouchedAssetItem = nullptr;
 }
 
 void RwaBackend::reset()

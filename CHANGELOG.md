@@ -21,6 +21,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   assets come back". The stray `takeItem` is gone; the rebuild is the single
   source of truth.
 
+- **Undo restore / opening a project no longer re-broadcasts stale objects.**
+  `RwaBackend::clearScenes()` deletes every state but kept the
+  `lastTouchedScene`/`lastTouchedState`/`lastTouchedAssetItem` pointers, so the
+  post-restore broadcast (`updateLastTouchedSceneStateAndAsset()`) handed the
+  views freed states and a scene no longer part of the game. Subsequent edits
+  landed in objects that saving never sees and were silently lost. The pointers
+  are now cleared with the scenes, and the broadcast guards against an empty
+  scene list.
+
 
 ### Added
 
