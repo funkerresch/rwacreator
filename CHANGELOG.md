@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.4.5] - 2026-08-11
+
+### Added
+
+- **Two-phase stop with a master fade - the reference design for the Player's
+  stop/start flow.** Stopping/starting a simulation now models the (more
+  graceful) procedure that will be implemented into RWA Player:
+  `stopRwaSimulation()` now only stops the game loop and fades the master gain
+  to zero over 200 ms (phase A, the stream keeps running), then hands over to
+  `finishStopRwaSimulation()` (phase B): the existing silent, single-threaded
+  teardown: close stream, release actives, pool-wide protocol sweep, scheduler
+  flush, drain, close dynamic patchers. A start requested while stopping is
+  *queued* and launched automatically once the reset is complete, which is what
+  Cmd-R (when simulation is running: stop directly followed by start) now rides
+  on; a stop while a start is queued cancels the start. `isSimulationRunning()`
+  stays true throughout the stop, so every guard that protects a running
+  simulation keeps holding. Starts are soft too: the master gain jumps to 0
+  before the stream opens (nothing stale reaches the first blocks) and ramps to
+  the user's volume over 100 ms.
+
+  Quitting the application and rescanning the audio devices use
+  `stopRwaSimulationNow()` (synchronous, no fade) since a single-shot timer
+  never fires while the event loop winds down / PortAudio restarts.
+
+  The master gain in `stereoout.pd` has a new `rwamasterfade` receiver takes
+  `<target> <ms>` lists for the stop/start ramps, after `rwamainvolume` (the
+  volume slider), which is now smoothed over 20 ms. `setMainVolume()` no longer
+  logs every slider tick.
+
+  **Engine parity - porting contract for `RwaGameLoop.swift` / the Player's
+  output patch:** receiver `rwamasterfade` (`<target> <ms>`), fade-out 200 ms
+  (Creator; the Player should use its own, longer audience-facing length),
+  fade-in 100 ms, teardown delay = fade-out + one audio buffer + margin;
+  ordering: stop game loop → fade → close stream → complete the patcher
+  release protocol for the whole pool → flush scheduler → drain → close
+  dynamic patchers; a launch during stop is queued until the reset finished.
+  Constants live in `rwasimulator.h` (`masterFadeOutMs`, `masterFadeInMs`,
+  `stopTeardownDelayMs`).
+
 ### Fixed
 
 - **A pooled patcher's pending fade-out no longer fires into the next

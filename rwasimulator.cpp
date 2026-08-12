@@ -289,7 +289,7 @@ void RwaSimulator::clearGame()
 int RwaSimulator::rescanAudioDevices()
 {
     if(simulationIsRunning)
-        stopRwaSimulation();
+        stopRwaSimulationNow();
 
     int err = ap->rescanDevices();
     if(err != paNoError)
@@ -310,6 +310,17 @@ int RwaSimulator::rescanAudioDevices()
 
 void RwaSimulator::startRwaSimulation()
 {
+    // A start during teardown is queued, not lost:
+    // finishStopRwaSimulation() launches it once the reset is complete.
+    if(stopInProgress)
+    {
+        startPending = true;
+        return;
+    }
+
+    if(simulationIsRunning)
+        return;
+
     // Picks up devices which were connected or removed since the last scan.
     // Without this the stored device indices can be stale and the simulation would run without any audio.
     rescanAudioDevices();
@@ -325,6 +336,12 @@ void RwaSimulator::startRwaSimulation()
     runtime->setScene(entity, startScene);
 
     libpd_init_audio(ap->inputChannelCount() , ap->outputChannelCount(), backend->sampleRate); // 2 inputs, 2 output
+
+    // start silent: the master [line~] in stereoout.pd jumps to 0 before the stream
+    // opens, so nothing left standing in the signal graph reaches the first blocks.
+    // The ramp up to 1 goes out once the stream runs.
+    sendMasterFade(0.0f, 0);
+
     libpd_start_message(1);
     libpd_add_float(1.0f);
     libpd_finish_message("pd", "dsp");
@@ -335,21 +352,68 @@ void RwaSimulator::startRwaSimulation()
                    << "- device:" << ap->getDeviceName(ap->getOutputDevice())
                    << "- try Audio Preferences -> Rescan Audio Devices";
 
+    sendMasterFade(1.0f, masterFadeInMs);
+
     gameLoopTimer->start();
     simulationIsRunning = true;
     sendSelectedScene2Devices();
     emit sendSimulationRunningChanged(true);
 }
 
+void RwaSimulator::sendMasterFade(float target, int milliseconds)
+{
+    ap->pdMutex.lock();
+    libpd_start_message(2);
+    libpd_add_float(target);
+    libpd_add_float(milliseconds);
+    libpd_finish_list("rwamasterfade");
+    ap->pdMutex.unlock();
+}
+
 void RwaSimulator::stopRwaSimulation()
 {
-    gameLoopTimer->stop();
-    simulationIsRunning = false;
+    if(!simulationIsRunning)
+        return;
 
-    // The audio callback calls libpd_process_float() until Pa_AbortStream() returns, and
-    // only the message sends in RwaRuntime take pdMutex - closing patches, "dsp 0" and
-    // clearing the IR list do not. They must therefore come after stopAudio(), which
-    // makes everything below single-threaded. See docs/teardown-investigation.md.
+    if(stopInProgress)
+    {
+        // Stop while a queued start waits: the stop wins, the start is forgotten.
+        startPending = false;
+        return;
+    }
+
+    stopInProgress = true;
+    gameLoopTimer->stop();
+
+    sendMasterFade(0.0f, masterFadeOutMs);
+
+    QTimer::singleShot(stopTeardownDelayMs, this, [this]{ finishStopRwaSimulation(); });
+}
+
+void RwaSimulator::stopRwaSimulationNow()
+{
+    if(!simulationIsRunning)
+        return;
+
+    gameLoopTimer->stop();
+    startPending = false;
+    stopInProgress = true;
+    finishStopRwaSimulation();
+    // If a phase-A single-shot is still pending, its finishStopRwaSimulation()
+    // no-ops on arrival: simulationIsRunning is false by then.
+}
+
+/**
+  Phase B of the two-phase stop: the stream is closed first, which makes everything
+  below single-threaded - the audio callback calls libpd_process_float() until
+  Pa_AbortStream() returns, and only the message sends in RwaRuntime take pdMutex;
+  closing patches and "pd dsp 0" do not. See docs/teardown-investigation.md.
+*/
+void RwaSimulator::finishStopRwaSimulation()
+{
+    if(!simulationIsRunning)
+        return;
+
     ap->stopAudio();
 
     runtime->freeAllPatchers();
@@ -382,7 +446,16 @@ void RwaSimulator::stopRwaSimulation()
 
     runtime->freeDynamicPdPatchers1();
     clearGame();
+
+    simulationIsRunning = false;
+    stopInProgress = false;
     emit sendSimulationRunningChanged(false);
+
+    if(startPending)
+    {
+        startPending = false;
+        startRwaSimulation();
+    }
 }
 
 void RwaSimulator::flushPdScheduler(int milliseconds)
@@ -404,7 +477,6 @@ void RwaSimulator::setMainVolume(float volume)
 {
     ap->pdMutex.lock();
     libpd_float("rwamainvolume", volume);
-    qDebug("%f", volume);
     ap->pdMutex.unlock();
 }
 

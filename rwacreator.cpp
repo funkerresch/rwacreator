@@ -267,7 +267,9 @@ void RwaCreator::closeEvent(QCloseEvent *event)
 void RwaCreator::cleanUpBeforeQuit()
 {
     qDebug() << "Clean up and quit!";
-    backend->simulator->stopRwaSimulation();
+    // synchronous stop without the fade (the single-shot timer of "stop" would
+    // never fire once the event loop stops.)
+    backend->simulator->stopRwaSimulationNow();
     saveLayoutAndSettings();
     emptyTmpDirectories();
     backend->clearScenes();

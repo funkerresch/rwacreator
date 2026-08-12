@@ -76,6 +76,24 @@ public:
     bool devicesRegistered;
     bool simulationIsRunning;
 
+    /** The two-phase stop (see stopRwaSimulation()): true from the stop request
+     *  until the teardown in finishStopRwaSimulation() is done. While stopping,
+     *  simulationIsRunning stays true, so all guards that protect a running
+     *  simulation (asset deletion, scene edits) keep holding. */
+    bool stopInProgress = false;
+
+    /** A start requested while the stop was still fading out / tearing down.
+     *  finishStopRwaSimulation() launches it once the reset is complete. */
+    bool startPending = false;
+
+    /** Master fade lengths, in milliseconds.
+     * Sent as "<target> <ms>" to "rwamasterfade" -> [line~] in stereoout.pd.
+     */
+    static constexpr int masterFadeOutMs = 200;
+    static constexpr int masterFadeInMs = 100;
+    /** Fade-out plus one audio buffer (1024 samples ~ 21 ms at 48 kHz) plus margin. */
+    static constexpr int stopTeardownDelayMs = masterFadeOutMs + 60;
+
     QList<oscDevice *> devices;
     QOscServer* oscServer;
     PathObject *registerPath;
@@ -107,7 +125,45 @@ public slots:
     void updateAssets();
     bool isSimulationRunning();
     void startRwaSimulation();
+
+    /**
+     * Phase A of teardown/stop: audible, the stream still runs.
+     *
+     * - the game loop stops first, so no new asset activity starts
+     * - then the master gain in stereoout.pd fades to zero over masterFadeOutMs
+     *   while the audio callback keeps running.
+     * - the silent teardown (phase B, finishStopRwaSimulation()) follows once
+     *   the fade is through the hardware buffer.
+     * - a second stop request during the fade is swallowed, a start request
+     *   during the fade or the teardown is queued and launched after
+     *   the reset (see startRwaSimulation()).
+     *
+     * This is the reference design for the stop/start flow in the RWA Player: fade out over
+     * a fixed length, tear down in silence, block the next launch until the reset is done.
+     */
     void stopRwaSimulation();
+
+    /**
+     * Phase B of teardown/stop: the silent, single-threaded teardown.
+     *
+     * - run stopTeardownDelayMs after stopRwaSimulation() faded the master
+     *   gain, or immediately via stopRwaSimulationNow().
+     * - launch a pending
+     *   start request at the end.
+     */
+    void finishStopRwaSimulation();
+
+    /**
+     * Stops without the fade, synchronously - for quitting the application
+     * (a single-shot timer would never fire again) and for restarting
+     * PortAudio on a device rescan. Cancels a pending start.
+     */
+    void stopRwaSimulationNow();
+
+    /**
+     * Sends "<target> <ms>" to the master gain [line~] in stereoout.pd.
+     */
+    void sendMasterFade(float target, int milliseconds);
     int rescanAudioDevices();
     void clearGame();
     void setCurrentScene(RwaScene *scene);
