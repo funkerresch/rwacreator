@@ -40,50 +40,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   output patch:** receiver `rwamasterfade` (`<target> <ms>`), fade-out 200 ms
   (Creator; the Player should use its own, longer audience-facing length),
   fade-in 100 ms, teardown delay = fade-out + one audio buffer + margin;
-  ordering: stop game loop → fade → close stream → complete the patcher
-  release protocol for the whole pool → flush scheduler → drain → close
-  dynamic patchers; a launch during stop is queued until the reset finished.
-  Constants live in `rwasimulator.h` (`masterFadeOutMs`, `masterFadeInMs`,
+  ordering: stop game loop → fade → close stream → complete the patcher release
+  protocol for the whole pool → flush scheduler → drain → close dynamic
+  patchers; a launch during stop is queued until the reset finished. Constants
+  live in `rwasimulator.h` (`masterFadeOutMs`, `masterFadeInMs`,
   `stopTeardownDelayMs`).
-
-### Fixed
-
-- **A pooled patcher's pending fade-out no longer fires into the next
-  simulation.** The pooled player patchers are opened once and never closed, so
-  their `$0` tags - and their pending `[delay]` clocks - survive a stop. A
-  patcher whose asset had already ended but was still fading out has left
-  `activeAssets`, so `freeAllPatchers()` (which resets only active assets) never
-  re-armed its `[delay]`: the clock stayed in Pd's clock queue with its absolute
-  deadline, logical time froze with the closed stream, and on the next start the
-  remaining fade time elapsed *inside the new run* — then the patch switched
-  itself off and sent `<tag>-playfinished` for a tag a fresh asset could own by
-  then (silent asset drop; patcher assignment is first-free, so re-acquiring the
-  same tag is the common case). Verified with an instrumented
-  `rwaloopplayerstereo.pd` (`print` taps on `-play`/`-end`): the `END FIRED`
-  debug line consistently appeared in the run *after* the one that armed it.
-  Custom Pd assets were never affected: dynamic patchers are closed on stop,
-  and closing a canvas frees its objects' pending clocks with them.
-
-  The stop routine now completes the patcher release protocol for the whole pool
-  instead of leaving it half done, using only messages the protocol already
-  defines (no patch-side changes): `RwaRuntime::resetAllPatchers()` sends
-  `-free` / `-fadeouttime 0` / `-end` to every pooled patcher and clears the
-  busy flags; `RwaSimulator::flushPdScheduler(30)` then advances Pd's scheduler
-  by hand — clocks only advance inside `libpd_process_float()`, and the stream
-  is already closed — so every (now zero-length) fade matures at stop; the
-  resulting `-playfinished` bangs are drained on the spot, harmlessly, since
-  `activeAssets` is empty and every patcher idle. The drain previously ran on a
-  100 ms single-shot timer that a quick restart could push into the next
-  simulation — a second, independent leak channel, now gone. The stop path also
-  emits `sendSimulationRunningChanged(false)`, mirroring the start path. The
-  `tools/pdtests/` patches (added here) document the underlying Pd mechanics:
-  what `[switch~] 0`, `pd dsp 0` and a closed stream each do to `[line]`,
-  `[line~]` and pending clocks.
-
-  **Engine parity**: Creator-simulator stop path only; no tick-loop behaviour
-  changed and nothing was added to the patcher protocol, so there is nothing to
-  mirror in the Player's `RwaGameLoop.swift`, but the audit of RWA Player's own
-  stop/teardown ordering is planned next.
 
 ### Changed
 
@@ -112,6 +73,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   change; details in the vas_library's CHANGELOG.
 
 ### Fixed
+
+- **A pooled patcher's pending fade-out no longer fires into the next
+  simulation.** The pooled player patchers are opened once and never closed, so
+  their `$0` tags - and their pending `[delay]` clocks - survive a stop. A
+  patcher whose asset had already ended but was still fading out has left
+  `activeAssets`, so `freeAllPatchers()` (which resets only active assets) never
+  re-armed its `[delay]`: the clock stayed in Pd's clock queue with its absolute
+  deadline, logical time froze with the closed stream, and on the next start the
+  remaining fade time elapsed *inside the new run* — then the patch switched
+  itself off and sent `<tag>-playfinished` for a tag a fresh asset could own by
+  then (silent asset drop; patcher assignment is first-free, so re-acquiring the
+  same tag is the common case). Verified with an instrumented
+  `rwaloopplayerstereo.pd` (`print` taps on `-play`/`-end`): the `END FIRED`
+  debug line consistently appeared in the run *after* the one that armed it.
+  Custom Pd assets were never affected: dynamic patchers are closed on stop, and
+  closing a canvas frees its objects' pending clocks with them.
+
+  The stop routine now completes the patcher release protocol for the whole pool
+  instead of leaving it half done, using only messages the protocol already
+  defines (no patch-side changes): `RwaRuntime::resetAllPatchers()` sends
+  `-free` / `-fadeouttime 0` / `-end` to every pooled patcher and clears the
+  busy flags; `RwaSimulator::flushPdScheduler(30)` then advances Pd's scheduler
+  by hand — clocks only advance inside `libpd_process_float()`, and the stream
+  is already closed — so every (now zero-length) fade matures at stop; the
+  resulting `-playfinished` bangs are drained on the spot, harmlessly, since
+  `activeAssets` is empty and every patcher idle. The drain previously ran on a
+  100 ms single-shot timer that a quick restart could push into the next
+  simulation — a second, independent leak channel, now gone. The stop path also
+  emits `sendSimulationRunningChanged(false)`, mirroring the start path. The
+  `tools/pdtests/` patches (added here) document the underlying Pd mechanics:
+  what `[switch~] 0`, `pd dsp 0` and a closed stream each do to `[line]`,
+  `[line~]` and pending clocks.
 
 - Update `vas_library` to `f77e306`: a `set` message with unresolvable arrays
   (array-loaded IRs) no longer corrupts the heap, it posts `vas_fir: <name>: no
@@ -155,23 +148,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   *before* stopping the PortAudio stream, and none of those calls take
   `pdMutex`. The audio callback kept calling `libpd_process_float()`
   concurrently, so it could execute objects and DSP chains the main thread was
-  freeing at that moment: same trap signature as the double free above, which
-  is why both were suspects for the observed crash. The teardown now runs
-  strictly after `stopAudio()` (`Pa_AbortStream()` guarantees the callback has
-  returned), which makes every libpd call in the stop path single-threaded.
+  freeing at that moment: same trap signature as the double free above, which is
+  why both were suspects for the observed crash. The teardown now runs strictly
+  after `stopAudio()` (`Pa_AbortStream()` guarantees the callback has returned),
+  which makes every libpd call in the stop path single-threaded.
 
-  `vas_fir_list_clear()` additionally moved to after the patches are closed.
-  Not because the old order corrupted memory (the teardown never reads the
-  `IRs` list, and `clear` frees only the cache nodes, never the engines or
-  filter data they point to) but as an invariant: the externals' free routines
-  never remove their nodes from the list, so after `libpd_closefile()` the
-  nodes point at freed engines until the clear. Clearing last removes the
-  window in which a lookup would touch freed memory.
+  `vas_fir_list_clear()` additionally moved to after the patches are closed. Not
+  because the old order corrupted memory (the teardown never reads the `IRs`
+  list, and `clear` frees only the cache nodes, never the engines or filter data
+  they point to) but as an invariant: the externals' free routines never remove
+  their nodes from the list, so after `libpd_closefile()` the nodes point at
+  freed engines until the clear. Clearing last removes the window in which a
+  lookup would touch freed memory.
 
-  **Engine parity**: Creator-simulator stop path only (`RwaSimulator`), no
-  tick-loop behaviour changed, nothing to mirror in the Player's
-  `RwaGameLoop.swift`, though the Player's own stop/teardown ordering deserves
-  the same audit.
+  **Engine parity** (for this and the pooled-patcher fade-out fix above):
+  Creator-simulator stop path only (`RwaSimulator`); no tick-loop behaviour
+  changed and nothing was added to the patcher protocol, so there is nothing to
+  mirror in the Player's `RwaGameLoop.swift`, but the audit of RWA Player's own
+  stop/teardown ordering is planned next.
 
 ## [v1.4.4] - 2026-08-08
 
