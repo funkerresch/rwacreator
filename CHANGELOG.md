@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+### Added
+
+- **Missing-file badge in the asset list.** An asset entry whose file is absent
+  from the `assets/` folder (e.g. manually deleted, or resurrected by an undo
+  restore) now shows a corresponding badge instead of looking like a healthy
+  asset.
+
 ## [v1.4.5] - 2026-08-11
 
 ### Fixed

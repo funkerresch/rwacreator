@@ -1,5 +1,6 @@
 #include "rwaassetlist.h"
 
+#include <QFile>
 #include <tag.h>
 #include <fileref.h>
 
@@ -112,8 +113,15 @@ void RwaAssetList::setAssetBadges(QListWidgetItem *item, RwaAsset1 *asset)
     QStringList badges;
     QStringList toolTipLines;
     bool isPatch = (asset->getType() == RWAASSETTYPE_PD);
+    bool fileMissing = !QFile::exists(QString::fromStdString(asset->getFullPath()));
 
-    if(!isPatch)
+    if(fileMissing)
+    {
+        badges << "badgeFileMissing";
+        toolTipLines << "File not found in the assets folder";
+    }
+
+    if(!isPatch && !fileMissing)
     {
         if(asset->getOriginalSampleRate() == 0) // asset loaded from a .rwa, read the file once and cache
         {
