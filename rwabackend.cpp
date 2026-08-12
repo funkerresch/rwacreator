@@ -475,6 +475,13 @@ void RwaBackend::duplicateScene()
 
 void RwaBackend::removeScene(RwaScene *scene)
 {
+    if(isSimulationRunning())
+    {
+        // the entity's currentScene would keep a pointer to the deleted scene
+        qWarning() << "Cannot delete a scene while the simulation is running.";
+        return;
+    }
+
     if(scenes.count() == 1) // keep always one scene
     {
         qWarning() << "The last remaining scene can not be deleted.";

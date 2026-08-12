@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Scene and state deletion is now refused while the simulation is running**,
+  with a warning, matching the v1.4.6 asset-delete guard. The runtime's entity
+  holds raw `currentScene`/`currentState` pointers during simulation, so
+  deleting either mid-simulation left the tick loop dereferencing freed memory.
+  Guards live in the view/backend delete paths (`RwaSceneView::deleteState`,
+  `RwaBackend::removeScene`); no runtime change, no engine-parity impact. A
+  refused delete writes no undo snapshot.
+
 - **Scene and state lists no longer remove rows behind the model's back** (same
   family as the v1.4.6 asset-list fix). Both Backspace handlers called
   `takeItem` on the widget and *then* asked the model to delete, so any refusal

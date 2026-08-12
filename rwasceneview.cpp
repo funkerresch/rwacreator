@@ -1,5 +1,7 @@
 #include "rwasceneview.h"
 
+#include <QDebug>
+
 RwaSceneView::RwaSceneView(QWidget *parent, RwaScene *scene, QString name)
 : RwaView(parent, scene, name)
 {
@@ -37,6 +39,13 @@ RwaSceneView::RwaSceneView(QWidget *parent, RwaScene *scene, QString name)
 
 void RwaSceneView::deleteState(const QString &stateName)
 {
+    if(backend->isSimulationRunning())
+    {
+        // the entity's currentState would keep a pointer to the deleted state
+        qWarning() << "Cannot delete a state while the simulation is running.";
+        return;
+    }
+
     if(!currentScene)
         return;
 
