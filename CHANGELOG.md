@@ -9,6 +9,100 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v1.4.5] - 2026-08-11
 
+### Fixed
+
+- **A pooled patcher's pending fade-out no longer fires into the next
+  simulation.** The pooled player patchers are opened once and never closed, so
+  their `$0` tags - and their pending `[delay]` clocks - survive a stop. A
+  patcher whose asset had already ended but was still fading out has left
+  `activeAssets`, so `freeAllPatchers()` (which resets only active assets) never
+  re-armed its `[delay]`: the clock stayed in Pd's clock queue with its absolute
+  deadline, logical time froze with the closed stream, and on the next start the
+  remaining fade time elapsed *inside the new run*, then the patch switched
+  itself off and sent `<tag>-playfinished` for a tag a fresh asset could own by
+  then (silent asset drop; patcher assignment is first-free, so re-acquiring the
+  same tag is the common case). Verified with an instrumented
+  `rwaloopplayerstereo.pd` (`print` taps on `-play`/`-end`): the `END FIRED`
+  debug line consistently appeared in the run *after* the one that armed it.
+  Custom Pd assets were never affected: dynamic patchers are closed on stop, and
+  closing a canvas frees its objects' pending clocks with them.
+
+  The stop routine now completes the patcher release protocol for the whole pool
+  instead of leaving it half done, using only messages the protocol already
+  defines (no patch-side changes): `RwaRuntime::resetAllPatchers()` sends
+  `-free` / `-fadeouttime 0` / `-end` to every pooled patcher and clears the
+  busy flags; `RwaSimulator::flushPdScheduler(30)` then advances Pd's scheduler
+  by hand (clocks only advance inside `libpd_process_float()`, and the stream is
+  already closed) so every (now zero-length) fade matures at stop; the resulting
+  `-playfinished` bangs are drained on the spot, harmlessly, since
+  `activeAssets` is empty and every patcher idle. The drain previously ran on a
+  100 ms single-shot timer that a quick restart could push into the next
+  simulation - a second, independent leak channel, now gone. The stop path also
+  emits `sendSimulationRunningChanged(false)`, mirroring the start path. The
+  `tools/pdtests/` patches (added here) document the underlying Pd mechanics:
+  what `[switch~] 0`, `pd dsp 0` and a closed stream each do to `[line]`,
+  `[line~]` and pending clocks.
+
+- Update `vas_library` to `f77e306`: a `set` message with unresolvable arrays
+  (array-loaded IRs) no longer corrupts the heap, it posts `vas_fir: <name>: no
+  such array` / `... missing or empty array, filter unchanged` and keeps the
+  current filter. Observed as a crash in Qt painting long after the corruption,
+  triggered by a creator patch using `$0-arrayL` in *message boxes*: message-box
+  `$0` never expands to the canvas id (only object-box arguments expand), so
+  `soundfiler read` and `set` targeted arrays that do not exist. Details in the
+  CHANGELOG of vas_library.
+
+- Restarting a simulation no longer re-parses the HRTF filter file for every
+  `[rwa_binauralsimple~]` in the game's own Pd patches. Loaded filters are
+  shared through `vas_library`'s global `IRs` cache, but the externals never
+  removed their cache entry when they were freed, so as a workaround
+  `stopRwaSimulation()` wiped the whole cache (`vas_fir_list_clear()`) to avoid
+  entries pointing at freed engines. That wipe also discarded the pooled
+  patchers' entry for `fabian_dir256.txt`, so from the second run on, every
+  creator patch with a file-loading binaural object parsed the 38 MB HRTF file
+  again instead of sharing the filter already in memory (visible in the Log
+  View: "Load Filter from File" instead of "Use existing filter"). The
+  `vas_library` submodule (bumped) now deregisters an engine from the cache in
+  `vas_fir_binaural_free()`, and fixes a latent bug in the list's remove
+  functions that lost all subsequent nodes when the first one was removed. The
+  wipe in the stop path is gone and the cache survives for the whole session.
+  Details in the fork's CHANGELOG.
+
+- Fixed crash (heap corruption, `SIGTRAP` in `free_medium`) when stopping a
+  simulation whose game contained a `[vas_reverb~]` patch with array-loaded IRs
+  (the externals I'm currently integrating into RWA Creator). The deterministic
+  cause was a double free in the externals themselves: `vas_reverb~`,
+  `vas_partconv~` and `vas_dynconv~` freed the garray buffers they had only
+  borrowed via `garray_getfloatwords()`, so `libpd_closefile → garray_free`
+  freed each buffer a second time. Fixed in `vas_library` (submodule bumped to
+  `d81d8b6`, see the fork's CHANGELOG for the full story).
+
+- Hardened the same stop path against a second, independent hazard: heap
+  corruption from tearing libpd down while the audio callback is live.
+  `RwaSimulator::stopRwaSimulation()` sent `pd dsp 0` and ran
+  `freeDynamicPdPatchers1()`'s `libpd_closefile()` and `vas_fir_list_clear()`
+  *before* stopping the PortAudio stream, and none of those calls take
+  `pdMutex`. The audio callback kept calling `libpd_process_float()`
+  concurrently, so it could execute objects and DSP chains the main thread was
+  freeing at that moment: same trap signature as the double free above, which is
+  why both were suspects for the observed crash. The teardown now runs strictly
+  after `stopAudio()` (`Pa_AbortStream()` guarantees the callback has returned),
+  which makes every libpd call in the stop path single-threaded.
+
+  `vas_fir_list_clear()` additionally moved to after the patches are closed. Not
+  because the old order corrupted memory (the teardown never reads the `IRs`
+  list, and `clear` frees only the cache nodes, never the engines or filter data
+  they point to) but as an invariant: the externals' free routines never remove
+  their nodes from the list, so after `libpd_closefile()` the nodes point at
+  freed engines until the clear. Clearing last removes the window in which a
+  lookup would touch freed memory.
+
+  **Engine parity** (for this and the pooled-patcher fade-out fix above):
+  Creator-simulator stop path only (`RwaSimulator`); no tick-loop behaviour
+  changed and nothing was added to the patcher protocol, so there is nothing to
+  mirror in the Player's `RwaGameLoop.swift`, but the audit of RWA Player's own
+  stop/teardown ordering is planned next.
+
 ### Added
 
 - **Two-phase stop with a master fade - the reference design for the Player's
@@ -72,121 +166,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   had been mapped to the HRTF file and twice misled debugging). No functional
   change; details in the vas_library's CHANGELOG.
 
-### Fixed
-
-- **A pooled patcher's pending fade-out no longer fires into the next
-  simulation.** The pooled player patchers are opened once and never closed, so
-  their `$0` tags - and their pending `[delay]` clocks - survive a stop. A
-  patcher whose asset had already ended but was still fading out has left
-  `activeAssets`, so `freeAllPatchers()` (which resets only active assets) never
-  re-armed its `[delay]`: the clock stayed in Pd's clock queue with its absolute
-  deadline, logical time froze with the closed stream, and on the next start the
-  remaining fade time elapsed *inside the new run* — then the patch switched
-  itself off and sent `<tag>-playfinished` for a tag a fresh asset could own by
-  then (silent asset drop; patcher assignment is first-free, so re-acquiring the
-  same tag is the common case). Verified with an instrumented
-  `rwaloopplayerstereo.pd` (`print` taps on `-play`/`-end`): the `END FIRED`
-  debug line consistently appeared in the run *after* the one that armed it.
-  Custom Pd assets were never affected: dynamic patchers are closed on stop, and
-  closing a canvas frees its objects' pending clocks with them.
-
-  The stop routine now completes the patcher release protocol for the whole pool
-  instead of leaving it half done, using only messages the protocol already
-  defines (no patch-side changes): `RwaRuntime::resetAllPatchers()` sends
-  `-free` / `-fadeouttime 0` / `-end` to every pooled patcher and clears the
-  busy flags; `RwaSimulator::flushPdScheduler(30)` then advances Pd's scheduler
-  by hand — clocks only advance inside `libpd_process_float()`, and the stream
-  is already closed — so every (now zero-length) fade matures at stop; the
-  resulting `-playfinished` bangs are drained on the spot, harmlessly, since
-  `activeAssets` is empty and every patcher idle. The drain previously ran on a
-  100 ms single-shot timer that a quick restart could push into the next
-  simulation — a second, independent leak channel, now gone. The stop path also
-  emits `sendSimulationRunningChanged(false)`, mirroring the start path. The
-  `tools/pdtests/` patches (added here) document the underlying Pd mechanics:
-  what `[switch~] 0`, `pd dsp 0` and a closed stream each do to `[line]`,
-  `[line~]` and pending clocks.
-
-- Update `vas_library` to `f77e306`: a `set` message with unresolvable arrays
-  (array-loaded IRs) no longer corrupts the heap, it posts `vas_fir: <name>: no
-  such array` / `... missing or empty array, filter unchanged` and keeps the
-  current filter. Observed as a crash in Qt painting long after the corruption,
-  triggered by a creator patch using `$0-arrayL` in *message boxes*: message-box
-  `$0` never expands to the canvas id (only object-box arguments expand), so
-  `soundfiler read` and `set` targeted arrays that do not exist. Details in the
-  CHANGELOG of vas_library.
-
-- Restarting a simulation no longer re-parses the HRTF filter file for every
-  `[rwa_binauralsimple~]` in the game's own Pd patches. Loaded filters are
-  shared through `vas_library`'s global `IRs` cache, but the externals never
-  removed their cache entry when they were freed, so as a workaround
-  `stopRwaSimulation()` wiped the whole cache (`vas_fir_list_clear()`) to avoid
-  entries pointing at freed engines. That wipe also discarded the pooled
-  patchers' entry for `fabian_dir256.txt`, so from the second run on, every
-  creator patch with a file-loading binaural object parsed the 38 MB HRTF file
-  again instead of sharing the filter already in memory (visible in the Log
-  View: "Load Filter from File" instead of "Use existing filter"). The
-  `vas_library` submodule (bumped) now deregisters an engine from the cache in
-  `vas_fir_binaural_free()` — and fixes a latent bug in the list's remove
-  functions that lost all subsequent nodes when the first one was removed — so
-  the wipe in the stop path is gone and the cache survives for the whole
-  session. Details in the fork's CHANGELOG; teardown background in
-  `docs/teardown-investigation.md`.
-
-- Fixed crash (heap corruption, `SIGTRAP` in `free_medium`) when stopping a
-  simulation whose game contained a `[vas_reverb~]` patch with array-loaded IRs
-  (the externals I'm currently integrating into RWA Creator). The deterministic
-  cause was a double free in the externals themselves: `vas_reverb~`,
-  `vas_partconv~` and `vas_dynconv~` freed the garray buffers they had only
-  borrowed via `garray_getfloatwords()`, so `libpd_closefile → garray_free`
-  freed each buffer a second time. Fixed in `vas_library` (submodule bumped to
-  `d81d8b6`, see the fork's CHANGELOG for the full story).
-
-- Hardened the same stop path against a second, independent hazard: heap
-  corruption from tearing libpd down while the audio callback is live.
-  `RwaSimulator::stopRwaSimulation()` sent `pd dsp 0` and ran
-  `freeDynamicPdPatchers1()`'s `libpd_closefile()` and `vas_fir_list_clear()`
-  *before* stopping the PortAudio stream, and none of those calls take
-  `pdMutex`. The audio callback kept calling `libpd_process_float()`
-  concurrently, so it could execute objects and DSP chains the main thread was
-  freeing at that moment: same trap signature as the double free above, which is
-  why both were suspects for the observed crash. The teardown now runs strictly
-  after `stopAudio()` (`Pa_AbortStream()` guarantees the callback has returned),
-  which makes every libpd call in the stop path single-threaded.
-
-  `vas_fir_list_clear()` additionally moved to after the patches are closed. Not
-  because the old order corrupted memory (the teardown never reads the `IRs`
-  list, and `clear` frees only the cache nodes, never the engines or filter data
-  they point to) but as an invariant: the externals' free routines never remove
-  their nodes from the list, so after `libpd_closefile()` the nodes point at
-  freed engines until the clear. Clearing last removes the window in which a
-  lookup would touch freed memory.
-
-  **Engine parity** (for this and the pooled-patcher fade-out fix above):
-  Creator-simulator stop path only (`RwaSimulator`); no tick-loop behaviour
-  changed and nothing was added to the patcher protocol, so there is nothing to
-  mirror in the Player's `RwaGameLoop.swift`, but the audit of RWA Player's own
-  stop/teardown ordering is planned next.
-
 ## [v1.4.4] - 2026-08-08
 
 ### Fixed
 
-- Fixed a crash (use-after-free) when clicking a stale asset marker in the
-  State View map. `RwaGraphicsView::redrawAssetsOfCurrentState` returned early
-  when the newly selected state had no assets — *before* clearing the asset
-  layers — so the previous state's markers stayed on the map, each still
-  holding a raw pointer to its `RwaAsset1`. Once those assets were destroyed
-  (deleting the state, undo restore, or game reload all destroy states, whose
-  destructor deletes their assets), clicking a leftover marker dereferenced
-  freed memory in `RwaAssetList::setCurrentAsset` and segfaulted. Typical
-  trigger: select an empty fallback/background state, delete the previously
-  shown state, click one of its still-visible asset dots. The layers are now
-  cleared before the empty-assets early return.
+- Fixed a crash (use-after-free) when clicking a stale asset marker in the State
+  View map. `RwaGraphicsView::redrawAssetsOfCurrentState` returned early when
+  the newly selected state had no assets - *before* clearing the asset layers -
+  so the previous state's markers stayed on the map, each still holding a raw
+  pointer to its `RwaAsset1`. Once those assets were destroyed (deleting the
+  state, undo restore, or game reload all destroy states, whose destructor
+  deletes their assets), clicking a leftover marker dereferenced freed memory in
+  `RwaAssetList::setCurrentAsset` and segfaulted. Typical trigger: select an
+  empty fallback/background state, delete the previously shown state, click one
+  of its still-visible asset dots. The layers are now cleared before the
+  empty-assets early return.
 
 - Closed the remaining stale-asset-pointer holes of the same class as the crash
   above. `RwaGraphicsView::redrawAssets` only cleared the asset layers when the
   corresponding visibility flag was on, so toggling assets/reflections off left
-  old markers on the (hidden) layers — and hidden layers still hit-test their
+  old markers on the (hidden) layers, and hidden layers still hit-test their
   geometries, since `Layer::setVisible` does not propagate to geometry
   visibility. Both layers are now cleared unconditionally. Additionally,
   `RwaView::setCurrentState` now resets `currentAsset` to null when the new
@@ -204,14 +203,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Deleting an asset from the asset list no longer leaks the `RwaAsset1` object:
   `RwaState::deleteAsset` only removed it from the state's list and never freed
-  it (the object was only ever deleted with the whole state). It now also
-  resets the state's `lastTouchedAsset` reference before deleting; the backend
-  and the views drop their references through the existing
-  `sendCurrentState` → `receiveLastTouchedState` refresh that deletion already
-  triggers. Since the object is now actually freed, deleting assets is refused
-  while the simulation is running (same rule as dragging them) — the runtime's
-  `activeAssets` map holds raw pointers and could otherwise tick a freed asset.
-  `deleteAssetItem` also guards against the asset no longer being found.
+  it (the object was only ever deleted with the whole state). It now also resets
+  the state's `lastTouchedAsset` reference before deleting; the backend and the
+  views drop their references through the existing `sendCurrentState` →
+  `receiveLastTouchedState` refresh that deletion already triggers. Since the
+  object is now actually freed, deleting assets is refused while the simulation
+  is running (same rule as dragging them). The runtime's `activeAssets` map
+  holds raw pointers and could otherwise tick a freed asset. `deleteAssetItem`
+  also guards against the asset no longer being found.
 
 ## [v1.4.3] - 2026-08-07
 
@@ -276,24 +275,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Pd-patch assets receive a `$0-numchannels` init value (sent alongside
   `$0-samplerate` etc. on state entry): the number of
-  `azimuthN`/`distanceN`/`elevationN` channels the engine will actually stream
-  — derived from the playback mode via new
-  `RwaAsset1::playbackChannelCount()`, which also accounts for "headtracker
-  relative to source" off (always 1 raw data set). Patches can use it to adapt
-  their receiver wiring; it is deliberately not the unreliable `channelcount`
-  XML attribute. Audio assets get the value too; the built-in player patches
-  simply have no receiver for it. **Engine parity:** mirrored in the Player
-  (`sendInitValues2Pd`).
+  `azimuthN`/`distanceN`/`elevationN` channels the engine will actually stream -
+  derived from the playback mode via new `RwaAsset1::playbackChannelCount()`,
+  which also accounts for "headtracker relative to source" off (always 1 raw
+  data set). Patches can use it to adapt their receiver wiring; it is
+  deliberately not the unreliable `channelcount` XML attribute. Audio assets get
+  the value too; the built-in player patches simply have no receiver for it.
+  **Engine parity:** mirrored in the Player (`sendInitValues2Pd`).
 
 - The Playback Mode dropdown hides "Auto" and "Binaural-Auto" for Pd-patch
   assets. Both dispatch on the audio file's channel count, which a patch does
-  not have (TagLib cannot read `.pd` files), so on a patch they were
-  meaningless (the patch plays regardless and falls back to a single data
-  channel). Already-authored patch assets with an Auto mode still display it;
-  only the dropdown choices are filtered.
+  not have (TagLib cannot read `.pd` files), so on a patch they were meaningless
+  (the patch plays regardless and falls back to a single data channel).
+  Already-authored patch assets with an Auto mode still display it; only the
+  dropdown choices are filtered.
 
 - `tools/trace/pdmodes/` + `tools/trace/scenarios/pdmodes.scenario.json`:
-  checked-in regression fixture for the two engine changes above — four dummy Pd
+  checked-in regression fixture for the two engine changes above: four dummy Pd
   patches (binaural stereo, binaural mono, binaural stereo with "headtracker
   relative to source" off, binaural 7 channel) whose expected per-channel
   `azimuthN`/`distanceN`/`elevationN` sends are documented in
@@ -316,27 +314,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Debug builds are now signed with the Developer ID identity (`TEAM_ID` from
-  `.env`, same as release builds) instead of ad-hoc, falling back to ad-hoc
-  with a warning when no identity is available. The macOS application
-  firewall identifies apps by code signature and its "automatically allow
-  downloaded signed software" option only covers identified-developer
-  signatures, so an ad-hoc debug build could never be durably allowed —
-  every rebuild produced a new signature, and once the allow/deny prompt
-  stopped appearing (e.g. after an MDM policy sync rewrote the firewall
-  rules), incoming OSC from RWA Players on UDP :8000 was silently dropped
-  while loopback traffic kept working. `debug.entitlements`
-  (`get-task-allow`) is still applied, so lldb can attach as before.
+  `.env`, same as release builds) instead of ad-hoc, falling back to ad-hoc with
+  a warning when no identity is available. The macOS application firewall
+  identifies apps by code signature and its "automatically allow downloaded
+  signed software" option only covers identified-developer signatures, so an
+  ad-hoc debug build could never be durably allowed. Every rebuild produced a
+  new signature, and once the allow/deny prompt stopped appearing (e.g. after an
+  MDM policy sync rewrote the firewall rules), incoming OSC from RWA Players on
+  UDP :8000 was silently dropped while loopback traffic kept working.
+  `debug.entitlements` (`get-task-allow`) is still applied, so lldb can attach
+  as before.
 
 - Three asset attribute checkboxes ("Raw Sensors to Pd", "GPS to Pd",
-  "Headtracker relative to source") no longer displayed the asset's actual
-  value when an asset was selected. Most visibly, "Headtracker relative to
-  source" showed unchecked although the field defaults to enabled. Attribute
-  widgets are found by their label string (`findChild` on the `objectName` set
-  in `addAttrCheckbox`), and the label update in `fb11ef7` renamed only the
-  lookup strings in `setCurrentAsset`, not the labels the checkboxes are
-  created with, so the lookups silently returned null. The constructor labels
-  now match the lookups. Stored values and export were never affected; only
-  the display was stale.
+  "Headtracker relative to source") no longer displayed the asset's actual value
+  when an asset was selected. Most visibly, "Headtracker relative to source"
+  showed unchecked although the field defaults to enabled. Attribute widgets are
+  found by their label string (`findChild` on the `objectName` set in
+  `addAttrCheckbox`), and the label update in `fb11ef7` renamed only the lookup
+  strings in `setCurrentAsset`, not the labels the checkboxes are created with,
+  so the lookups silently returned null. The constructor labels now match the
+  lookups. Stored values and export were never affected; only the display was
+  stale.
 
 ### Removed
 
@@ -346,11 +344,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   creator entered was silently lost on save. Its display code was additionally
   broken (wrong widget lookup, read the last-touched state's required states
   instead of the scene's) and had never executed. The field is commented out,
-  not deleted; what a real implementation needs (visited-scene tracking, a
-  gate in `setEntityScene`, serialisation and Player parity) is recorded in
-  `docs/planned-features.md`. No existing game is affected: the value was
-  never written to disk, and the example corpus uses neither this field nor
-  the (working) state-level Required States.
+  not deleted; what a real implementation needs (visited-scene tracking, a gate
+  in `setEntityScene`, serialisation and Player parity) is recorded in
+  `docs/planned-features.md`. No existing game is affected: the value was never
+  written to disk, and the example corpus uses neither this field nor the
+  (working) state-level Required States.
 
 ## [v1.4.1] - 2026-08-04
 
@@ -426,39 +424,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     as the first command-line argument.
   - Opening via Finder replaces the currently loaded project, exactly the
     behaviour of File > Open (which does not prompt for unsaved changes either).
-  - New document icon `images/rwa-document.icns`, copied into `Contents/Resources` by CMake.
+  - New document icon `images/rwa-document.icns`, copied into
+    `Contents/Resources` by CMake.
 
 - Key commands for the operations a creator repeats all day.
 
-  | Key command | Action | Menu |
-  | --- | --- | --- |
-  | Cmd-N | New | File |
-  | Cmd-O | Open | File |
-  | Cmd-S | Save | File (was a hidden shortcut before, now shown in the menu) |
-  | Cmd-Shift-S | Save Version as… | File |
-  | Cmd-Opt-S | Copy Project to… | File |
-  | Cmd-E | Export Project for transfer to RWA Player... | File |
-  | Cmd-Shift-E | Send Project to Sharing Server... | File |
-  | Cmd-R | Run Simulation, restarts a running one | Simulation |
-  | Cmd-K | Stop Simulation | Simulation |
-  | Cmd-Shift-L | Clear Log Window | View |
+  | Key command | Action                                       | Menu                                |
+  | ----------- | -------------------------------------------- | ----------------------------------- |
+  | Cmd-N       | New                                          | File                                |
+  | Cmd-O       | Open                                         | File                                |
+  | Cmd-S       | Save                                         | File (was a hidden shortcut before) |
+  | Cmd-Shift-S | Save Version as…                             | File                                |
+  | Cmd-Opt-S   | Copy Project to…                             | File                                |
+  | Cmd-E       | Export Project for transfer to RWA Player... | File                                |
+  | Cmd-Shift-E | Send Project to Sharing Server...            | File                                |
+  | Cmd-R       | Run Simulation, restarts a running one       | Simulation                          |
+  | Cmd-K       | Stop Simulation                              | Simulation                          |
+  | Cmd-Shift-L | Clear Log Window                             | View                                |
 
-- **Simulation** menu with *Run Simulation* and *Stop Simulation*, doing the same
-  as the start/stop buttons in the Map View toolbar - the only place from which
-  the simulation could be run until now, so there was nothing a key command could
-  hang on.
+- **Simulation** menu with *Run Simulation* and *Stop Simulation*, doing the
+  same as the start/stop buttons in the Map View toolbar - the only place from
+  which the simulation could be run until now, so there was nothing a key
+  command could hang on.
 
   Cmd-R means "run from the top": on a running simulation it restarts it, taking
   one keystroke for what the toolbar takes two clicks. The menu entry is called
-  *Restart Simulation* while the simulation runs, and *Stop Simulation* is greyed
-  out while it does not.
+  *Restart Simulation* while the simulation runs, and *Stop Simulation* is
+  greyed out while it does not.
 
 - **Clear Log Window** in the View menu, the menu counterpart of the log view's
   *clear* button.
 
-- The sharing server now logs what connected players do, so a creator can see
-  whether a phone reached RWA Creator at all and which game it pulled. Two lines
-  per request — the attempt as it arrives and the outcome once answered:
+- The sharing server now logs what connected RWA Player apps do, so a creator can see
+  whether a phone reached the sharing server at all and which game it pulled:
 
   ```
   Player 192.168.1.42 requests GET /My Soundwalk.zip
@@ -471,8 +469,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   server also logs its port and the directory it serves.
 
   Note that httplib calls its logger even when writing the response failed, and
-  the status is by then already sent — a player who walks out of wifi mid-download
-  is logged as a completed transfer.
+  the status is by then already sent: a player who walks out of wifi
+  mid-download is logged as a completed transfer.
 
 - **Rescan Audio Devices** in the Audio Preferences menu. It re-enumerates the
   audio hardware and rebuilds the menu, so a headset connected after the app was
@@ -485,7 +483,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   RWA Creator starts in: macOS switches its default output to a headset when one
   is connected, and following that is what a creator plugging in headphones
   expects. Picking a device from the list opts out of this for that direction
-  until the entry is selected again — the pick is then remembered by name and
+  until the entry is selected again. The pick is then remembered by name and
   wins over the default whenever it is present, including after it was unplugged
   and reconnected.
 
@@ -493,7 +491,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the settings). They are stored by name, not by index: PortAudio hands out
   indices in whatever order it enumerates the hardware, so they mean nothing in
   the next session. A stored device that is not connected at startup stays
-  remembered — RWA Creator runs on the system default until it appears.
+  remembered, RWA Creator runs on the system default until it appears.
 
 ### Changed
 
@@ -525,14 +523,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   all of them discard everything but the filename.
 
 - The File menu entry **Clear** is now called **New**: It clears out the current
-  project (without saving) and opens a file dialogue (now correctly titled
-  "New RWA Project" instead of "Copy entire RWA Project Folder") to save the new project.
-  The first save of a game that was never written to disk opens the same dialogue as
-  "Save RWA Project". "Copy Project to..." keeps its title. All three still write a
-  complete project folder, only the title of the dialogue differs.
+  project (without saving) and opens a file dialogue (now correctly titled "New
+  RWA Project" instead of "Copy entire RWA Project Folder") to save the new
+  project. The first save of a game that was never written to disk opens the
+  same dialogue as "Save RWA Project". "Copy Project to..." keeps its title. All
+  three still write a complete project folder, only the title of the dialogue
+  differs.
 
 - The start button in the Map View toolbar now follows the state of the
-  simulation instead of only its own clicks — otherwise Cmd-R and Cmd-K would
+  simulation instead of only its own clicks, otherwise Cmd-R and Cmd-K would
   start and stop the simulation with the button not moving at all. The state
   comes from `RwaSimulator` itself, which announces every start and stop
   (`sendSimulationRunningChanged`), so several open Map Views agree as well.
@@ -546,9 +545,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The Log View now follows the system's light/dark appearance. Its monospace
   font was set via a stylesheet, and any stylesheet moves a widget from the
-  native style to `QStyleSheetStyle`, which stops tracking palette switches.
-  The font is now set with `QFont` (with a monospace style hint as fallback
-  should Andale Mono be missing) and no stylesheet remains on the widget.
+  native style to `QStyleSheetStyle`, which stops tracking palette switches. The
+  font is now set with `QFont` (with a monospace style hint as fallback should
+  Andale Mono be missing) and no stylesheet remains on the widget.
 
 - Clicking empty space in the state or asset lists no longer clears the
   selection. Previously the click deselected the last touched item while the
@@ -558,8 +557,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The asset attribute form no longer shows stale values after switching states.
   Previously it kept displaying the previous state's asset when the newly
-  selected state had no touched asset yet; edits then either went nowhere or —
-  when the new state contained an audio file of the same name — silently landed
+  selected state had no touched asset yet; edits then either went nowhere or,
+  when the new state contained an audio file of the same name, silently landed
   in that other asset whose values were never shown. Now touching a state
   defaults its touched asset to the first asset before the change is broadcast
   (`RwaBackend::receiveLastTouchedState`), the asset list re-announces its
@@ -586,10 +585,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   devices once in `Pa_Initialize()` and never updates that list, so the stored
   device index pointed at whatever now sits at that index. The menu was built
   once at startup and never rebuilt either. A rescan now restarts PortAudio
-  (`paWrapper::rescanDevices()`), which is the only way to pick up the new device
-  list, and repopulates the menu. Selections are tracked by device name rather
-  than by index, since the indices are reused: on the machine this was developed
-  on, index 2 was "Externe Kopfhörer" with the headset plugged in and
+  (`paWrapper::rescanDevices()`), which is the only way to pick up the new
+  device list, and repopulates the menu. Selections are tracked by device name
+  rather than by index, since the indices are reused: on the machine this was
+  developed on, index 2 was "Externe Kopfhörer" with the headset plugged in and
   "MacBook Pro-Lautsprecher" without it.
 
   Two things that made this hard to diagnose are fixed as well: a failing
@@ -611,17 +610,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `[rwa_binauralsimple~ 256 fabian_dir256.txt]` resolved its IR file only next
   to the patch that instantiated it: the bundled playback patches worked because
   they sit beside `fabian_dir256.txt` in `Resources/puredata`, while a creator's
-  own Pd patcher — opened from the game's `assets/` folder — did not, unless the
+  own Pd patcher (opened from the game's `assets/` folder) did not, unless the
   38 MB file was copied in by hand. Two changes:
+
   - `vas_library` (`vas_pdmaxobject_read`) now resolves the IR through
     `open_via_path`: absolute path, then the patch's own directory, then Pd's
     global search path. A missing file is reported by name instead of being
     passed down as a bad path, and the path is bounded (`fullpath` is 512 bytes,
     `MAXPDSTRING` is 1000).
+  
   - `RwaRuntime` registers the bundled `puredata` directory with
     `libpd_add_to_search_path()`, so any patch resolves the HRTF set from there.
 
-  Existing games that carry their own copy keep working — the patch directory is
+  Existing games that carry their own copy keep working, the patch directory is
   still searched first. **Engine parity**: mirrored in the Player, which adds
   `Bundle.main.resourcePath` to the search path in `RwaGameLoop.init`; both apps
   build the same `vas_library` sources, so the external side is shared.
@@ -630,14 +631,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `vas_library` now tracks `rnd-hsm-klassik/vas_library` (branch
   `rwa-player-fixes`) instead of `funkerresch/vas_library`, the same fork the
-  Player already used — one lineage for both apps. The fork additionally carries
-  null-terminator fixes in three `vas_mem_alloc` calls, `pd_error` instead of the
-  deprecated `error`, and drops its stale bundled `m_pd.h` copies (Pd headers now
-  come from `libpd/pure-data/src`).
+  Player already used. The fork additionally carries null-terminator fixes in
+  three `vas_mem_alloc` calls, `pd_error` instead of the deprecated `error`, and
+  drops its stale bundled `m_pd.h` copies (Pd headers now come from
+  `libpd/pure-data/src`).
 
 ## [v1.3.0] - 2026-07-29
 
-**Engine parity updates**: align game engine behaviour between RWA Creator and RWA Player
+**Engine parity updates**: align game engine behaviour between RWA Creator and
+RWA Player
 
 ### Added
 
@@ -649,12 +651,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Improved scene transition handling in `setScene`: **Important**: this diverges from the RWA Player's historical behavior (which always cut active assets on scene change) and must be mirrored there for engine parity.
+- Improved scene transition handling in `setScene`: **Important**: this diverges
+  from the RWA Player's historical behavior (which always cut active assets on
+  scene change) and must be mirrored there for engine parity.
   - always end background assets when switching scenes
   - release the current state's block latch
   - switch scene
-  - explicitly handle fallback activation: fallback enabled: the scene's fallback state;
-    fallback disabled:  active assets keep playing until a new state is triggered.
+  - explicitly handle fallback activation: fallback enabled: the scene's
+    fallback state; fallback disabled: active assets keep playing until a new
+    state is triggered.
   - activate background state
 - Updated the simulator's RWA Player OSC target port to 8001.
 - Aligned runtime logging with RWA Player, including timestamps and scoped Qt
@@ -671,14 +676,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - sendData2activeAssets: TODO
 - Background state now initialises correctly and assets receive updates,
-  allowing for panning and distance attenuation without activating another state before.
-- `RwaRuntime::setScene` no longer invokes undefined behavior when a scene
-  has fallback enabled but no states: it logs a warning and leaves the
-  entity without a current state (same as fallback-disabled), instead of
-  calling front() on an empty state list.
-- Prevent scene-selection signals from clearing the current state after a
-  scene transition: Updated `receiveLastTouchedScene()` to prevent the signal 
-  `sendSelectedScene` from echoing into RwaRuntime::setScene(), where a previously set state would be again unset.
+  allowing for panning and distance attenuation without activating another state
+  before.
+- `RwaRuntime::setScene` no longer invokes undefined behavior when a scene has
+  fallback enabled but no states: it logs a warning and leaves the entity
+  without a current state (same as fallback-disabled), instead of calling
+  front() on an empty state list.
+- Prevent scene-selection signals from clearing the current state after a scene
+  transition: Updated `receiveLastTouchedScene()` to prevent the signal
+  `sendSelectedScene` from echoing into RwaRuntime::setScene(), where a
+  previously set state would be again unset.
 
 ### Documentation
 
@@ -689,54 +696,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `RwaRuntime::setScene`: active assets of the previous state are now only
-  ended when the new scene activates a fallback state that contains assets.
-  A scene with fallback disabled — or with a silent (asset-less) fallback —
-  lets running assets play out until a new state is triggered, instead of
-  cutting to silence on the scene transition. Note: this diverges from the
-  RWA Player's historical behavior (which always cut active assets on scene
-  change) and must be mirrored there for engine parity.
+- `RwaRuntime::setScene`: active assets of the previous state are now only ended
+  when the new scene activates a fallback state that contains assets. A scene
+  with fallback disabled, or with a silent (asset-less) fallback, lets running
+  assets play out until a new state is triggered, instead of cutting to silence
+  on the scene transition. Note: this diverges from the RWA Player's historical
+  behavior (which always cut active assets on scene change) and must be mirrored
+  there for engine parity.
 
-**Update UI strings for save/export/open actions**
+- The hero map icon (`images/hero4.png`) got a transparent background.
 
-Rename menu items and dialog titles to clarify RWA and Sharing Server
-terminology (e.g. Save Version as..., Copy Project to..., Send Project to
-Sharing Server..., Export Project for transfer to RWA Player..., Save RWA
-File, Open RWA File, File Path Preferences). Update preference labels
-(Sharing Server Path, Project Export Path) and toolbar tooltip.
+- **Update UI strings for save/export/open actions**
 
-Also renamed client associated download/export functions/properties
-to reflect update UI strings. The cutoff is keys in settings, as those
-should be retained for users.
+  Rename menu items and dialog titles to clarify RWA and Sharing Server
+  terminology (e.g. Save Version as..., Copy Project to..., Send Project to
+  Sharing Server..., Export Project for transfer to RWA Player..., Save RWA
+  File, Open RWA File, File Path Preferences). Update preference labels (Sharing
+  Server Path, Project Export Path) and toolbar tooltip.
+  
+  Also renamed client associated download/export functions/properties to reflect
+  update UI strings. The cutoff is keys in settings, as those should be retained
+  for users.
 
-**Add dialog title and reduce widths**
-
-Enhance RwaInputDialog to accept a title parameter
-for better context in file path preferences.
-
-**Engine parity**
-
-- send gain when in sendInitValue2pd
-
-**Scene Switch**
-
-Improved scene transition handling in setScene
-
-- always end background assets when switching scenes
-- release the current state's block latch
-- switch scene
-- explicitly handle fallback activation:
+- **Add dialog title and reduce widths**
+  
+  Enhance RwaInputDialog to accept a title parameter
+  for better context in file path preferences.
+  
+- **Engine parity**
+  
+  send gain when in sendInitValue2pd
+  
+- **Scene Switch**
+  
+  Improved scene transition handling in setScene:
+  
+  - always end background assets when switching scenes
+  - release the current state's block latch
+  - switch scene
+  - explicitly handle fallback activation:
   - fallback enabled: the scene's fallback state
-  - fallback disabled:  active assets keep playing until
-    a new state is triggered
-- activate background state
+  - fallback disabled: active assets keep playing until a new state is triggered
+  - activate background state
 
 ### Fixed
 
-- `RwaRuntime::setScene` no longer invokes undefined behavior when a scene
-  has fallback enabled but no states: it logs a warning and leaves the
-  entity without a current state (same as fallback-disabled), instead of
-  calling front() on an empty state list.
+- `RwaRuntime::setScene` no longer invokes undefined behavior when a scene has
+  fallback enabled but no states: it logs a warning and leaves the entity
+  without a current state (same as fallback-disabled), instead of calling
+  front() on an empty state list.
 - Updated `receiveLastTouchedScene()` to prevent the signal `sendSelectedScene`
   from echoing into RwaRuntime::setScene(), where a previously set state would
   be again unset.
@@ -744,6 +752,137 @@ Improved scene transition handling in setScene
 ### Documentation
 
 - Documented `setScene`'s contract (post-call state per fallback setting,
-  audio-continuity rule, preconditions) and clarified that the latch
-  release on the old state exists because the per-tick geographic unblock
-  only scans the current scene.
+  audio-continuity rule, preconditions) and clarified that the latch release on
+  the old state exists because the per-tick geographic unblock only scans the
+  current scene.
+
+## [v1.2.5] - 2026-07-22
+
+### Fixed
+
+- Fixed a dangling-pointer crash when deleting FALLBACK states: several places
+  (asset list, backend, map view, state list) kept references to the deleted
+  state or its assets and dereferenced them afterwards.
+
+- Fallback and background states now initialise correctly at simulation start,
+  without another state having to be triggered first; fixed dangling pointers to
+  the scene's background and fallback state references in the runtime.
+
+### Added
+
+- `debug.entitlements` and a signing step in `build_debug.sh`, so debug builds
+  have a code-signing identity and CoreBluetooth allows the headtracker
+  connection.
+
+- `NSLocalNetworkUsageDescription` in `Info.plist.in`, so macOS shows the
+  local-network permission prompt needed by the OSC listener (incoming data from
+  RWA Players on UDP :8000).
+
+## [v1.2.3] - 2026-07-06
+
+### Added
+
+- About menu and dialog (app icon, name, version, commit hash).
+
+### Changed
+
+- Toolbar and map icons are shipped as SVG instead of PNG.
+- Debug build script and output path updated.
+
+## [v1.2.2] - 2026-07-02
+
+### Changed
+
+- The app bundle is named **RWA Creator** (was `rwacreator`).
+- New icon drafts for the map/toolbar icon set; attempt to fix the app icon's
+  scaling issue.
+- Attribute views (game, scene, state, asset) have fixed widths and no longer
+  show horizontal scroll bars; attribute-row construction was refactored into a
+  shared method for consistent layout across the views.
+- Release build script updated.
+- **Qt5 portability cherry-picks** kept in sync with the `legacy` branch:
+  `QOverload`-based signal connections, `QString::fromStdString` in debug
+  output. Submodule remotes switched to HTTPS; version string no longer
+  duplicated in `main.cpp`.
+
+## [v1.2.1] - 2026-06-30
+
+### Changed
+
+- The qmake project file (`rwacreator.pro`) was deleted: CMake is the only build
+  system on this branch.
+- Stopped tracking build artifacts (clangd cache, `rwabuild/`).
+- Application metadata is set via `QCoreApplication` so `QSettings` uses the
+  app/bundle identity; the hardcoded `QSettings("Intrinsic Audio", "Rwa
+  Creator")` instances were replaced with default-constructed `QSettings`
+  (cherry-picked from `legacy`).
+- The release DMG contains an Applications install link; build instructions
+  fixed.
+
+## [v1.2.0] - 2026-06-29
+
+### Added
+
+- Log level selector in the Log View: messages below the selected level are
+  dropped (new `msgSeverity`). Filename, line and context are only shown when
+  the Debug level is selected.
+
+### Changed
+
+- Headtracker data is logged only to the log window (no longer to the console)
+  and moved to the "other" log filter.
+- Coordinate log output formatted to the WGS-84 convention; the coordinate log
+  filter renamed accordingly.
+- Log levels across runtime, creator and bluetooth messages revised.
+- Bluetooth code consolidated into the `bluetooth/` directory.
+
+### Fixed
+
+- Floating (detached) dock widgets are restored on startup instead of being
+  re-docked.
+
+## [v1.1.0] - 2026-06-28
+
+### Added
+
+- Application icon (`images/rwa-creator.icns`).
+- Release build/sign/notarize script with `.env`-based credentials; Qt
+  deployment (`macdeployqt`) integrated into the CMake build, replacing the old
+  standalone shell scripts.
+- `README.md` with build prerequisites and IDE setup instructions.
+
+### Changed
+
+- Bluetooth (headtracker) code migrated to Qt 6, including the Qt 6 Bluetooth
+  permission handling.
+- Log window rewritten on `QPlainTextEdit` for better performance and
+  readability; it displays all log levels.
+- Pd patches are bundled under `Contents/Resources/puredata`.
+- `Info.plist` is generated by CMake from a template and embeds the version and
+  git commit hash.
+- Map tile requests send a User-Agent header, as required by the OSM tile usage
+  policy.
+- macOS deployment target raised to 13.0 (legacy branch kept at 11.0); wider
+  asset area in the State View.
+
+### Fixed
+
+- Missing-font lookup error in the style definitions.
+- Directory-clearing utility no longer touches the current working directory
+  when the given path is empty, relative or missing (guards in
+  `rwautilities.cpp`; tmp/undo cleanup is skipped while backend paths are
+  unset).
+- Set title of the headtracker name dialog.
+
+## [v1.0.0] - 2026-06-19
+
+First version under Semantic Versioning ("new version format").
+
+### Changed
+
+- Address search in the map view switched from OSM Nominatim to the swisstopo
+  SearchServer API (`api3.geo.admin.ch`, JSON); network errors of the lookup are
+  now logged.
+- macOS bundle identifier changed to `com.fhnw.rwa.creator`.
+- Deployment target lowered to macOS 12.0 and the build made universal (arm64 +
+  x86_64).
