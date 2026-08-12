@@ -1089,6 +1089,7 @@ void RwaCreator::emptyTmpDirectories()
 {
     if (backend->completeUndoPath.isEmpty() || backend->completeTmpPath.isEmpty())
         return;
+    backend->moveSessionTrash2SystemTrash(); // the undo history ends here, hand the trashed asset files to the OS
     RwaUtilities::emtpyDirectory(backend->completeUndoPath);
     RwaUtilities::emtpyDirectory(backend->completeTmpPath);
 }
@@ -1184,6 +1185,7 @@ void RwaCreator::readUndoFile(QString name)
 
     else
     {
+        backend->restoreAssetFilesFromSessionTrash(); // files trashed by asset deletes this session
         statusBar()->showMessage(tr("File loaded"), 2000);
     }
 }

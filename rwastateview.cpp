@@ -492,8 +492,14 @@ void RwaStateView::deleteAssetItem(const QString &path)
 
         if(backend->trashAsset && !backend->fileUsedByAnotherAsset(item))
         {
-            if(file.exists())
-                file.remove();
+            // the undo history can resurrect the asset entry, so the file goes
+            // to the session trash, where an undo restore finds it again; only
+            // if that fails, to the system trash (a manual recovery path)
+            if(file.exists() && !backend->moveAsset2SessionTrash(QString::fromStdString(item->getFullPath())))
+            {
+                if(!file.moveToTrash())
+                    file.remove();
+            }
         }
 
         currentState->deleteAsset(path.toStdString());

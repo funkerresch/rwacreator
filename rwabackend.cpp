@@ -2,6 +2,9 @@
 #include <QStandardPaths>
 #include <QThread>
 #include <QLocale>
+#include <QDir>
+#include <QFile>
+#include "rwautilities.h"
 
 RwaBackend *RwaBackend::instance = nullptr;
 
@@ -792,6 +795,68 @@ bool RwaBackend::adjust2UniqueStateNameRecursively(RwaScene *targetScene, RwaSta
 
     }
     return false;
+}
+
+/**
+ * "On asset delete: keep/remove file" moves files to the project's tmp folder
+ * instead of deleting them, so that restoring an undo snapshot can bring them
+ * back. The folder shares the lifetime of the undo history: when tmp is emptied
+ * (quit, open, new project) its contents are forwarded to the system trash as a
+ * last-resort recovery path.
+ */
+
+QString RwaBackend::sessionTrashPath() const
+{
+    if(completeTmpPath.isEmpty())
+        return QString();
+
+    return completeTmpPath + "/trash";
+}
+
+bool RwaBackend::moveAsset2SessionTrash(const QString &fullPath)
+{
+    QString trashPath = sessionTrashPath();
+    if(trashPath.isEmpty() || !QDir().mkpath(trashPath))
+        return false;
+
+    QString target = trashPath + "/" + RwaUtilities::getFileName(fullPath);
+    QFile::remove(target); // same name trashed twice in one session: the newest deletion wins
+    return QFile::rename(fullPath, target);
+}
+
+void RwaBackend::restoreAssetFilesFromSessionTrash()
+{
+    QString trashPath = sessionTrashPath();
+    if(trashPath.isEmpty())
+        return;
+
+    foreach(RwaScene *scene, scenes)
+    {
+        foreach(RwaState *state, scene->states)
+        {
+            foreach(RwaAsset1 *asset, state->assets)
+            {
+                QString fullPath = QString::fromStdString(asset->getFullPath());
+                if(QFile::exists(fullPath))
+                    continue;
+
+                QString trashed = trashPath + "/" + QString::fromStdString(asset->getFileName());
+                if(QFile::exists(trashed) && QFile::rename(trashed, fullPath))
+                    qInfo() << "Undo brought back asset" << QString::fromStdString(asset->getFileName())
+                            << "- restored its file to the assets folder.";
+            }
+        }
+    }
+}
+
+void RwaBackend::moveSessionTrash2SystemTrash()
+{
+    QDir trashDir(sessionTrashPath());
+    if(sessionTrashPath().isEmpty() || !trashDir.exists())
+        return;
+
+    foreach(const QFileInfo &info, trashDir.entryInfoList(QDir::Files | QDir::Hidden))
+        QFile::moveToTrash(info.absoluteFilePath());
 }
 
 bool RwaBackend::fileUsedByAnotherAsset(RwaAsset1 *asset2Delete)

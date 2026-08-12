@@ -368,7 +368,7 @@ void RwaViewToolbar::initControls()
     trashAssetsButton->setIcon(rwaThemedIcon(path+"images/donttrashassets.svg"));
     trashAssetsButton->setIconSize(QSize(20,20));
     trashAssetsButton->setFixedSize(QSize(20,20));
-    trashAssetsButton->setToolTip("On asset delete: keep/remove Assets on/from Disk.");
+    trashAssetsButton->setToolTip("On asset delete: keep/remove referenced files.");
     addWidget(trashAssetsButton);
 
     activateClientSyncButton = new QToolButton(this);

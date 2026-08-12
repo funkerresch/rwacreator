@@ -36,13 +36,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   are now cleared with the scenes, and the broadcast guards against an empty
   scene list.
 
+- **"On asset delete: keep/remove ..." no longer permanently deletes the file,
+  and undo brings it back.** The undo history can resurrect a deleted asset
+  *entry*, but never a permanently removed file, which produced entries pointing
+  at nothing. The file now moves to a session trash (`tmp/trash/` inside the
+  project, same lifetime as the undo history); restoring an undo snapshot moves
+  the files of resurrected entries back into `assets/` automatically and notes
+  it in the Log View. When the undo history ends (quit, open, new project), the
+  session trash is forwarded to the system trash as a last-resort manual
+  recovery path, so the files never silently vanish. If the session trash is
+  unavailable, the file goes to the system trash directly, and only if that also
+  fails is it removed permanently.
 
 ### Added
 
 - **Missing-file badge in the asset list.** An asset entry whose file is absent
-  from the `assets/` folder (e.g. manually deleted, or resurrected by an undo
-  restore) now shows a corresponding badge instead of looking like a healthy
-  asset.
+  from the `assets/` folder (e.g. manually deleted, or resurrected by a session
+  that wasn't saved after removing assets) now shows a corresponding badge
+  instead of looking like a healthy asset.
 
 ## [v1.4.5] - 2026-08-11
 

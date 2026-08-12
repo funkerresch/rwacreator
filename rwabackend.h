@@ -278,6 +278,11 @@ public:
     bool adjust2UniqueSceneNameRecursively(RwaScene *newScene);
     void adjust2UniqueSceneName(RwaScene *newScene);
 
+    QString sessionTrashPath() const;
+    bool moveAsset2SessionTrash(const QString &fullPath);
+    void restoreAssetFilesFromSessionTrash();
+    void moveSessionTrash2SystemTrash();
+
     /** ************************************************** Signals ************************************************** */
 
     qint32 getSampleRate() const;
