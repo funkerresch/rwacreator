@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.4.6] - 2026-08-12
+
 ### Fixed
 
 - **Deleting an asset no longer takes a second, unrelated entry out of the asset
@@ -55,7 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   that wasn't saved after removing assets) now shows a corresponding badge
   instead of looking like a healthy asset.
 
-## [v1.4.5] - 2026-08-11
+## [v1.4.5] - 2026-08-12
 
 ### Fixed
 
