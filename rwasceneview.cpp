@@ -37,13 +37,17 @@ RwaSceneView::RwaSceneView(QWidget *parent, RwaScene *scene, QString name)
 
 void RwaSceneView::deleteState(const QString &stateName)
 {
-    if(currentScene)
-    {
-        currentScene->removeState(currentScene->getState(stateName.toStdString()));
-        emit sendCurrentScene(currentScene);
-        emit sendCurrentState(currentScene->lastTouchedState);
-        emit sendWriteUndo("Delete State");
-    }
+    if(!currentScene)
+        return;
+
+    RwaState *state = currentScene->getState(stateName.toStdString());
+    if(!state)
+        return;
+
+    currentScene->removeState(state);
+    emit sendCurrentScene(currentScene);
+    emit sendCurrentState(currentScene->lastTouchedState);
+    emit sendWriteUndo("Delete State");
 }
 
 void RwaSceneView::setCurrentScene(RwaScene *scene)

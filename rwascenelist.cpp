@@ -96,12 +96,12 @@ void RwaSceneList::keyPressEvent(QKeyEvent *event)
           case Qt::Key_Insert:
               qDebug() << "Insert";
               break;
-          case 16777219:
-             // qDebug() << "Delete Scene";
-              takeItem(getSelectedIndex());
-              emit deleteScene(QString::fromStdString(currentScene->objectName()));
-              emit sendWriteUndo("Delete Scene");
-              break;
+        // the backend rebuilds the list and writes the undo
+        case Qt::Key_Backspace:
+        case Qt::Key_Delete:
+            if(currentScene)
+                emit deleteScene(QString::fromStdString(currentScene->objectName()));
+            break;
           case 16777237:
               setCurrentSceneFromCurrentItem();
               break;

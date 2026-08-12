@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Scene and state lists no longer remove rows behind the model's back** (same
+  family as the v1.4.6 asset-list fix). Both Backspace handlers called
+  `takeItem` on the widget and *then* asked the model to delete, so any refusal
+  or early return on the model side left a row missing from the list while the
+  object stayed in the game:
+  - Deleting the last remaining scene is refused by `RwaBackend::removeScene`
+    ("keep always one scene"), but the scene list had already dropped the row -
+    the only scene vanished from the list while staying in the game, and a no-op
+    "Delete Scene" undo snapshot was written on top. The refusal is now logged
+    as a warning and the row stays.
+  - The stray `takeItem` calls are gone; row removal is now only driven by the
+    model change. `RwaBackend::removeScene` emits `updateGame()` on success
+    (like `appendScene`/`duplicateScene` already did), which rebuilds the scene
+    list and the toolbar's scene menu; the state list was already rebuilt by the
+    scene broadcast.
+  - The undo snapshot for a scene delete is now written by the backend, only
+    when a scene was actually removed. Previously the scene list and the toolbar
+    each wrote one unconditionally, so a refused delete produced an undo step
+    that appeared to do nothing. Same guard for a state delete whose name lookup
+    fails.
+  - After a state delete the selection lands on the FALLBACK state (the model
+    re-points `lastTouchedState` to `states.front()`), which is immortal.
+    Holding Backspace cannot chain-delete states the user never selected. That
+    refusal is now a visible warning instead of a debug print.
+
+- **Toolbar "Scene → Remove" left the deleted scene in the scene list.** The
+  toolbar path never touched the widget and `removeScene` never triggered a
+  rebuild, so the dead scene stayed listed (and selectable) until the next full
+  rebuild. Fixed by the same `updateGame()` emission above.
+
 ## [v1.4.6] - 2026-08-12
 
 ### Fixed

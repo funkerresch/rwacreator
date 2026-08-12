@@ -133,15 +133,12 @@ void RwaStateList::keyPressEvent(QKeyEvent *event)
     QListWidget::keyPressEvent(event);
     switch (event->key())
     {
-        case 16777219: // Qt::Key_Delete not working on OSX
+        case Qt::Key_Backspace:
+        case Qt::Key_Delete:
             if(currentState && !currentState->isImmortal)
-            {
-                RwaState *toDelete = currentState;
-                takeItem(getSelectedIndex());
-                emit deleteState(QString::fromStdString(toDelete->objectName()));
-            }
+                emit deleteState(QString::fromStdString(currentState->objectName()));
             else
-                qDebug() << "Fallback/Background States can not be deleted.";
+                qWarning() << "Fallback/Background States can not be deleted.";
             break;
         case Qt::Key_Down:
             setCurrentStateFromCurrentListItem();

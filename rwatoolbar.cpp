@@ -699,8 +699,8 @@ void RwaViewToolbar::appendScene()
 
 void RwaViewToolbar::removeScene()
 {
+    // the backend writes the undo, only when the scene was actually removed
     emit sendRemoveScene(currentScene);
-    emit sendWriteUndo("Remove Scene");
 }
 
 void RwaViewToolbar::duplicateScene()

@@ -475,22 +475,26 @@ void RwaBackend::duplicateScene()
 
 void RwaBackend::removeScene(RwaScene *scene)
 {
-    qint32 index;
-
     if(scenes.count() == 1) // keep always one scene
-        return;
-    else
     {
-        index = scenes.indexOf(scene);
-        index--;
-        if(index < 0)
-            index = 0;
-
-        scenes.removeOne(scene);
-        lastTouchedScene = scenes.at(index);
-        emit sendLastTouchedScene(lastTouchedScene);
+        qWarning() << "The last remaining scene can not be deleted.";
+        return;
     }
+
+    qint32 index = scenes.indexOf(scene);
+    if(index < 0)
+        return;
+
+    scenes.removeAt(index);
+    index--;
+    if(index < 0)
+        index = 0;
+
+    lastTouchedScene = scenes.at(index);
     scene->clear();
+    emit updateGame();
+    emit sendLastTouchedScene(lastTouchedScene);
+    emit sendWriteUndo("Delete Scene");
 }
 
 void RwaBackend::removeScene(QString sceneName)
