@@ -4,6 +4,8 @@
 #include <QLocale>
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
+#include <QCryptographicHash>
 #include "rwautilities.h"
 
 RwaBackend *RwaBackend::instance = nullptr;
@@ -578,14 +580,80 @@ void RwaBackend::copySelectedStates2Clipboard()
     }
 }
 
+static QByteArray fileChecksum(const QString &path)
+{
+    QFile file(path);
+    if(!file.open(QIODevice::ReadOnly))
+        return QByteArray();
+
+    QCryptographicHash hash(QCryptographicHash::Sha256);
+    if(!hash.addData(&file))
+        return QByteArray();
+
+    return hash.result();
+}
+
+static bool filesAreIdentical(const QString &pathA, const QString &pathB)
+{
+    if(QFileInfo(pathA).size() != QFileInfo(pathB).size())
+        return false;
+
+    QByteArray checksumA = fileChecksum(pathA);
+    return !checksumA.isEmpty() && checksumA == fileChecksum(pathB);
+}
+
+void RwaBackend::copyAssetFile2Project(RwaAsset1 *asset)
+{
+    QString fileName = QString::fromStdString(asset->getFileName());
+    QString sourcePath = QString::fromStdString(asset->getFullPath());
+    QString targetPath = QString("%1/%2").arg(completeAssetPath).arg(fileName);
+
+    if(QFileInfo(sourcePath).absoluteFilePath() == QFileInfo(targetPath).absoluteFilePath())
+        return;
+
+    if(!QFile::exists(sourcePath))
+    {
+        if(!QFile::exists(targetPath))
+            qWarning() << "Pasted asset" << fileName << "is missing at its source location" << sourcePath
+                       << "- copy the file into" << completeAssetPath << "manually.";
+        asset->setFullPath(targetPath.toStdString());
+        return;
+    }
+
+    // A same-named file with different content must not be overwritten; count up
+    // until the name is free or points at a copy from an earlier paste.
+    QFileInfo info(fileName);
+    int counter = 2;
+
+    while(QFile::exists(targetPath) && !filesAreIdentical(sourcePath, targetPath))
+    {
+        fileName = QString("%1-%2.%3").arg(info.completeBaseName()).arg(counter++).arg(info.suffix());
+        targetPath = QString("%1/%2").arg(completeAssetPath).arg(fileName);
+    }
+
+    if(!QFile::exists(targetPath) && !QFile::copy(sourcePath, targetPath))
+        qWarning() << "Could not copy pasted asset from" << sourcePath << "to" << targetPath;
+
+    asset->setFileName(fileName.toStdString());
+    asset->setObjectName(fileName.toStdString());
+    asset->setFullPath(targetPath.toStdString());
+}
+
 void RwaBackend::pasteStatesFromClipboard()
 {
+    if(!lastTouchedScene)
+        return;
+
     foreach (RwaState *clipboardState, clipboardStates->getStates())
     {
         RwaState *newState = new RwaState(clipboardState->objectName());
         clipboardState->copyAttributes(newState);
         generateUuidsForClipboardState(newState);
         adjust2UniqueStateName(lastTouchedScene, newState);
+
+        foreach(RwaAsset1 *asset, newState->getAssets())
+            copyAssetFile2Project(asset);
+
         lastTouchedScene->getStates().push_back(newState);
         newState->setScene(lastTouchedScene);
     }

@@ -9,6 +9,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Pasting states into another project now copies the referenced asset files
+  into that project's `assets/` folder.** The state clipboard survives switching
+  projects, but pasting only ever copied the in-memory asset objects, the
+  audio/Pd files stayed in the source project. Playback kept working for the
+  rest of the session (the in-memory path still pointed at the source project),
+  and broke on the next load: both importers (Creator and Player) have always
+  resolved the `url` attribute's basename against the *current* project's
+  `assets/` folder, where the file never existed. This predates the v1.4.5
+  relative-`url` change, which only removed the stale absolute source path from
+  the saved file, not the (already absent) file copy.
+  `RwaBackend::pasteStatesFromClipboard` now rebases every pasted asset onto the
+  current project and copies the file if it isn't already there:
+  - A same-named file with *identical* content is reused (the common case when
+    both projects draw on the shared audio library).
+  - A same-named file with *different* content is not overwritten; the incoming
+    file is copied as `name-2.ext` (`-3`, ... - reusing an identical copy from
+    an earlier paste instead of stacking duplicates) and the pasted asset is
+    renamed to match. This still can cause inconsistencies, i.e. missing files
+    in dynamic Pd patches that reference specific filenames of assets!
+  - If the source file has disappeared (e.g. deleted in the source project since
+    copying), the paste still succeeds; a warning is logged and the asset shows
+    the missing-file badge introduced in v1.4.5. Pasting within the same project
+    is unaffected (source and target path are equal, nothing is copied). No
+    runtime change, no engine-parity impact.
+
+- **Crash when clicking a state pasted from another project.**
+  `RwaState::copyAttributes` deep-copies the assets but copied the raw
+  `lastTouchedAsset` pointer, so a clipboard state kept pointing into the
+  *source* project's assets, which are freed when another project is opened.
+  Selecting the pasted state made the asset list dereference the freed asset
+  (`RwaAssetList::setCurrentState` → `setCurrentAsset` →
+  `RwaAsset1::getFileName`), reading a garbage string length and aborting on the
+  failed allocation. `lastTouchedAsset` is now remapped onto the corresponding
+  asset *copy* during `copyAttributes` (nullptr when the source had none),
+  which also makes within-project duplicates (Duplicate scene, State from
+  current) self-contained instead of pointing at their sibling's assets. The
+  stale `myScene` copy is harmless: the paste/duplicate paths overwrite it via
+  `setScene`, and `nextState`/`nextScene`/`hintState` are name strings, not
+  pointers.
+
 - **Scene and state deletion is now refused while the simulation is running**,
   with a warning, matching the v1.4.6 asset-delete guard. The runtime's entity
   holds raw `currentScene`/`currentState` pointers during simulation, so

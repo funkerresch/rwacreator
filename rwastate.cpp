@@ -48,11 +48,14 @@ RwaState::~RwaState() // Delete Audio Files from Disk??
 void RwaState::copyAttributes(RwaState *dest)
 {
     RwaAsset1 *asset;
+    dest->lastTouchedAsset = nullptr; // must point into dest's own copies, never into this state's assets
     foreach(asset, this->getAssets())
     {
         RwaAsset1 *assetCopy = new RwaAsset1("", std::vector<double>(2, 0.0), RWA_UNDETERMINED, "");
         asset->copyAttributes(assetCopy);
         assetCopy->myState = dest;
+        if(asset == this->lastTouchedAsset)
+            dest->lastTouchedAsset = assetCopy;
         dest->assets.push_back(assetCopy);
     }
 
@@ -66,7 +69,6 @@ void RwaState::copyAttributes(RwaState *dest)
     dest->areaType = this->areaType;
     dest->gpsLocation = std::vector<double>(this->gpsLocation);
     dest->myScene = this->myScene;
-    dest->lastTouchedAsset = this->lastTouchedAsset;
     dest->selectedAssetIndex = this->selectedAssetIndex;
     dest->isGpsState = this->isGpsState;
     dest->blockUntilRadiusHasBeenLeft = this->blockUntilRadiusHasBeenLeft;
