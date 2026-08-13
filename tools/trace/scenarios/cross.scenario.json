@@ -1,0 +1,12 @@
+{
+  "schema": "rwa-scenario/1",
+  "description": "Walk from Scene 0 center through the overlap into Scene-1-only territory; expect exactly one scene switch.",
+  "game": "scenechange/overlap.rwa",
+  "startScene": "Scene 0",
+  "durationMs": 6000,
+  "timeline": [
+    { "t": 0,    "pos": { "lon": 7.58600000, "lat": 47.57700000 } },
+    { "t": 1000, "pos": { "lon": 7.58800000, "lat": 47.57700000 } },
+    { "t": 3000, "pos": { "lon": 7.59100000, "lat": 47.57700000 } }
+  ]
+}

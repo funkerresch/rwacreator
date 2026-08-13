@@ -1,0 +1,18 @@
+{
+  "schema": "rwa-scenario/1",
+  "description": "Post-fix check: re-enter Scene 0 during bg0 fade; old instance (tag) finishes later; ensure new instance is tracked and endable.",
+  "game": "scenechange/twoscene.rwa",
+  "startScene": "Scene 0",
+  "durationMs": 16000,
+  "timeline": [
+    { "t": 0,     "pos": { "lon": 7.58600000, "lat": 47.57700000 } },
+    { "t": 5000,  "pos": { "lon": 7.59000000, "lat": 47.57700000 } },
+    { "t": 6000,  "pos": { "lon": 7.58600000, "lat": 47.57700000 } },
+    { "t": 8000,  "playFinished": { "tag": 1002 } },
+    { "t": 8100,  "playFinished": { "tag": 1003 } },
+    { "t": 9000,  "pos": { "lon": 7.59000000, "lat": 47.57700000 } },
+    { "t": 11000, "playFinished": { "asset": "bg1.wav" } },
+    { "t": 11100, "playFinished": { "asset": "fb1.wav" } },
+    { "t": 13000, "pos": { "lon": 7.58600000, "lat": 47.57700000 } }
+  ]
+}

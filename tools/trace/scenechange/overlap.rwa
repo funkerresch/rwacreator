@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE rwa>
+<rwa version="1.0">
+    <game currentscene="Scene 0"/>
+    <scene currentstate="BACKGROUND" name="Scene 0" lon="7.58600000" lat="47.57700000" zoom="19" numberofstates="2" areatype="1" radius="300" width="-1" height="-1" level="1" exitoffset="0" fallbackdisabled="0" minstaytime="0">
+        <corners/>
+        <exitoffsetcorners/>
+        <state name="FALLBACK" type="1" areatype="1" zoom="17" assetsfollowstate="1" defaultplaybacktype="3" lockposition="0" statewithinstate="0" leaveafterassetsfinish="0" leaveonlyafterassetsfinish="0" enteronlyonce="0" timeout="0" minstaytime="0">
+            <enterconditions>
+                <gps isgps="0" lon="7.58600000" lat="47.57700000" radius="10" width="-1" height="-1" exitoffset="0"/>
+                <requiredstates/>
+                <corners/>
+                <exitoffsetcorners/>
+            </enterconditions>
+            <actions/>
+            <assets>
+                <asset url="assets/fb0.wav" uuid="{bbbbbbbb-0000-0000-0000-000000000001}" type="1" gain="0.5" elevation="0" lon="7.58600000" lat="47.57700000" playbacktype="1" damping="1" dampingfactor="30" dampingtrim="2" dampingmin="0" dampingmax="1" smoothdist="10" mindistance="-1" fadein="1000" fadeout="1000" crossfadetime="100" duration="60000" channelcount="1" lockposition="0" alwaysplayfrombeginning="0" loop="1" mute="0" headtrackerrelative2source="1" hascoordinates="0" loopuntilendposition="0" gps2pd="0" isexclusive="0" channelradius="20" rawsensors2pd="0" playonlyonce="0" speed="20" move="0" rotateoffset="0" rotatefrequency="0" rotate="0" fixedazimuth="-1" fixeddistance="-1" fixedelevation="-1" startpositionlon="7.58600000" startpositionlat="47.57700000" offset="0" reflectioncount="0" individualchannelpositions="0">
+                    <channelpositions/>
+                    <reflectionpositions/>
+                </asset>
+            </assets>
+        </state>
+        <state name="BACKGROUND" type="2" areatype="1" zoom="17" assetsfollowstate="1" defaultplaybacktype="3" lockposition="0" statewithinstate="0" leaveafterassetsfinish="0" leaveonlyafterassetsfinish="0" enteronlyonce="0" timeout="0" minstaytime="0">
+            <enterconditions>
+                <gps isgps="0" lon="7.58600000" lat="47.57700000" radius="10" width="-1" height="-1" exitoffset="0"/>
+                <requiredstates/>
+                <corners/>
+                <exitoffsetcorners/>
+            </enterconditions>
+            <actions/>
+            <assets>
+                <asset url="assets/bg0.wav" uuid="{aaaaaaaa-0000-0000-0000-000000000001}" type="1" gain="0.5" elevation="0" lon="7.58600000" lat="47.57700000" playbacktype="1" damping="1" dampingfactor="30" dampingtrim="2" dampingmin="0" dampingmax="1" smoothdist="10" mindistance="-1" fadein="1000" fadeout="1000" crossfadetime="100" duration="60000" channelcount="1" lockposition="0" alwaysplayfrombeginning="0" loop="1" mute="0" headtrackerrelative2source="1" hascoordinates="0" loopuntilendposition="0" gps2pd="0" isexclusive="0" channelradius="20" rawsensors2pd="0" playonlyonce="0" speed="20" move="0" rotateoffset="0" rotatefrequency="0" rotate="0" fixedazimuth="-1" fixeddistance="-1" fixedelevation="-1" startpositionlon="7.58600000" startpositionlat="47.57700000" offset="0" reflectioncount="0" individualchannelpositions="0">
+                    <channelpositions/>
+                    <reflectionpositions/>
+                </asset>
+            </assets>
+        </state>
+    </scene>
+    <scene currentstate="BACKGROUND" name="Scene 1" lon="7.59000000" lat="47.57700000" zoom="19" numberofstates="2" areatype="1" radius="300" width="-1" height="-1" level="1" exitoffset="0" fallbackdisabled="0" minstaytime="0">
+        <corners/>
+        <exitoffsetcorners/>
+        <state name="FALLBACK" type="1" areatype="1" zoom="17" assetsfollowstate="1" defaultplaybacktype="3" lockposition="0" statewithinstate="0" leaveafterassetsfinish="0" leaveonlyafterassetsfinish="0" enteronlyonce="0" timeout="0" minstaytime="0">
+            <enterconditions>
+                <gps isgps="0" lon="7.59000000" lat="47.57700000" radius="10" width="-1" height="-1" exitoffset="0"/>
+                <requiredstates/>
+                <corners/>
+                <exitoffsetcorners/>
+            </enterconditions>
+            <actions/>
+            <assets>
+                <asset url="assets/fb1.wav" uuid="{bbbbbbbb-0000-0000-0000-000000000002}" type="1" gain="0.5" elevation="0" lon="7.59000000" lat="47.57700000" playbacktype="1" damping="1" dampingfactor="30" dampingtrim="2" dampingmin="0" dampingmax="1" smoothdist="10" mindistance="-1" fadein="1000" fadeout="1000" crossfadetime="100" duration="60000" channelcount="1" lockposition="0" alwaysplayfrombeginning="0" loop="1" mute="0" headtrackerrelative2source="1" hascoordinates="0" loopuntilendposition="0" gps2pd="0" isexclusive="0" channelradius="20" rawsensors2pd="0" playonlyonce="0" speed="20" move="0" rotateoffset="0" rotatefrequency="0" rotate="0" fixedazimuth="-1" fixeddistance="-1" fixedelevation="-1" startpositionlon="7.59000000" startpositionlat="47.57700000" offset="0" reflectioncount="0" individualchannelpositions="0">
+                    <channelpositions/>
+                    <reflectionpositions/>
+                </asset>
+            </assets>
+        </state>
+        <state name="BACKGROUND" type="2" areatype="1" zoom="17" assetsfollowstate="1" defaultplaybacktype="3" lockposition="0" statewithinstate="0" leaveafterassetsfinish="0" leaveonlyafterassetsfinish="0" enteronlyonce="0" timeout="0" minstaytime="0">
+            <enterconditions>
+                <gps isgps="0" lon="7.59000000" lat="47.57700000" radius="10" width="-1" height="-1" exitoffset="0"/>
+                <requiredstates/>
+                <corners/>
+                <exitoffsetcorners/>
+            </enterconditions>
+            <actions/>
+            <assets>
+                <asset url="assets/bg1.wav" uuid="{aaaaaaaa-0000-0000-0000-000000000002}" type="1" gain="0.5" elevation="0" lon="7.59000000" lat="47.57700000" playbacktype="1" damping="1" dampingfactor="30" dampingtrim="2" dampingmin="0" dampingmax="1" smoothdist="10" mindistance="-1" fadein="1000" fadeout="1000" crossfadetime="100" duration="60000" channelcount="1" lockposition="0" alwaysplayfrombeginning="0" loop="1" mute="0" headtrackerrelative2source="1" hascoordinates="0" loopuntilendposition="0" gps2pd="0" isexclusive="0" channelradius="20" rawsensors2pd="0" playonlyonce="0" speed="20" move="0" rotateoffset="0" rotatefrequency="0" rotate="0" fixedazimuth="-1" fixeddistance="-1" fixedelevation="-1" startpositionlon="7.59000000" startpositionlat="47.57700000" offset="0" reflectioncount="0" individualchannelpositions="0">
+                    <channelpositions/>
+                    <reflectionpositions/>
+                </asset>
+            </assets>
+        </state>
+    </scene>
+</rwa>

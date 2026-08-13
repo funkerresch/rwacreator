@@ -1,0 +1,11 @@
+{
+  "schema": "rwa-scenario/1",
+  "description": "Scenes 0 and 1 overlap (r=300m, centers ~300m apart). Hero walks into the overlap region and stands still.",
+  "game": "scenechange/overlap.rwa",
+  "startScene": "Scene 0",
+  "durationMs": 3000,
+  "timeline": [
+    { "t": 0,    "pos": { "lon": 7.58600000, "lat": 47.57700000 } },
+    { "t": 1000, "pos": { "lon": 7.58800000, "lat": 47.57700000 } }
+  ]
+}
