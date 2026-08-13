@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and the actual mono patcher stayed busy forever, exhausting the mono pool over
   a session.
 
+### Added
+
+- `rwatrace` scenarios can now address a specific patch instance:
+  `{"playFinished": {"tag": 1002}}` injects the finish for an older instance of
+  an asset that has been restarted since (the name lookup always resolves to the
+  newest instance).
+
 ## [v1.4.7] - 2026-08-13
 
 ### Fixed

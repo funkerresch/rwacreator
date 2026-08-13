@@ -261,18 +261,32 @@ int main(int argc, char *argv[])
             }
             if(input.contains("playFinished"))
             {
-                const QString asset = input.value("playFinished").toObject().value("asset").toString();
-                auto it = lastTagForAsset.find(asset);
-                if(it != lastTagForAsset.end())
+                const QJsonObject pf = input.value("playFinished").toObject();
+                if(pf.contains("tag"))
                 {
-                    fake_libpd_inject_bang(QString("%1-playfinished").arg(it->second).toStdString());
-                    QJsonObject echoPf{{"ev", "input"}, {"kind", "playFinished"}, {"asset", asset}, {"tag", it->second}};
+                    // explicit tag, for addressing an older instance of an asset
+                    // that has been restarted since (the name lookup below always
+                    // resolves to the newest instance)
+                    const int tag = pf.value("tag").toInt();
+                    fake_libpd_inject_bang(QString("%1-playfinished").arg(tag).toStdString());
+                    QJsonObject echoPf{{"ev", "input"}, {"kind", "playFinished"}, {"tag", tag}};
                     writeEvent(echoPf);
                 }
                 else
                 {
-                    QJsonObject echoPf{{"ev", "input"}, {"kind", "playFinished"}, {"asset", asset}, {"error", "asset not playing"}};
-                    writeEvent(echoPf);
+                    const QString asset = pf.value("asset").toString();
+                    auto it = lastTagForAsset.find(asset);
+                    if(it != lastTagForAsset.end())
+                    {
+                        fake_libpd_inject_bang(QString("%1-playfinished").arg(it->second).toStdString());
+                        QJsonObject echoPf{{"ev", "input"}, {"kind", "playFinished"}, {"asset", asset}, {"tag", it->second}};
+                        writeEvent(echoPf);
+                    }
+                    else
+                    {
+                        QJsonObject echoPf{{"ev", "input"}, {"kind", "playFinished"}, {"asset", asset}, {"error", "asset not playing"}};
+                        writeEvent(echoPf);
+                    }
                 }
             }
         }

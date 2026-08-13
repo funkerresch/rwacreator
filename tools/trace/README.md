@@ -33,7 +33,12 @@ toggle with `-DRWA_BUILD_TRACE_TOOLS=OFF`).
 
 `t` is milliseconds; each input is applied at the first tick where
 `tick*25 >= t`. `playFinished` simulates Pd reporting the asset's patch done
-(delivered through the queued-bang path, exactly like production).
+(delivered through the queued-bang path, exactly like production). The
+`asset` form resolves to the *newest* instance of that asset; to finish an
+older instance that has since been superseded (e.g. a background asset
+restarted while its predecessor was still fading out), address the patcher
+directly with `{ "playFinished": { "tag": 1002 } }`. Tags appear in the
+trace's `-play` events and input echoes.
 
 ## Trace format (JSONL)
 
