@@ -256,7 +256,7 @@ void RwaRuntime::releasePatcherFromItem(RwaEntity::AssetMapItem item)
                 break;
 
             case RWAPLAYBACKTYPE_MONO:
-                monoPatchers[getStereoPatcherIndex(patcherTag)].isBusy = false;
+                monoPatchers[getMonoPatcherIndex(patcherTag)].isBusy = false;
                 break;
 
             case RWAPLAYBACKTYPE_STEREO:

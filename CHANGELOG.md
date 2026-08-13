@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+
+- Releasing a mono (WAV) asset's patcher freed the wrong pool slot.
+  `releasePatcherFromItem` looked the tag up with `getStereoPatcherIndex`, which
+  returns -1 for a mono tag: an out-of-bounds write (`monoPatchers[-1].isBusy`)
+  and the actual mono patcher stayed busy forever, exhausting the mono pool over
+  a session.
+
 ## [v1.4.7] - 2026-08-13
 
 ### Fixed
