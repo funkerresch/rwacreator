@@ -7,32 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.4.8] - 2026-08-14
+
 ### Fixed
 
-- Background assets of a left scene no longer keep playing forever: A background
-  asset that is still fading out stays in `backgroundAssets` until Pd reports
-  `-playfinished`. Re-entering its scene within that window made
-  `startBackgroundState` start a *second* patch instance and then silently fail
-  to track it (`std::map::insert` keeps the old entry), so the new instance
-  never received `-end`, never got per-tick updates, and was never released,
-  causing it to loop forever. The fading instance's patcher is now parked on a
-  pending-release list (freed on its `-playfinished`) and the new instance takes
-  over the map slot, giving a clean crossfade on quick re-entries. Mirrored in
-  the Player, which had the same flaw with different fallout (dictionary
-  assignment overwrote the entry: no eternal audio, but the fading patcher
-  leaked as busy).
+- Background assets of a left scene no longer keep playing forever. Two
+  cooperating runtime defects, both reproduced headlessly with `rwatrace`:
 
-- `RwaRuntime::setEntityScene` switched to any other same-level scene whose
-  area contains the hero, even while the hero was still inside the current
-  scene's area, causing scene ping-pong at tick rate. Where two scene areas
-  overlap (e.g. Ufer > klybeckschlosszug in the H.E.I. Guide Klybeck harbor
-  game), standing in the overlap alternated the scene on every tick (82
-  switches in 2 s in the trace), each switch ending and restarting the
-  background states and burning through the whole 40-patcher pool within a
-  second. The runtime now stays in the current scene as long as the hero is
-  within its area (exit-offset applies); another scene is only entered after
-  the current one has actually been left. Mirrored in the Player's
-  `RwaGameLoop.setEntityScene` (parity).
+  - Background assets of a left scene no longer keep playing forever: A background
+    asset that is still fading out stays in `backgroundAssets` until Pd reports
+    `-playfinished`. Re-entering its scene within that window made
+    `startBackgroundState` start a *second* patch instance and then silently fail
+    to track it (`std::map::insert` keeps the old entry), so the new instance
+    never received `-end`, never got per-tick updates, and was never released,
+    causing it to loop forever. The fading instance's patcher is now parked on a
+    pending-release list (freed on its `-playfinished`) and the new instance takes
+    over the map slot, giving a clean crossfade on quick re-entries. Mirrored in
+    the Player, which had the same flaw with different fallout (dictionary
+    assignment overwrote the entry: no eternal audio, but the fading patcher
+    leaked as busy).
+  
+  - `RwaRuntime::setEntityScene` switched to any other same-level scene whose
+    area contains the hero, even while the hero was still inside the current
+    scene's area, causing scene ping-pong at tick rate. Where two scene areas
+    overlap (e.g. Ufer > klybeckschlosszug in the H.E.I. Guide Klybeck harbor
+    game), standing in the overlap alternated the scene on every tick (82
+    switches in 2 s in the trace), each switch ending and restarting the
+    background states and burning through the whole 40-patcher pool within a
+    second. The runtime now stays in the current scene as long as the hero is
+    within its area (exit-offset applies); another scene is only entered after
+    the current one has actually been left. Mirrored in the Player's
+    `RwaGameLoop.setEntityScene` (parity).
 
 - State checks no longer run against the previous scene right after a scene
   switch. `setEntityState` cached the scene before `setEntityScene` and kept

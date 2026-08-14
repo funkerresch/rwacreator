@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(rwacreator
-    VERSION 1.4.7
+    VERSION 1.4.8
     LANGUAGES C CXX
 )
 
