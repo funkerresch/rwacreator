@@ -22,6 +22,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   assignment overwrote the entry: no eternal audio, but the fading patcher
   leaked as busy).
 
+- `RwaRuntime::setEntityScene` switched to any other same-level scene whose
+  area contains the hero, even while the hero was still inside the current
+  scene's area, causing scene ping-pong at tick rate. Where two scene areas
+  overlap (e.g. Ufer > klybeckschlosszug in the H.E.I. Guide Klybeck harbor
+  game), standing in the overlap alternated the scene on every tick (82
+  switches in 2 s in the trace), each switch ending and restarting the
+  background states and burning through the whole 40-patcher pool within a
+  second. The runtime now stays in the current scene as long as the hero is
+  within its area (exit-offset applies); another scene is only entered after
+  the current one has actually been left. Mirrored in the Player's
+  `RwaGameLoop.setEntityScene` (parity).
+
 - Releasing a mono (WAV) asset's patcher freed the wrong pool slot.
   `releasePatcherFromItem` looked the tag up with `getStereoPatcherIndex`, which
   returns -1 for a mono tag: an out-of-bounds write (`monoPatchers[-1].isBusy`)

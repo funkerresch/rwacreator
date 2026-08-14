@@ -1365,6 +1365,13 @@ void RwaRuntime::setScene(RwaEntity *entity, RwaScene *scene)
 
 void RwaRuntime::setEntityScene(RwaEntity *entity)
 {
+    // While the hero is still inside the current scene's area, stay. Without this,
+    // overlapping scene areas switch back and forth on every tick, each switch
+    // ending and restarting the background states.
+    // Mirrored in RwaGameLoop.swift setEntityScene().
+    if(entityIsWithinArea(entity, entity->getCurrentScene(), RWAAREAOFFSETTYPE_EXIT))
+        return;
+
     foreach(RwaScene *scene, entity->scenes)
     {
         if(scene->getLevel() == entity->getCurrentScene()->getLevel())
