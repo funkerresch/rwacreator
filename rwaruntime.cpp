@@ -15,6 +15,8 @@ pdPatcher RwaRuntime::monoPatchers[RWARUNTIME_MAXNUMBEROFPATCHERS];
 pdPatcher RwaRuntime::monoPatchersOgg[RWARUNTIME_MAXNUMBEROFPATCHERS];
 
 std::list<pdPatcher *> RwaRuntime::dynamicPatchers1;
+std::list<RwaEntity::AssetMapItem> RwaRuntime::assetsPendingRelease;
+
 RwaBackend *RwaRuntime::backend;
 
 bool RwaRuntime::logSim = false;
@@ -339,6 +341,21 @@ void RwaRuntime::bangpd(const char *source)
         {
             bangpdHelp(intPatcherTag, entity->activeAssets);
             bangpdHelp(intPatcherTag, entity->backgroundAssets);
+        }
+
+        // superseded background instance finished its fade-out
+        std::list<RwaEntity::AssetMapItem>::iterator p = assetsPendingRelease.begin();
+        while(p != assetsPendingRelease.end())
+        {
+            if(p->getPatcherTag() == intPatcherTag)
+            {
+                releasePatcherFromItem(*p);
+                p = assetsPendingRelease.erase(p);
+                if(logSim)
+                    qInfo() << "Released superseded background patcher: " << intPatcherTag;
+            }
+            else
+                ++p;
         }
     }
 }
@@ -1387,6 +1404,18 @@ void RwaRuntime::startBackgroundState(RwaEntity *entity)
     {
         if(!asset->mute)
         {
+             // An instance from an earlier visit may still be fading out (scene re-entered
+             // within the fade-out window). Its map slot must go to the new instance,
+             // otherwise the new patch starts but is never tracked: it can't be ended or
+             // released and loops forever. The fading patcher is parked for release on
+             // its "-playfinished".
+             std::map<string, RwaEntity::AssetMapItem>::iterator existing = entity->backgroundAssets.find(asset->uniqueId);
+             if(existing != entity->backgroundAssets.end())
+             {
+                 assetsPendingRelease.push_back(existing->second);
+                 entity->backgroundAssets.erase(existing);
+             }
+
              patcherTag = findFreePatcher(asset);
              sprintf(gain2pd, "%d-", patcherTag);
              strcat(gain2pd, "gain");
@@ -1727,6 +1756,13 @@ void RwaRuntime::freeAllPatchers()
             resetPatcher(intPatcherTag);
         }
     }
+
+    foreach(item, assetsPendingRelease)
+    {
+        releasePatcherFromItem(item);
+        resetPatcher(item.getPatcherTag());
+    }
+    assetsPendingRelease.clear();
 
     endBackgroundState();
     if(entity)

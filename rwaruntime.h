@@ -102,6 +102,10 @@ RwaRuntime(QObject *parent, const char *pdpath, const char *assetPath, float sam
 
     static std::list<pdPatcher *> dynamicPatchers1;
 
+    // Patchers of superseded background-asset instances, still fading out after "-end";
+    // released when their "<tag>-playfinished" arrives (see startBackgroundState / bangpd).
+    static std::list<RwaEntity::AssetMapItem> assetsPendingRelease;
+
     static void printpd(const char *s);
     static void bangpdHelp(int32_t patcherTag, std::map<string, RwaEntity::AssetMapItem> &assetItemMap);
     static void bangpd(const char *source);

@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Background assets of a left scene no longer keep playing forever: A background
+  asset that is still fading out stays in `backgroundAssets` until Pd reports
+  `-playfinished`. Re-entering its scene within that window made
+  `startBackgroundState` start a *second* patch instance and then silently fail
+  to track it (`std::map::insert` keeps the old entry), so the new instance
+  never received `-end`, never got per-tick updates, and was never released,
+  causing it to loop forever. The fading instance's patcher is now parked on a
+  pending-release list (freed on its `-playfinished`) and the new instance takes
+  over the map slot, giving a clean crossfade on quick re-entries. Mirrored in
+  the Player, which had the same flaw with different fallout (dictionary
+  assignment overwrote the entry: no eternal audio, but the fading patcher
+  leaked as busy).
 
 - Releasing a mono (WAV) asset's patcher freed the wrong pool slot.
   `releasePatcherFromItem` looked the tag up with `getStereoPatcherIndex`, which
