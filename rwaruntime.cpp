@@ -1489,6 +1489,9 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
     /** *************************************** Check conditions for a new scene ******************************************* */
 
     setEntityScene(entity);
+    // setEntityScene may have switched the scene; the checks below must run against the
+    // new one, not the scene cached above (the Swift engine re-reads it here as well).
+    entityScene = entity->getCurrentScene();
 
     /** *************************************** Check conditions for a new state ******************************************* */
 

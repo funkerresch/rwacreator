@@ -34,6 +34,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the current one has actually been left. Mirrored in the Player's
   `RwaGameLoop.setEntityScene` (parity).
 
+- State checks no longer run against the previous scene right after a scene
+  switch. `setEntityState` cached the scene before `setEntityScene` and kept
+  using it for the state-entry loop of the same tick, so a GPS state of the
+  left scene could be re-activated immediately after switching (its assets
+  then played into the new scene). The Swift engine already re-reads the scene
+  at this point; the Creator now does the same (parity restored).
+
 - Releasing a mono (WAV) asset's patcher freed the wrong pool slot.
   `releasePatcherFromItem` looked the tag up with `getStereoPatcherIndex`, which
   returns -1 for a mono tag: an out-of-bounds write (`monoPatchers[-1].isBusy`)
