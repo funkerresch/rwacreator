@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Pooled mono- and stereo playback Pd patches now apply equal-power crossfades
+  when looping.
+
 ### Fixed
 
 - Rewrite of mono- and stereo playback Pd patches: Through the investigations
