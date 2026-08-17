@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Rewrite of mono- and stereo playback Pd patches: Through the investigations
+  for previous bugs a few new ones became visible:
+
+  - Crossfade and Fade-in were applied simultaneously at the beginning of
+    playback. Fixed by separating the initial start bang from the activation of
+    the crossfade metro. This behaviour sounds different as before, but it now
+    reflects what the attributes actually say.
+  
+  - Replaced crossfade-controllers by a single writer, one `[line~]` for less
+    zipper noise, and fixing the double-crossfade bug.
+  
+  - After fixing this, the next bug became audible: Exponential distance-scaling
+    produced a click in the beginning of playback, through `[line]` jumping from
+    0 to the first distance value. The exponential transformation yields one
+    frame at unity gain, then the first actual distance-related value. Fixed by
+    interpolating from a far distance (1000) to the actual distance, resulting
+    an a short crossfade. That might need to be fixed for longer
+    `$0-smoothdistance` values. Also, linear distance scaling produced a
+    division-by-zero for the same reasons.
+  
+  - Both patches didn't receive `$0-smoothdistance`, and defaulted to 10 ms
+    ramps. Now they accept the attribute they now do.
+
+  - Thinned out some of the redundant left/right scaling further down the dsp
+    chain.
+
 ## [v1.4.8] - 2026-08-14
 
 ### Fixed
