@@ -163,3 +163,4 @@
 #X connect 31 0 22 0;
 #X restore 26 139 pd groundreflection-orignal;
 #X obj 26 59 delwrite~ \$0-groundreflection1 1000;
+#X text 23 19 parked feature "ground reflections";
