@@ -1,0 +1,9 @@
+#N canvas 10 10 200 200 10;
+#N canvas 20 20 500 340 META 0;
+#X text 10 30 NAME rwa;
+#X text 10 50 AUTHOR RWA\, after Olaf Matthes;
+#X text 10 80 DESCRIPTION the non-vanilla objects RWA Creator embeds \, built as a Pd library so the player patches can be developed in Pd;
+#X text 10 130 LICENSE LGPL-2.1-or-later (oggread~);
+#X text 10 150 VERSION 0.1.0;
+#X text 10 180 oggread~ is an RWA fork of pdogg 0.25: it takes a start offset and defers the end-of-file bang and. Patches written against it do NOT work with the pdogg from deken. See README.md.;
+#X restore 10 10 pd META;

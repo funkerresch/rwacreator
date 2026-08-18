@@ -542,6 +542,53 @@ add_custom_command(TARGET rwacreator POST_BUILD
 )
 
 # ------------------------------------------------------------------------------
+# Pd externals used by RWA as a standalone Pd library ("libdir")
+#
+# oggread~ is compiled into the app above. To work on the player patches in
+# puredata/, or to build new patches that rely on the specific implementations
+# built into RWA, that same object needs to exist as a loadable external.
+# The procedure below is based around a pd-lib-builder makefile (in sync with
+# the procedure for the externals of vas_library).
+#
+#   cmake --build <dir> --target pd-externals
+#   cmake --build <dir> --target pd-externals-install
+#
+# See pd_externals/rwa-lib/README.md.
+# ------------------------------------------------------------------------------
+
+set(RWA_PD_LIB_DIR ${CMAKE_SOURCE_DIR}/pd_externals/rwa-lib)
+
+# Called directly rather than through the generator's $(MAKE): these targets are
+# a sub-build, not a recursive make, and this keeps them working under Ninja too.
+find_program(RWA_MAKE_EXECUTABLE NAMES gmake make)
+
+if(NOT EXISTS ${CMAKE_SOURCE_DIR}/pd-lib-builder/Makefile.pdlibbuilder)
+    message(STATUS
+        "pd-lib-builder submodule missing - the pd-externals targets are "
+        "unavailable. Run: git submodule update --init pd-lib-builder")
+elseif(NOT RWA_MAKE_EXECUTABLE)
+    message(STATUS "make not found - the pd-externals targets are unavailable")
+else()
+    add_custom_target(pd-externals
+        COMMAND ${RWA_MAKE_EXECUTABLE} -C ${RWA_PD_LIB_DIR}
+        COMMENT "Building the rwa Pd library (oggread~)"
+        USES_TERMINAL
+        VERBATIM
+    )
+
+    # Installs into ~/Library/Pd/rwa on macOS. To install elsewhere, call the
+    # makefile directly:
+    #   make -C pd_externals/rwa-lib install objectsdir=~/Documents/Pd/externals
+    add_custom_target(pd-externals-install
+        COMMAND ${RWA_MAKE_EXECUTABLE} -C ${RWA_PD_LIB_DIR} install
+        COMMENT "Installing the rwa Pd library into Pd's externals directory"
+        USES_TERMINAL
+        VERBATIM
+    )
+endif()
+
+
+# ------------------------------------------------------------------------------
 # rwatrace — headless engine trace harness (no audio, no GUI).
 # Links the engine sources against tools/trace/fake_libpd.cpp instead of the
 # real libpd/portaudio; used for golden-trace parity testing against the iOS

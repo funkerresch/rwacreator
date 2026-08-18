@@ -71,3 +71,10 @@ build/qmake-debug
 
 # Python tool venvs
 tools/*/.venv/
+
+# Pd externals libdir (pd_externals/rwa-lib)
+!pd_externals/rwa-lib/Makefile
+pd_externals/rwa-lib/staged/
+pd_externals/rwa-lib/*.pd_darwin
+pd_externals/rwa-lib/*.pd_linux
+pd_externals/rwa-lib/*.dll
