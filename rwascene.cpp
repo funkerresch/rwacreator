@@ -66,6 +66,7 @@ void RwaScene::copyAttributes(RwaScene * dest)
 {
     dest->zoom = zoom;
     dest->level = level;
+    dest->gain = gain;
     dest->areaType = areaType;
     dest->radius = radius;
     dest->width = width;
@@ -321,6 +322,16 @@ int32_t RwaScene::getLevel() const
 void RwaScene::setLevel(int value)
 {
     level = value;
+}
+
+float RwaScene::getGain() const
+{
+    return gain;
+}
+
+void RwaScene::setGain(float value)
+{
+    gain = value < 0 ? 0 : value;
 }
 
 std::list<std::string> RwaScene::getRequiredScenes() const

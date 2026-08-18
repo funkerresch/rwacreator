@@ -66,6 +66,11 @@ protected:
     QLineEdit *addLineEditAndLabel(QGridLayout *layout, QString name);
     QComboBox *addComboBoxAndLabel(QGridLayout *layout, QString name, QStringList values);
 
+    // Gain is stored linear (model, .rwa, Pd) but edited in dB: 0 = unity, "-inf" = silent.
+    // dbTextToGain returns false for text that is not (yet) a number, so callers can ignore it.
+    static QString gainToDbText(float gain);
+    static bool dbTextToGain(const QString &text, float &gain);
+
     float calculate_window_height();
 protected slots:
     virtual void receiveCheckBoxAttributeValue(int id, bool) = 0;

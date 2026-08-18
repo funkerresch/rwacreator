@@ -72,3 +72,8 @@ walkthrough and the list of currently known divergences.
   also gets a `numchannels` init value matching the number of streamed
   channels (2/1/1/7). Run with `--game tools/trace/pdmodes/pdmodes.rwa`; the
   game paths in scenario files are informational, only the CLI options count.
+- `scenechange/`: two-scene fixture games for the scene-transition scenarios
+  (see its README).
+- `gainhierarchy/`: fixture for hierarchical gain (scene \* state \* asset,
+  `scenarios/gainhierarchy.scenario.json`): expect `-gain` 0.125 for the GPS
+  state's asset and 0.5 for the background asset on every tick (see its README).

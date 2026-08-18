@@ -162,6 +162,9 @@ void RwaImport::readRwa()
                 if(xml.attributes().hasAttribute("minstaytime"))
                     scene->setMinimumStayTime(xml.attributes().value("minstaytime").toFloat());
 
+                if(xml.attributes().hasAttribute("gain"))
+                    scene->setGain(xml.attributes().value("gain").toFloat());
+
                 if(xml.attributes().hasAttribute("fallbackdisabled"))
                     scene->setDisableFallback(xml.attributes().value("fallbackdisabled").toInt());
 
@@ -301,6 +304,8 @@ void RwaImport::readState()
                         state->stateWithinState = (xml.attributes().value("statewithinstate").toInt());
                     if(xml.attributes().hasAttribute("minstaytime"))
                         state->setMinimumStayTime(xml.attributes().value("minstaytime").toFloat());
+                    if(xml.attributes().hasAttribute("gain"))
+                        state->setGain(xml.attributes().value("gain").toFloat());
                     state->setLeaveAfterAssetsFinish(xml.attributes().value("leaveafterassetsfinish").toInt());
                     state->setLeaveOnlyAfterAssetsFinish(xml.attributes().value("leaveonlyafterassetsfinish").toInt());
                     state->setTimeOut(xml.attributes().value("timeout").toInt());

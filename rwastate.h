@@ -69,6 +69,7 @@ public:
     bool blockUntilRadiusHasBeenLeft;
     bool sensorData2Pd;
     bool stateWithinState = false;
+    float gain = 1; // linear; multiplied into every asset of this state by the runtime
 
     void addAsset(RwaAsset1 *item);
     void deleteAsset(const std::string &path);
@@ -113,6 +114,9 @@ public:
 
     std::string getHintState() const;
     void setHintState(const std::string &value);
+
+    float getGain() const;
+    void setGain(float value);
 
     std::list<std::string> getRequiredStates() const;
     void setRequiredStates(const std::list<string> &value);

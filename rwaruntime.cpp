@@ -831,6 +831,26 @@ int32_t RwaRuntime::findFreePatcher(RwaAsset1 *asset)
     }
 }
 
+// The gain that actually reaches Pd: asset gain scaled by the gain of the state
+// and the scene the asset belongs to.
+// Owners resolved through asset (not through the entity's current state):
+// background assets belong to the scene's background state, which is not the
+// entity's current state. RwaAsset1::myScene is not reliably set, so the scene
+// is reached via the state.
+// Mirrored in RwaGameLoop.effectiveGain (rwa-player).
+float RwaRuntime::effectiveGain(RwaAsset1 *asset)
+{
+    float gain = asset->gain;
+    RwaState *state = asset->myState;
+    if(state)
+    {
+        gain *= state->gain;
+        if(state->myScene)
+            gain *= state->myScene->gain;
+    }
+    return gain;
+}
+
 void RwaRuntime::sendInitValues2pd(RwaAsset1 *asset, int patcherTag)
 {
     if(logSim)
@@ -943,7 +963,7 @@ void RwaRuntime::sendInitValues2pd(RwaAsset1 *asset, int patcherTag)
      // new, sync to RWA Player
      sprintf(pdReceiver, "%d-gain", patcherTag);
      pdMutex->lock();
-     libpd_float(pdReceiver, asset->getGain());
+     libpd_float(pdReceiver, effectiveGain(asset));
      pdMutex->unlock();
 
      sprintf(pdReceiver, "%d-fadeintime", patcherTag);
@@ -1105,7 +1125,7 @@ void RwaRuntime::sendData2Asset(RwaEntity *entity, RwaEntity::AssetMapItem item)
     sprintf(step2pd, "%d-step", intPatcherTag);
 
     pdMutex->lock();
-    libpd_float(gain2pd, asset->gain);
+    libpd_float(gain2pd, effectiveGain(asset));
     libpd_float(lon2pd, entity->getCoordinates()[0]);
     libpd_float(lat2pd, entity->getCoordinates()[1]);
     pdMutex->unlock();
@@ -1392,7 +1412,6 @@ void RwaRuntime::startBackgroundState(RwaEntity *entity)
 {
     RwaState *entityState;
     RwaAsset1 *asset;
-    char gain2pd[100];
     int patcherTag;
 
     entityState = entity->getCurrentScene()->getBackgroundState();
@@ -1424,12 +1443,8 @@ void RwaRuntime::startBackgroundState(RwaEntity *entity)
              }
 
              patcherTag = findFreePatcher(asset);
-             sprintf(gain2pd, "%d-", patcherTag);
-             strcat(gain2pd, "gain");
-             pdMutex->lock();
-             libpd_float(gain2pd, asset->gain);
-             pdMutex->unlock();
-             sendInitValues2pd(asset, patcherTag);
+             sendInitValues2pd(asset, patcherTag); // sends "-gain" itself
+
              entity->addBackgroundAsset(asset->uniqueId, asset, patcherTag);
              if(logSim)
                  qDebug() << "Add Background Asset: " << QString::fromStdString(asset->fileName);

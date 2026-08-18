@@ -166,6 +166,7 @@ void RwaExport::writeState(RwaState *state)
     xml.writeAttribute("enteronlyonce", QString::number(state->getEnterOnlyOnce() ));
     xml.writeAttribute("timeout", QString::number(static_cast<double>(state->getTimeOut())));
     xml.writeAttribute("minstaytime", QString::number(static_cast<double>(state->getMinimumStayTime())));
+    xml.writeAttribute("gain", QString::number(static_cast<double>(state->getGain())));
 
     xml.writeStartElement("enterconditions");
     xml.writeStartElement("gps");
@@ -253,6 +254,7 @@ void RwaExport::writeScene(RwaScene *scene)
     xml.writeAttribute("exitoffset", QString::number(static_cast<double>(scene->getExitOffset())));
     xml.writeAttribute("fallbackdisabled", QString::number(scene->fallbackDisabled()));
     xml.writeAttribute("minstaytime", QString::number(static_cast<double>(scene->getMinimumStayTime())));
+    xml.writeAttribute("gain", QString::number(static_cast<double>(scene->getGain())));
 
     xml.writeStartElement("corners");
 

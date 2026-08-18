@@ -1,4 +1,5 @@
 #include "rwaattributeview.h"
+#include <cmath>
 
 RwaAttributeView::RwaAttributeView(QWidget* parent, RwaScene *scene)
   : RwaView(parent, scene)
@@ -163,4 +164,27 @@ void RwaAttributeView::addComboBoxAndLabel(QGridLayout *layout, QString name, QS
 float RwaAttributeView::calculate_window_height()
 {
     return ((float)assetAttrCounter * 0.5f) * 23.0f;
+}
+
+QString RwaAttributeView::gainToDbText(float gain)
+{
+    if(gain <= 0.f)
+        return QStringLiteral("-inf");
+    return QString::number(20.0 * std::log10(static_cast<double>(gain)), 'f', 2);
+}
+
+bool RwaAttributeView::dbTextToGain(const QString &text, float &gain)
+{
+    QString t = text.trimmed();
+    if(!t.compare("-inf", Qt::CaseInsensitive))
+    {
+        gain = 0.f;
+        return true;
+    }
+    bool ok = false;
+    double dB = t.toDouble(&ok);
+    if(!ok) // empty or half-typed ("-", "1.") while editing: leave the value alone
+        return false;
+    gain = static_cast<float>(std::pow(10.0, dB / 20.0));
+    return true;
 }

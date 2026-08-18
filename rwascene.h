@@ -50,6 +50,7 @@ public:
     RwaState *lastTouchedState;
     int32_t level;
     bool disableFallback = false;
+    float gain = 1; // linear; multiplied into every asset of this scene by the runtime
 
     void moveMyChildren(double dx, double dy);
     void clear();
@@ -81,6 +82,9 @@ public:
 
     int32_t getLevel() const;
     void setLevel(int value);
+
+    float getGain() const;
+    void setGain(float value);
 
     bool fallbackDisabled() const;
     void setDisableFallback(bool value);

@@ -28,6 +28,7 @@ RwaSceneAttributeView::RwaSceneAttributeView(QWidget *parent, RwaScene *scene) :
     // setLineEditSignal2editingFinished(requiredScenes);
 
     addLineEditAndLabel(attributeGridLayout, "Level");
+    addLineEditAndLabel(attributeGridLayout, "Gain (dB)");
     addLineEditAndLabel(attributeGridLayout, "Scene Radius");
     addLineEditAndLabel(attributeGridLayout, "Scene Width");
     addLineEditAndLabel(attributeGridLayout, "Scene Height");
@@ -81,6 +82,15 @@ void RwaSceneAttributeView::setCurrentScene(RwaScene *scene)
     attrLineEdit = this->findChild<QLineEdit *>("Level");
     if(attrLineEdit)
         attrLineEdit->setText(QString::number(currentScene->getLevel()));
+
+    attrLineEdit = this->findChild<QLineEdit *>("Gain (dB)");
+    if(attrLineEdit)
+    {
+        // block: setText() would re-enter receiveLineEditAttributeValue and write the
+        // dB->linear round trip of the displayed value back into the scene on every refresh
+        QSignalBlocker blocker(attrLineEdit);
+        attrLineEdit->setText(gainToDbText(currentScene->getGain()));
+    }
 
     attrLineEdit = this->findChild<QLineEdit *>("Exit Offset");
     if(attrLineEdit)
@@ -277,6 +287,13 @@ void RwaSceneAttributeView::receiveLineEditAttributeValue(const QString &value)
     if(!QObject::sender()->objectName().compare("Level"))
     {
         currentScene->setLevel(value.toInt());
+    }
+
+    if(!QObject::sender()->objectName().compare("Gain (dB)"))
+    {
+        float gain;
+        if(dbTextToGain(value, gain))
+            currentScene->setGain(gain); // picked up by the running simulation on the next tick
     }
 }
 

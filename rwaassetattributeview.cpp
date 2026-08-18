@@ -51,7 +51,7 @@ RwaAssetAttributeView::RwaAssetAttributeView(QWidget *parent, RwaScene *scene) :
     addLineEditAndLabel(attributeGridLayout, "Fade-Out Time");
     addLineEditAndLabel(attributeGridLayout, "Crossfade Time");
     addLineEditAndLabel(attributeGridLayout, "Offset Time");
-    addLineEditAndLabel(attributeGridLayout, "Gain");
+    addLineEditAndLabel(attributeGridLayout, "Gain (dB)");
     addLineEditAndLabel(attributeGridLayout, "Altitude");
     addLineEditAndLabel(attributeGridLayout, "Channel Radius");
     addLineEditAndLabel(attributeGridLayout, "Rotate Offset");
@@ -235,9 +235,9 @@ void RwaAssetAttributeView::setCurrentAsset(RwaAsset1 *asset)
     if(attrLineEdit)
         attrLineEdit->setText(QString().setNum(asset->getOffset()));
 
-    attrLineEdit = this->findChild<QLineEdit *>("Gain");
+    attrLineEdit = this->findChild<QLineEdit *>("Gain (dB)");
     if(attrLineEdit)
-        attrLineEdit->setText(QString().setNum(asset->getGain()));
+        attrLineEdit->setText(gainToDbText(asset->getGain()));
 
     attrLineEdit = this->findChild<QLineEdit *>("Altitude");
     if(attrLineEdit)
@@ -837,13 +837,17 @@ void RwaAssetAttributeView::receiveLineEditAttributeValue(const QString &text)
        }
     }
 
-    if(!QObject::sender()->objectName().compare("Gain"))
+    if(!QObject::sender()->objectName().compare("Gain (dB)"))
     {
-       foreach(QString assetName, selectedAssets)
+       float gain;
+       if(dbTextToGain(text, gain))
        {
-            asset = currentState->getAsset(assetName.toStdString());
-            if(asset)
-                asset->setGain(text.toFloat());
+           foreach(QString assetName, selectedAssets)
+           {
+                asset = currentState->getAsset(assetName.toStdString());
+                if(asset)
+                    asset->setGain(gain);
+           }
        }
     }
 

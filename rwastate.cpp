@@ -84,6 +84,7 @@ void RwaState::copyAttributes(RwaState *dest)
     dest->width = this->width;
     dest->height = this->height;
     dest->minimumStayTime = this->minimumStayTime;
+    dest->gain = this->gain;
     dest->leaveAfterAssetsFinish = this->getLeaveAfterAssetsFinish();
     dest->leaveOnlyAfterAssetsFinish = this->getLeaveOnlyAfterAssetsFinish();
     dest->enterOnlyAfterAssetsFinish = this->getEnterOnlyAfterAssetsFinish();
@@ -276,6 +277,16 @@ std::string RwaState::getHintState() const
 void RwaState::setHintState(const std::string &value)
 {
     hintState = value;
+}
+
+float RwaState::getGain() const
+{
+    return gain;
+}
+
+void RwaState::setGain(float value)
+{
+    gain = value < 0 ? 0 : value;
 }
 
 std::string RwaState::getNextState() const

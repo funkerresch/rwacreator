@@ -51,6 +51,7 @@ RwaStateAttributeView::RwaStateAttributeView(QWidget *parent, RwaScene *scene) :
     addComboBoxAndLabel(attributeGridLayout, "Next Scene", nextScenes);
     addLineEditAndLabel(attributeGridLayout, "Time Out");
     editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Min stay time");
+    addLineEditAndLabel(attributeGridLayout, "Gain (dB)");
 
     QLineEdit *requiredStates = addLineEditAndLabel(attributeGridLayout, "Required States");
     setLineEditSignal2editingFinished(requiredStates);
@@ -191,6 +192,15 @@ void RwaStateAttributeView::setCurrentState(RwaState *state)
     attrLineEdit = this->findChild<QLineEdit *>("Min stay time");
     if(attrLineEdit)
         attrLineEdit->setText(QString::number(currentState->getMinimumStayTime()));
+
+    attrLineEdit = this->findChild<QLineEdit *>("Gain (dB)");
+    if(attrLineEdit)
+    {
+        // block: setText() would re-enter receiveLineEditAttributeValue and write the
+        // dB->linear round trip of the displayed value back into the state on every refresh
+        QSignalBlocker blocker(attrLineEdit);
+        attrLineEdit->setText(gainToDbText(currentState->getGain()));
+    }
 
     attrCheckBox = this->findChild<QCheckBox *>("Assets follow state");
     if(attrCheckBox)
@@ -355,6 +365,13 @@ void RwaStateAttributeView::receiveLineEditAttributeValue(const QString &value)
     if(!QObject::sender()->objectName().compare("Min stay time"))
     {
         currentState->setMinimumStayTime(value.toFloat());
+    }
+
+    if(!QObject::sender()->objectName().compare("Gain (dB)"))
+    {
+        float gain;
+        if(dbTextToGain(value, gain))
+            currentState->setGain(gain); // picked up by the running simulation on the next tick
     }
 
     if(!QObject::sender()->objectName().compare("State Radius"))

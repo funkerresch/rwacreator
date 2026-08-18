@@ -59,7 +59,7 @@ position preview; HTTP :8088 transfers game files.
 
 | Receiver | Value | Notes |
 |---|---|---|
-| `<tag>-gain` | asset gain | every tick (C++) |
+| `<tag>-gain` | effective gain = asset \* state \* scene gain (`RwaRuntime::effectiveGain`) | every tick (C++); the Player computes the same product once at activation |
 | `<tag>-lon` / `<tag>-lat` | listener GPS | every tick (C++) |
 | `<tag>-step` | bang | when headtracker registered a footstep |
 | `<tag>-distance<n>` | meters | per channel n=1..N |
@@ -145,7 +145,7 @@ Verified in source on both sides:
 |---|---|---|---|---|
 | 1 | Tick rate | 25 ms | 10 ms | movement/fade/playhead per-tick math scales differently |
 | 2 | State evaluation | every tick | ~1 Hz — `if (fmod(hero.timeInCurrentState, 1) >= 0.01) return` (RwaGameLoop.swift:864) | up to ~1 s transition latency on iOS |
-| 3 | Per-tick sends | `-gain`, `-lon`, `-lat` every tick, all assets | `-gain` only at init; `-lon/-lat/-step` only for PD-type assets | runtime gain changes inaudible on iOS |
+| 3 | Per-tick sends | `-gain`, `-lon`, `-lat` every tick, all assets | `-gain` only at init; `-lon/-lat/-step` only for PD-type assets | runtime gain changes inaudible on iOS. Harmless for hierarchical gain (scene \* state \* asset, both engines send the same product): on the Player nothing edits gain while a game runs and an asset's owning state/scene never changes, so the init-time value stays correct |
 | 4 | Background assets w/o state | serviced regardless (rwaruntime.cpp:1285 comment) | `sendData2ActiveAssets` early-returns if `currentState == nil` **or** `activeAssets.isEmpty` (RwaGameLoop.swift:1369-1375) — background assets then get no data | background audio starves on iOS in fallback-disabled scenes / empty states |
 | 5 | Patcher pools | 40 + 4×5ch + 4×7ch | 30 (+15 stereo etc.) | exhaustion behavior differs |
 | 6 | Latent C++ quirk | `backend->sampleRate` hardcoded 48000 used in `sendInitValues2pd`/playhead math while ctor receives the real device rate (rwaruntime.cpp:809, 846, 1243-1252) | n/a | wrong playhead/offset math on 44.1 kHz devices |

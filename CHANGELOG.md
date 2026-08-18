@@ -9,6 +9,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Hierarchical gain for mixing: scenes and states now have a gain of their own,
+  next to the existing asset gain. The three are cumulative, Pd receives `scene
+  gain * state gain * asset gain` on `<tag>-gain` (`RwaRuntime::effectiveGain()`),
+  so raising a state lifts every asset in it by the same amount in dB, and
+  raising a scene lifts every state and asset under it.
+
+  - The runtime computes the product each time it sends gain and never writes it
+    back into the objects: the asset keep their own value, and the state and
+    scene keep theirs. Since the simulator streams `-gain` every tick and reads
+    the live objects, an edit in the attribute view is audible on the next tick.
+  - The attributes are optional, older files load with 1.
+
+  - Fixture and scenario: `tools/trace/gainhierarchy/` +
+    `scenarios/gainhierarchy.scenario.json`.
+
+  - Player parity: mirrored in `rwa-player` (`RwaGameLoop.effectiveGain`,
+    importer, model) in the same change. The Player only sends `-gain` at
+    activation, which is sufficient there because nothing edits gain while a
+    game runs and an asset's owners never change.
+
+### Changed
+
+- The gain fields in the asset, state and scene attribute views are shown and
+  edited in **dB** ("Gain (dB)": 0 = unity, −6 ≈ half, `-inf` = silent); model,
+  `.rwa` and Pd stay linear. Half-typed input (`-`, `1.`) is ignored instead of
+  muting the asset while you type.
+
+- `startBackgroundState()` no longer sends `<tag>-gain` a second time right
+  before `sendInitValues2pd()` (which sends it anyway). Trace init blocks of
+  background assets now contain a single `-gain`; the Player got the same
+  cleanup so the traces stay comparable.
+
 - Shift+double-click on an asset in the asset list opens the file in the OS
   default application: Pd for patches, the default audio app for sound files
   (ocenaudio recommended). Plain double-click still renames. A missing file or a
