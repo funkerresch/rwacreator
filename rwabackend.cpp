@@ -538,9 +538,40 @@ void RwaBackend::reset()
     projectName = QString();
     completeFilePath = QString();
     completeProjectPath = QString();
+
+    // The derived paths must not keep pointing into the previously opened
+    // project: an unsaved new project would write its undo steps, tmp files and
+    // dropped assets in there. Until it is saved it works in a scratch folder;
+    // "Save" (exportProjectAs) copies the assets from there into the real project.
+    QString scratch = unsavedProjectPath();
+    completeUndoPath = scratch + "/undo";
+    completeTmpPath = scratch + "/tmp";
+    completeAssetPath = scratch + "/assets";
+    for (const QString &folder : {completeUndoPath, completeTmpPath, completeAssetPath})
+    {
+        QDir dir(folder);
+        if (!dir.exists() && !dir.mkpath("."))
+            qWarning() << "Could not create scratch folder" << folder;
+        RwaUtilities::emtpyDirectory(folder); // leftovers of an earlier unsaved project (e.g. after a crash)
+    }
+
     clearScenes();
     appendScene();
+    emit projectPathsChanged();
     updateLastTouchedSceneStateAndAsset();
+}
+
+QString RwaBackend::unsavedProjectPath() const
+{
+    return applicationSupportPath + "/unsaved";
+}
+
+QString RwaBackend::tileCachePath() const
+{
+    if (!completeProjectPath.isEmpty() && QDir(completeProjectPath).isAbsolute())
+        return completeProjectPath + "/tilecache";
+
+    return unsavedProjectPath() + "/tilecache";
 }
 
 /** ************************************* Location functionality ************************************* */

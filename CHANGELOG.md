@@ -62,6 +62,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     through it and stay untouched. When changing assets, save the project to
     integrate those changes.
 
+- Undo/History: Empty History View or directory listing, seemingly random
+  project resets when clicking in Histoy View, inability to write undo steps.
+  One cause: `open()` only *assigned* `completeUndoPath` and never created the
+  folder (only New/Save-as did), and empty folders do not survive git, zip or a
+  hand copy, so a lot of checked test projects had no `undo/`. For such a
+  project every `writeUndo()` failed silently, and
+  `QFileSystemModel::setRootPath()` on a nonexistent directory silently falls
+  back to the process working directory (`/` when launched from Finder,
+  `build/cmake-debug` under the debugger; an empty path shows the drives list,
+  i.e. one hard-disk icon). `readUndoFile()` then called `clearScenes()`
+  *before* opening the clicked "file", so a click on any entry in that foreign
+  listing wiped the project.
+
+  - `open()` creates `undo/`, `tmp/` and `assets/` if missing and resolves a
+    relative file path (command line, "open with") to an absolute one first.
+    `writeUndo()` creates the folder too and warns in the log instead of
+    silently dropping the step. Undo file names carry a zero-padded counter
+    (`0010_Move State.rwa`), so the name-sorted History View keeps the right
+    order past ten steps.
+
+  - `RwaHistory` owns one `QFileSystemModel` for its lifetime (used to leak one
+    per loaded project), shows only `*.rwa` files, and is only rooted at an
+    absolute, existing undo folder; otherwise it shows nothing and logs a
+    warning. A click or Up/Down only loads entries that are `.rwa` files of that
+    root.
+
+  - `readUndoFile()` refuses names outside the undo folder, opens the file and
+    runs a dry XML pass (well-formed, `<rwa version="1.0">` root) before
+    `clearScenes()`. An unreadable snapshot now leaves the current project
+    untouched, with a warning dialogue instead of an empty project.
+
+  - Unsaved new project (New, then dialogue cancelled): `RwaBackend::reset()`
+    used to clear the project path but leave undo/tmp/asset paths pointing at
+    the previously opened project, whose `undo/` had just been emptied; the
+    unsaved project then wrote its undo steps, dropped assets and map tiles in
+    there. `reset()` now points them at a scratch workspace
+    `~/Library/Application Support/RWACreator/unsaved/{undo,tmp,assets,tilecache}`
+    (new `RwaBackend::unsavedProjectPath()`, emptied on each reset), emits the
+    new `projectPathsChanged()` signal, and `newProject()` writes the "Init
+    Game" snapshot there, so undo works from the first edit; Save-as copies the
+    assets into the real project as before.
+
+  - `rwacreator.h` declared `documentFingerprint()`, `markDocumentSaved()` and
+    `isDocumentModified()` twice since 91de6f6 (the header did not compile from
+    a clean checkout); the duplicate block is gone.
+
 ## [v1.4.9] - 2026-08-18
 
 ### Added

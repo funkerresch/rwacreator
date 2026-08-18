@@ -169,6 +169,9 @@ public slots:
     void clearScenes();
     void reset();
 
+    /** Scratch project folder (undo, tmp, assets, tilecache) used while a new project is not saved yet. */
+    QString unsavedProjectPath() const;
+
     /** ************************************* Location functionality ********************************** */
 
     void moveScene2CurrentMapLocation();
@@ -318,6 +321,8 @@ signals:
     void updateAssets();  // update simulator if assets are updated while simulation runs..
     void newGameLoaded();
     void undoGameLoaded();
+    /** completeProjectPath and the paths derived from it were reset (new, unsaved project). */
+    void projectPathsChanged();
     void sendRedrawAssets();
     void sendEntityPosition(vector<double> position);
     void sendStatePosition(QPointF position);

@@ -17,6 +17,7 @@
 #include <QDataStream>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QXmlStreamReader>
 #include <QSignalMapper>
 #include <QApplication>
 #include <QMouseEvent>
@@ -1089,6 +1090,10 @@ qint32 RwaCreator::open(QString fileName, bool throwDialogue)
     if (fullpath.isEmpty() || fullpath.isNull())
         return 0;
 
+    // Project, undo, tmp and asset paths are all derived from this; a relative
+    // path (command line, "open with") would silently make them CWD-relative.
+    fullpath = QFileInfo(fullpath).absoluteFilePath();
+
     // Before touching the file: a "Save" here may rewrite the very file about to be opened.
     if(isDocumentModified() && !maybeSave(tr("opening another project")))
         return 0;
@@ -1123,6 +1128,16 @@ qint32 RwaCreator::open(QString fileName, bool throwDialogue)
     backend->completeAssetPath = (completeAssetPath);
     backend->completeTmpPath = (completeTmpPath);
     setWindowTitle(backend->projectName);
+
+    // Empty folders don't survive git, zip or a hand copy, and undo/ was only
+    // ever created by "New"/"Save as": without it every undo step was silently
+    // dropped and the History View fell back to listing the working directory.
+    for (const QString &folder : {completeUndoPath, completeTmpPath, completeAssetPath})
+    {
+        QDir dir(folder);
+        if (!dir.exists() && !dir.mkpath("."))
+            qWarning() << "Could not create project folder" << folder;
+    }
 
     RwaImport reader(this, &backend->getScenes(), backend->completeProjectPath);
 
@@ -1173,7 +1188,8 @@ void RwaCreator::newProject()
     backend->reset();
     markDocumentSaved(); // a pristine new project is nothing to be asked about, even if the dialogue below is cancelled
     setWindowTitle("Not saved");
-    exportProjectAs(tr("New RWA Project"));
+    if(!exportProjectAs(tr("New RWA Project")))
+        writeUndo("Init Game"); // dialogue cancelled: the unsaved project lives in the scratch folder, its history starts here
 }
 
 /** ******************************************* Simulation and log view ************************************************ */
@@ -1215,42 +1231,102 @@ void RwaCreator::writeUndo(QString undoAction)
 {
     if(backend->completeUndoPath.isEmpty())
     {
-        qDebug();
+        qWarning() << "Undo: no undo folder set, step not recorded:" << undoAction;
         return;
     }
 
-    QString fullUndoFilepath;
-    fullUndoFilepath = QString("%1/%3_%2.rwa").arg(backend->completeUndoPath).arg(undoAction).arg(undoCounter++);
+    QDir undoDir(backend->completeUndoPath);
+    if(!undoDir.exists() && !undoDir.mkpath("."))
+    {
+        qWarning() << "Undo: cannot create undo folder" << backend->completeUndoPath << "- step not recorded:" << undoAction;
+        return;
+    }
+
+    // Zero-padded counter: the History View is a name-sorted directory listing,
+    // so "10_" must sort after "9_".
+    QString fullUndoFilepath = undoDir.filePath(QString("%1_%2.rwa")
+                                                .arg(undoCounter++, 4, 10, QChar('0'))
+                                                .arg(QString(undoAction).replace('/', '-')));
 
     QFile file(fullUndoFilepath);
     if(file.exists())
         file.remove();
 
     if (!file.open(QFile::WriteOnly | QFile::Text))
-         return;
+    {
+        qWarning() << "Undo: cannot write" << fullUndoFilepath << file.errorString();
+        return;
+    }
 
     RwaExport writer(this, QString(), QString(), 0);
     writer.writeFile(&file);
 }
 
+/**
+ * Cheap check over a .rwa file to load: well-formed XML with an <rwa version="1.0"> root.
+ * Checking files before RwaImport::read() fails lets readUndoFile() keep the
+ * current project when the file is unusable.
+ */
+static bool isReadableRwaFile(QIODevice *device, QString *error)
+{
+    QXmlStreamReader xml(device);
+    if (!xml.readNextStartElement()
+        || xml.name().toString() != "rwa"
+        || xml.attributes().value("version").toString() != "1.0")
+    {
+        *error = QObject::tr("The file is not an RWA version 1.0 file.");
+        return false;
+    }
+    while (!xml.atEnd())
+        xml.readNext();
+    if (xml.hasError())
+    {
+        *error = QObject::tr("%1\nLine %2, column %3")
+                    .arg(xml.errorString()).arg(xml.lineNumber()).arg(xml.columnNumber());
+        return false;
+    }
+    return true;
+}
+
 void RwaCreator::readUndoFile(QString name)
 {
-    backend->clearScenes();
-    QFile file(backend->completeUndoPath +"/"+name);
+    // Only ever load from the undo folder itself, and never clear the current
+    // project before the snapshot has proven readable.
+    QDir undoDir(backend->completeUndoPath);
+    if (backend->completeUndoPath.isEmpty() || !undoDir.isAbsolute()
+        || name.isEmpty() || name.contains('/') || !name.endsWith(".rwa"))
+    {
+        qWarning() << "Undo: refusing to load" << name << "from" << backend->completeUndoPath;
+        return;
+    }
+
+    QFile file(undoDir.filePath(name));
     if (!file.open(QFile::ReadOnly | QFile::Text))
     {
-        QMessageBox::warning(this, tr("QXmlStream Bookmarks"),
-                             tr("Cannot read file %1:\n%2.")
+        QMessageBox::warning(this, tr("RWA Creator"),
+                             tr("Cannot read undo file %1:\n%2.")
                              .arg(name)
                              .arg(file.errorString()));
         return;
     }
 
+    QString error;
+    if (!isReadableRwaFile(&file, &error))
+    {
+        QMessageBox::warning(this, tr("RWA Creator"),
+                             tr("Undo file %1 is not usable, keeping the current project:\n\n%2")
+                             .arg(name)
+                             .arg(error));
+        return;
+    }
+    file.seek(0);
+
+    backend->clearScenes();
     RwaImport reader(this, &backend->getScenes(), backend->completeProjectPath);
     if (!reader.read(&file))
     {
-        QMessageBox::warning(this, tr("QXmlStream Bookmarks"),
-                             tr("Parse error in file %1:\n\n%2")
+        QMessageBox::warning(this, tr("RWA Creator"),
+                             tr("Parse error in undo file %1:\n\n%2")
                              .arg(name)
                              .arg(reader.errorString()));
     }
