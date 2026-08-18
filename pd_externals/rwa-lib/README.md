@@ -97,7 +97,7 @@ the same material in both forms:
 | | compressed | uncompressed |
 | --- | --- | --- |
 | mono, 44.1 kHz | `alligator-mono.ogg` | `alligator-mono.aif` |
-| stereo, 48 kHz | `belbbirds-stereo.ogg` | `belbbirds-stereo.wav` |
+| stereo, 48 kHz | `bellbirds-stereo.ogg` | `bellbirds-stereo.wav` |
 
 ## Verifying a build
 

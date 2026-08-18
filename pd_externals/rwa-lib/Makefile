@@ -158,8 +158,8 @@ datafiles = \
     oggread~-help.pd \
     alligator-mono.ogg \
     alligator-mono.aif \
-    belbbirds-stereo.ogg \
-    belbbirds-stereo.wav
+    bellbirds-stereo.ogg \
+    bellbirds-stereo.wav
 
 PDLIBBUILDER_DIR = $(ROOT)/pd-lib-builder/
 include $(PDLIBBUILDER_DIR)/Makefile.pdlibbuilder

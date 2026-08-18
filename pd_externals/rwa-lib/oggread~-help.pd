@@ -43,10 +43,10 @@
 #X obj 576 147 t s s;
 #X obj 576 177 makefilename %s/alligator-mono.ogg;
 #X obj 537 207 symbol;
-#X obj 584 253 makefilename %s/belbbirds-stereo.ogg;
+#X obj 584 253 makefilename %s/bellbirds-stereo.ogg;
 #X obj 545 283 symbol;
 #X msg 621 344 open alligator-mono.aif;
-#X msg 621 369 open belbbirds-stereo.wav;
+#X msg 621 369 open bellbirds-stereo.wav;
 #X msg 621 394 1;
 #X msg 654 394 0;
 #X obj 621 419 readsf~ 2;
@@ -58,7 +58,7 @@
 #X text 159 190 play file 2.5 seconds in;
 #X obj 621 448 dac~;
 #X text 632 215 oggread~ needs absolute paths;
-#X text 657 107 examples \; alligator-mono (44.1 kHz mono \, .ogg + .aif) belbbirds-stereo (48 kHz stereo \, .ogg + .wav), f 46;
+#X text 657 107 examples \; alligator-mono (44.1 kHz mono \, .ogg + .aif) bellbirds-stereo (48 kHz stereo \, .ogg + .wav), f 46;
 #X text 619 321 the same samples uncompressed:;
 #X connect 2 0 0 0;
 #X connect 2 1 0 1;
