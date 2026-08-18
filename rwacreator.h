@@ -260,6 +260,22 @@ private:
     */
     bool isDocumentModified();
 
+    /**
+    * @brief Directory the next file dialogue should open in.
+    * The last directory a project was opened from or written to, kept in
+    * QSettings so that it survives a restart. Falls back to the folder of the
+    * project currently open, then to the home directory, when the remembered
+    * one is gone (external volume, renamed folder).
+    */
+    QString lastUsedDirectory() const;
+
+    /**
+    * @brief Remembers the folder of fullpath as the file dialogue directory.
+    * Called with the path the user picked (or the project that was opened),
+    * never with a path the application chose on its own.
+    */
+    void rememberLastUsedDirectory(const QString &fullpath);
+
 /**
  * @brief Helper function for saving/exporting RWA games. <br>
  * @param fullpath The path and name of the game to be saved. <br>

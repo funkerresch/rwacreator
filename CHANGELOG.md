@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- File dialogues now start in the last folder a project was opened from or
+  written to. The folder is stored in `QSettings` (`lastuseddirectory`) and
+  therefore survives a restart; it is updated only when the user picks a path
+  themselves or opens a project from Finder or the command line, never by the
+  automatic reopen of the last game at startup. If the remembered folder is gone
+  (external volume, renamed directory), the dialogue falls back to the current
+  project's folder and then to the home directory. *Save as* keeps starting in
+  the current project folder, which is what a new version of that project wants.
+
 - The save-on-quit dialogue. It used to appear on every quit, whether or not
   anything had changed, and *Cancel* did not cancel: `closeEvent()` ignored
   the answer and the application quit regardless.

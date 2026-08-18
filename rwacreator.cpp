@@ -979,6 +979,35 @@ void RwaCreator::exportZip()
     QTimer::singleShot(2000, [this]{setWindowTitle(backend->projectName);});
 }
 
+/** ************************************* File dialogue start directory *********************************** */
+
+QString RwaCreator::lastUsedDirectory() const
+{
+    QSettings settings;
+    QString directory = settings.value("lastuseddirectory").toString();
+
+    if(!directory.isEmpty() && QDir(directory).exists())
+        return directory;
+
+    if(!backend->completeProjectPath.isEmpty() && QDir(backend->completeProjectPath).exists())
+        return backend->completeProjectPath;
+
+    return QDir::homePath();
+}
+
+void RwaCreator::rememberLastUsedDirectory(const QString &fullpath)
+{
+    if(fullpath.isEmpty())
+        return;
+
+    QString directory = QFileInfo(fullpath).absolutePath();
+    if(directory.isEmpty())
+        return;
+
+    QSettings settings;
+    settings.setValue("lastuseddirectory", directory);
+}
+
 void RwaCreator::exportProject()
 {
     exportProjectAs(tr("Copy entire RWA Project Folder"));
@@ -997,11 +1026,14 @@ bool RwaCreator::exportProjectAs(const QString &dialogTitle)
           | RWAEXPORT_CREATEFOLDERS;
 
     QString fullpath = QFileDialog::getSaveFileName(this, dialogTitle,
-                                         QDir::homePath(),
+                                         lastUsedDirectory(),
                                          tr("RWA Files (*.rwa *.xml)"));
 
     if(fullpath.isEmpty())
         return false;
+
+    // The folder the user picked, not the project subfolder created below.
+    rememberLastUsedDirectory(fullpath);
 
     QString fileName = RwaUtilities::getFileName(fullpath);            // for example test.rwa
     QString directory = RwaUtilities::getFileBaseName(fileName);        // test
@@ -1033,11 +1065,14 @@ void RwaCreator::saveAs()
     flags |= RWAEXPORT_SAVEAS;
 
     QString fullpath = QFileDialog::getSaveFileName(this, tr("Save Version of RWA Project File"),
-                                         backend->completeProjectPath,
+                                         backend->completeProjectPath.isEmpty() ? lastUsedDirectory()
+                                                                                : backend->completeProjectPath,
                                          tr("RWA Files (*.rwa *.xml)"));
 
     if(fullpath.isEmpty())
         return;
+
+    rememberLastUsedDirectory(fullpath);
 
     backend->completeFilePath = fullpath;
     if(write1("File saved", flags, fullpath))
@@ -1084,7 +1119,10 @@ qint32 RwaCreator::open(QString fileName, bool throwDialogue)
     else
     {
         if(throwDialogue)
-            fullpath = QFileDialog::getOpenFileName(this, tr("Open RWA File"), QDir::currentPath(),tr("RWA Files (*.rwa *.xml)"));
+        {
+            fullpath = QFileDialog::getOpenFileName(this, tr("Open RWA File"), lastUsedDirectory(),tr("RWA Files (*.rwa *.xml)"));
+            rememberLastUsedDirectory(fullpath);
+        }
     }
 
     if (fullpath.isEmpty() || fullpath.isNull())
@@ -1164,7 +1202,9 @@ void RwaCreator::openProject(const QString &path)
         return;
     }
 
-    open(path, false);
+    if(open(path, false))
+        rememberLastUsedDirectory(path);   // opened from Finder or the command line
+
     raise();
     activateWindow();
 }
