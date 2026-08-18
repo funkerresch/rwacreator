@@ -275,6 +275,7 @@ public:
     static int getNumberFromQString(const QString &xString);
 
     bool fileUsedByAnotherAsset(RwaAsset1 *asset2Delete);
+    qint32 refreshAssetFileProperties();
     void copyAssetFile2Project(RwaAsset1 *asset);
     bool adjust2UniqueSceneNameRecursively(RwaScene *newScene);
     void adjust2UniqueSceneName(RwaScene *newScene);

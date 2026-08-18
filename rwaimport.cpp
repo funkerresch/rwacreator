@@ -1,6 +1,4 @@
 #include "rwaimport.h"
-#include <tag.h>
-#include <fileref.h>
 
 RwaImport::RwaImport(QObject *parent, QList<RwaScene *> *scenes, QString projectPath)
     :QObject(parent)
@@ -560,8 +558,6 @@ void RwaImport::readAssets()
     double lat;
 
     int32_t type;
-    int32_t channels = 0;
-    int32_t length = 0;
 
     while (!xml.atEnd())
     {
@@ -715,25 +711,12 @@ void RwaImport::readAssets()
                 if(xml.attributes().hasAttribute("fixeddistance"))
                     item->setFixedDistance(xml.attributes().value("fixeddistance").toInt());
 
-                // TagLib is the source of truth for channel count and duration;
-                // the channelcount/duration XML attributes are only written, never
-                // read back. Pd patches have neither, they stay at 0.
-                channels = 0;
-                length = 0;
-
-                if(type != RWAASSETTYPE_PD)
-                {
-                    TagLib::FileRef f(path.toStdString().c_str());
-
-                    if(!f.isNull() && f.audioProperties())
-                    {
-                        channels = f.audioProperties()->channels();
-                        length = f.audioProperties()->lengthInMilliseconds();
-                    }
-                }
-
-                item->setNumberOfChannels(channels);
-                item->setDuration(length);
+                // The file is the source of truth for channel count, duration and
+                // sample rate; the channelcount/duration XML attributes are only
+                // written, never read back. Pd patches and missing files keep the
+                // defaults (all 0). Runs after crossfadetime, since the duration
+                // recalculates fadeOutAfter from it.
+                item->refreshFileProperties();
 
                 readChannelPositions(item);
                 readReflectionPositions(item);

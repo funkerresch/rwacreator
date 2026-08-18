@@ -12,6 +12,8 @@
 #include "rwaasset1.h"
 #include <qdebug.h>
 #include <quuid.h>
+#include <tag.h>
+#include <fileref.h>
 
 RwaAsset1::RwaAsset1(const std::string &data, std::vector<double> gps, qint32 type, const string uid)
     : RwaLocation1()
@@ -810,6 +812,36 @@ void RwaAsset1::setDuration(const int64_t &value)
 {
     duration = value;
     setFadeOutAfter(duration-getCrossfadeTime());
+}
+
+/**
+  Re-reads duration, channel count and sample rate from the audio file.
+  @return true if one of the three values actually changed.
+*/
+
+bool RwaAsset1::refreshFileProperties()
+{
+    if(type == RWAASSETTYPE_PD)
+        return false;
+
+    TagLib::FileRef f(fullPath.c_str());
+
+    if(f.isNull() || !f.audioProperties())
+        return false;
+
+    int32_t newDuration = f.audioProperties()->lengthInMilliseconds();
+    int32_t newChannels = f.audioProperties()->channels();
+    int32_t newSampleRate = f.audioProperties()->sampleRate();
+
+    bool changed = (newDuration != duration)
+                || (newChannels != numberOfChannels)
+                || (newSampleRate != originalSampleRate);
+
+    setNumberOfChannels(newChannels);
+    setOriginalSampleRate(newSampleRate);
+    setDuration(newDuration); // recalculates fadeOutAfter
+
+    return changed;
 }
 
 

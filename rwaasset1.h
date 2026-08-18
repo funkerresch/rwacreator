@@ -227,6 +227,8 @@ public:
     int64_t getDuration() const;
     void setDuration(const int64_t &value);
 
+    bool refreshFileProperties();
+
     int64_t getFadeOutAfter() const;
     void setFadeOutAfter(const int64_t &value);
 

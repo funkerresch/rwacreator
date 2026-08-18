@@ -800,6 +800,8 @@ void RwaCreator::setupMenuBar()
 
 void RwaCreator::write1(QString writeMessage, qint32 flags, QString newCompleteFilePath)
 {
+    backend->refreshAssetFileProperties();
+
     QString path = RwaUtilities::getPath(newCompleteFilePath);
     QFile file(newCompleteFilePath);
     if(file.exists())

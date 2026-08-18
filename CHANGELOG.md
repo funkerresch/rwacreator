@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Audio files edited outside the Creator (trimmed, resampled, converted two
+  mono, etc.) no longer leave a stale length behind. Duration, channel count and
+  sample rate were read from the file exactly twice: when a game is loaded and
+  when an asset is dropped in. From then on those values were cached in the
+  model until the project was reopened.
+
+  Consequence: The loop playback broke. The duration drives `fadeOutAfter` and
+  with it the crossfade the runtime schedules in Pd, and it is written to the
+  `.rwa`, where the Player reads it verbatim (`RwaImport.swift`).
+
+  - New `RwaAsset1::refreshFileProperties()` re-reads all three values from the
+    file and reports whether anything changed. It replaces the three duplicated
+    TagLib blocks in `rwaimport.cpp`, `rwastateview.cpp` and `rwaassetlist.cpp`.
+
+  - New `RwaBackend::refreshAssetFileProperties()` runs it over every asset of
+    the game and logs each file whose properties changed, and a warning when a
+    crossfade time is now longer than the file.
+
+  - Called from `RwaCreator::write1()`, whenever save, save-as, "copy project",
+    export-for-Player or export-zip is triggered, so every written `.rwa`
+    carries the correct file durations. The per-edit undo snapshots do not go
+    through it and stay untouched. When changing assets, save the project to
+    integrate those changes.
+
 ## [v1.4.9] - 2026-08-18
 
 ### Added

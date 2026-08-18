@@ -958,6 +958,52 @@ bool RwaBackend::fileUsedByAnotherAsset(RwaAsset1 *asset2Delete)
     return false;
 }
 
+/**
+  Re-reads the audio properties of all assets from disk.
+
+  The Creator caches duration, channel count and sample rate when a project is
+  loaded and when an asset is added, and doesn't look at the files again. Editing
+  an asset outside the app (trimming, resampling, convert to mono) requires
+  an update to prevent the model from becoming stale.
+
+  @return the number of assets whose properties changed.
+*/
+
+qint32 RwaBackend::refreshAssetFileProperties()
+{
+    qint32 numberOfChangedAssets = 0;
+
+    foreach(RwaScene *scene, scenes)
+    {
+        foreach(RwaState *state, scene->states)
+        {
+            foreach(RwaAsset1 *asset, state->assets)
+            {
+                int64_t oldDuration = asset->getDuration();
+
+                if(!asset->refreshFileProperties())
+                    continue;
+
+                numberOfChangedAssets++;
+                QString fileName = QString::fromStdString(asset->getFileName());
+
+                if(asset->getDuration() != oldDuration)
+                    qInfo() << "Asset file changed on disk:" << fileName << "is now"
+                            << asset->getDuration() << "ms, was" << oldDuration << "ms.";
+                else
+                    qInfo() << "Asset file changed on disk:" << fileName;
+
+                if(asset->getCrossfadeTime() > asset->getDuration())
+                    qWarning() << "Crossfade time of" << fileName << "("
+                               << asset->getCrossfadeTime() << "ms ) is longer than the file ("
+                               << asset->getDuration() << "ms ).";
+            }
+        }
+    }
+
+    return numberOfChangedAssets;
+}
+
 void RwaBackend::adjust2UniqueStateName(RwaScene *targetScene, RwaState *newState)
 {
     while(adjust2UniqueStateNameRecursively(targetScene, newState));

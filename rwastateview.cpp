@@ -1,7 +1,5 @@
 #include "rwastateview.h"
 #include <QScrollArea>
-#include <tag.h>
-#include <fileref.h>
 
 RwaStateView::RwaStateView(QWidget* parent, RwaScene *scene, QString name)
 : RwaGraphicsView(parent, scene, name)
@@ -451,23 +449,9 @@ void RwaStateView::addAssetItem(const QString &path, qint32 type)
 {
     if(currentState)
     {
-        TagLib::FileRef f(path.toStdString().c_str());
-        int channels = 0;
-        int length = 0;
-        int sampleRate = 0;
-
-        if(!f.isNull() && f.audioProperties())
-        {
-            channels = f.audioProperties()->channels();
-            length = f.audioProperties()->lengthInMilliseconds();
-            sampleRate = f.audioProperties()->sampleRate();
-        }
-
         string uid = std::string(QUuid::createUuid().toString().toLatin1());
         RwaAsset1 *newItem = new RwaAsset1(path.toStdString(), currentState->getCoordinates(), type, uid);
-        newItem->setDuration(length);
-        newItem->setNumberOfChannels(channels);
-        newItem->setOriginalSampleRate(sampleRate);
+        newItem->refreshFileProperties();
         currentState->addAsset(newItem);
         currentState->setLastTouchedAsset(newItem);
         emit sendCurrentState(currentState);

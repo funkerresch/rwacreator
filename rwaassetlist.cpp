@@ -1,8 +1,6 @@
 #include "rwaassetlist.h"
 
 #include <QFile>
-#include <tag.h>
-#include <fileref.h>
 
 struct PlaybackBadge { QString icon; QString label; };
 
@@ -123,12 +121,8 @@ void RwaAssetList::setAssetBadges(QListWidgetItem *item, RwaAsset1 *asset)
 
     if(!isPatch && !fileMissing)
     {
-        if(asset->getOriginalSampleRate() == 0) // asset loaded from a .rwa, read the file once and cache
-        {
-            TagLib::FileRef f(asset->getFullPath().c_str());
-            if(!f.isNull() && f.audioProperties())
-                asset->setOriginalSampleRate(f.audioProperties()->sampleRate());
-        }
+        if(asset->getOriginalSampleRate() == 0) // never read (the file was missing when the project was loaded)
+            asset->refreshFileProperties();
 
         if(asset->getOriginalSampleRate() > 0 && asset->getOriginalSampleRate() != backend->getSampleRate())
         {
