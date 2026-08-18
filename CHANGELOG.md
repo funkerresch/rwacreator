@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.4.9] - 2026-08-18
+
 ### Added
 
 - `pd_externals/rwa-lib`: Pd Externals that RWA Creator and Player embed
@@ -20,27 +22,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     its `vas` libdir. `make install` puts the library in `~/Library/Pd/rwa`; add
     that folder *itself* to Pd's search path, next to the entries for `vas` and
     for Creator's `puredata/` resources.
+  
   - Reachable from CMake as the `pd-externals` and `pd-externals-install`
     targets, which just drive that makefile. Neither is part of `ALL`.
+  
   - `make check-upstream` diffs `oggread~.c` against the pristine pdogg source
     vendored at `pd-extra/pd/externals/pdogg/`, which is verified byte-identical
     to pd-l2ork master (the last place pdogg is still published: 0.25.1, 2011,
     no upstream git). Our copy is a fork: `start` takes a seek offset in seconds
     and the end-of-file bang is deferred by 1000 ms.
+  
   - `make check-symbols` catches a source file missing from the build, which on
     macOS is not a link error but a `dlopen` failure at load time.
+  
   - `oggread~-help.pd` moved into the library from `build/`, and installs with
     test samples beside it.
 
 ### Changed
 
-- Pooled non-ogg playback Pd patches now apply equal-power crossfades when
-  looping.
+- All pooled playback Pd patches now apply equal-power crossfades when looping
+  (except the ones that are currently not implemented: `rwaplayermonobrir1.pd`
+  and `rwabinauralwrappermono.pd`).
 
 ### Fixed
 
-- Rewrite of all non-ogg playback Pd patches: Through the investigations
-  for previous bugs a few new ones became visible:
+- Rewrite of all pooled playback Pd patches. Through the investigations for
+  previous bugs (background/fallback start inconsistencies) a few new ones
+  became visible:
 
   - Crossfade and Fade-in were applied simultaneously at the beginning of
     playback. Fixed by separating the initial start bang from the activation of
@@ -60,7 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     division-by-zero for the same reasons.
   
   - Both patches didn't receive `$0-smoothdistance`, and defaulted to 10 ms
-    ramps. Now they accept the attribute they now do.
+    ramps. Now they accept the attribute value set in RWA Creator.
 
   - Thinned out some of the redundant left/right/multichannel scaling further
     down the dsp chain.
@@ -70,15 +78,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The prebuilt `build/oggread~.pd_darwin` is no longer checked in. It was the
   output of `pd_xcodeOggObjects/oggread.xcodeproj`; `pd_externals/rwa-lib`
   replaces that workflow and its output is ignored by git.
+
 - The simulation of ground-reflections in the binaural playback patches sounded
   unrealistic at close proximity. The attempt to trim it when getting really
   close to a sound source did not produce satisfying results. We decided to
   remove the feature from the patches and park it in `ground-reflections.pd`
   next to the pooled patches in `puredata`, both the original and the trimmed
   version. Add them back in if you like.
+
 - `freeverb~.h` in the repo root, which was an unreferenced copy of
   `rwapdextra~.h` (same include guard, same two `*_tilde_setup()` declarations)
   under a name suggesting it belonged to `freeverb~.c`, which never included it.
+
 - left-over test patches and externals from `build/` directory. The `oggread~`
   helpfile and example content now lives in `pd_externals/rwa-lib`.
 
