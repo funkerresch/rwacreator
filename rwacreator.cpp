@@ -265,7 +265,7 @@ void RwaCreator::closeEvent(QCloseEvent *event)
     // Ignoring the event keeps the window open, and Qt (6.x) also cancels an
     // application quit (Cmd+Q, Quit menu, Dock) whose window close was refused.
     // On a quit the question has usually been asked already, see eventFilter().
-    if(!closeConfirmed && isDocumentModified() && !maybeSave())
+    if(!closeConfirmed && isDocumentModified() && !maybeSave(tr("closing")))
         event->ignore();
     else
         event->accept();
@@ -302,16 +302,18 @@ void RwaCreator::markDocumentSaved()
 
 bool RwaCreator::isDocumentModified()
 {
+    if(savedDocumentFingerprint.isEmpty())   // no game loaded yet (startup)
+        return false;
     return documentFingerprint() != savedDocumentFingerprint;
 }
 
-bool RwaCreator::maybeSave()
+bool RwaCreator::maybeSave(const QString &before)
 {
     QString name = backend->projectName.isEmpty() ? tr("Untitled") : backend->projectName;
     const QMessageBox::StandardButton ret
         = QMessageBox::warning(this, tr("RWA Creator"),
                                tr("The project \"%1\" has unsaved changes.\n"
-                                  "Do you want to save them before closing?").arg(name),
+                                  "Do you want to save them before %2?").arg(name, before),
                                QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel,
                                QMessageBox::Save);
     switch (ret) {
@@ -343,7 +345,7 @@ bool RwaCreator::eventFilter(QObject *obj, QEvent *event)
         // close button, which then quits), it has asked and been answered.
         if(event->type() == QEvent::Quit && isVisible() && isDocumentModified())
         {
-            if(!maybeSave())
+            if(!maybeSave(tr("quitting")))
             {
                 event->ignore();
                 return true;
@@ -1087,6 +1089,10 @@ qint32 RwaCreator::open(QString fileName, bool throwDialogue)
     if (fullpath.isEmpty() || fullpath.isNull())
         return 0;
 
+    // Before touching the file: a "Save" here may rewrite the very file about to be opened.
+    if(isDocumentModified() && !maybeSave(tr("opening another project")))
+        return 0;
+
     QFile file(fullpath);
 
     if (!file.open(QFile::ReadOnly | QFile::Text))
@@ -1159,7 +1165,9 @@ void RwaCreator::emptyTmpDirectories()
 
 void RwaCreator::newProject()
 {
-    qDebug();
+    if(isDocumentModified() && !maybeSave(tr("creating a new project")))
+        return;
+
     undoCounter = 0;
     emptyTmpDirectories();
     backend->reset();

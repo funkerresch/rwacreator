@@ -32,6 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     project opens the save dialogue; cancelling that keeps the app open too,
     since nothing was written.
 
+  - *New* and *Open* ask the same question before they replace a modified
+    project. Until now they threw unsaved changes away silently. The question
+    names the pending action ("before quitting / opening another project /
+    creating a new project"). Never asked at startup, when no project is loaded
+    yet.
+
 - Audio files edited outside the Creator (trimmed, resampled, converted two
   mono, etc.) no longer leave a stale length behind. Duration, channel count and
   sample rate were read from the file exactly twice: when a game is loaded and

@@ -229,38 +229,35 @@ private:
 
     void emptyTmpDirectories();
 
-/**
- * @brief Asks whether the modified game should be saved before it is closed. <br>
- * @return false if the user cancelled (or a chosen save did not happen), <br>
- * true if the game was saved or the changes were discarded. <br>
- * Called from closeEvent() only when isDocumentModified() says so.
- */
+    /**
+    * @brief Asks whether the modified game should be saved before it is replaced or closed.
+    * @param before Names the pending action in the question ("closing", "opening another project", ...).
+    * @return false if the user cancelled (or a chosen save did not happen),
+    *         true  if the game was saved or the changes were discarded.
+    * Called before quit/close, Open and New, only when isDocumentModified() says so.
+    */
+    bool maybeSave(const QString &before);
 
-    bool maybeSave();
-
-/**
- * @brief Content hash of the game currently in memory. <br>
- * The game is serialised with RWAEXPORT_CONTENTONLY (no selection, no map
- * zoom) into a buffer and SHA-256 hashed. Two calls return the same value
- * exactly when nothing that would go into the .rwa has changed.
- */
-
+    /**
+    * @brief Content hash of the game currently in memory.
+    * The game is serialised with RWAEXPORT_CONTENTONLY (no selection, no map
+    * zoom) into a buffer and SHA-256 hashed. Two calls return the same value
+    * exactly when nothing that would go into the .rwa has changed.
+    */
     QByteArray documentFingerprint();
 
-/**
- * @brief Remembers the current content as the saved reference. <br>
- * Called after every successful load and write of the project file, and
- * after a project reset, so that isDocumentModified() compares against
- * what is on disk (or against the pristine new project).
- */
-
+    /**
+    * @brief Remembers the current content as the saved reference.
+    * Called after every successful load and write of the project file, and
+    * after a project reset, so that isDocumentModified() compares against what
+    * is on disk (or against the pristine new project).
+    */
     void markDocumentSaved();
 
-/**
- * @brief True if the game differs from the last loaded/saved reference. <br>
- * Undoing back to the saved content counts as unmodified again.
- */
-
+    /**
+    * @brief True if the game differs from the last loaded/saved reference.
+    * Undoing back to the saved content counts as unmodified again.
+    */
     bool isDocumentModified();
 
 /**
