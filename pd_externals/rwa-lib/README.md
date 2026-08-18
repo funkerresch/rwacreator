@@ -89,6 +89,16 @@ and then behave differently. To see the current delta:
 make check-upstream
 ```
 
+## The help patch and its samples
+
+`oggread~-help.pd` is installed with four sound files next to it, two pairs of
+the same material in both forms:
+
+| | compressed | uncompressed |
+| --- | --- | --- |
+| mono, 44.1 kHz | `alligator-mono.ogg` | `alligator-mono.aif` |
+| stereo, 48 kHz | `belbbirds-stereo.ogg` | `belbbirds-stereo.wav` |
+
 ## Verifying a build
 
 On macOS externals link with a flat namespace: Pd's symbols are resolved out of

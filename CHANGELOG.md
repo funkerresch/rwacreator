@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     and the end-of-file bang is deferred by 1000 ms.
   - `make check-symbols` catches a source file missing from the build, which on
     macOS is not a link error but a `dlopen` failure at load time.
+  - `oggread~-help.pd` moved into the library from `build/`, and installs with
+    test samples beside it.
 
 ### Changed
 
@@ -77,6 +79,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `freeverb~.h` in the repo root, which was an unreferenced copy of
   `rwapdextra~.h` (same include guard, same two `*_tilde_setup()` declarations)
   under a name suggesting it belonged to `freeverb~.c`, which never included it.
+- left-over test patches and externals from `build/` directory. The `oggread~`
+  helpfile and example content now lives in `pd_externals/rwa-lib`.
 
 ## [v1.4.8] - 2026-08-14
 

@@ -155,7 +155,11 @@ endef
 datafiles = \
     rwa-meta.pd \
     README.md \
-    $(ROOT)/build/oggread~-help.pd
+    oggread~-help.pd \
+    alligator-mono.ogg \
+    alligator-mono.aif \
+    belbbirds-stereo.ogg \
+    belbbirds-stereo.wav
 
 PDLIBBUILDER_DIR = $(ROOT)/pd-lib-builder/
 include $(PDLIBBUILDER_DIR)/Makefile.pdlibbuilder
