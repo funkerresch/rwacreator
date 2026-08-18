@@ -9,12 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Pooled mono- and stereo playback Pd patches now apply equal-power crossfades
-  when looping.
+- Pooled non-ogg playback Pd patches now apply equal-power crossfades when
+  looping.
 
 ### Fixed
 
-- Rewrite of mono- and stereo playback Pd patches: Through the investigations
+- Rewrite of all non-ogg playback Pd patches: Through the investigations
   for previous bugs a few new ones became visible:
 
   - Crossfade and Fade-in were applied simultaneously at the beginning of
@@ -37,8 +37,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Both patches didn't receive `$0-smoothdistance`, and defaulted to 10 ms
     ramps. Now they accept the attribute they now do.
 
-  - Thinned out some of the redundant left/right scaling further down the dsp
-    chain.
+  - Thinned out some of the redundant left/right/multichannel scaling further
+    down the dsp chain.
+
+### Removed
+
+- The simulation of ground-reflections in the binaural playback patches sounded
+  unrealistic at close proximity. The attempt to trim it when getting really
+  close to a sound source did not produce satisfying results. We decided to
+  remove the feature from the patches and park it in `ground-reflections.pd`
+  next to the pooled patches in `puredata`, both the original and the trimmed
+  version. Add them back in if you like.
 
 ## [v1.4.8] - 2026-08-14
 
