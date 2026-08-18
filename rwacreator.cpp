@@ -27,6 +27,8 @@
 #include <QDialog>
 #include <QVBoxLayout>
 #include <QTimer>
+#include <QBuffer>
+#include <QCryptographicHash>
 #include <qdebug.h>
 #include <unistd.h>
 #include "rwainputdialog.h"
@@ -65,6 +67,7 @@ RwaCreator::RwaCreator(QWidget *parent)
     QObject::connect(QApplication::instance(), SIGNAL(aboutToQuit()),this, SLOT(cleanUpBeforeQuit()));
     QObject::connect(backend->simulator, SIGNAL(sendAudioDevicesChanged()), this, SLOT(receiveAudioDevicesChanged()));
     this->installEventFilter(this);
+    QApplication::instance()->installEventFilter(this); // for QEvent::Quit, see eventFilter()
 
     setCentralWidget(backend);
     createInitFolder();
@@ -259,9 +262,15 @@ void RwaCreator::addHistoryView()
 
 void RwaCreator::closeEvent(QCloseEvent *event)
 {
-    (void) event;
-    maybeSave();
-    qDebug();
+    // Ignoring the event keeps the window open, and Qt (6.x) also cancels an
+    // application quit (Cmd+Q, Quit menu, Dock) whose window close was refused.
+    // On a quit the question has usually been asked already, see eventFilter().
+    if(!closeConfirmed && isDocumentModified() && !maybeSave())
+        event->ignore();
+    else
+        event->accept();
+
+    closeConfirmed = false;
 }
 
 void RwaCreator::cleanUpBeforeQuit()
@@ -275,25 +284,47 @@ void RwaCreator::cleanUpBeforeQuit()
     backend->clearScenes();
 }
 
-/** *************************** Currently maybeSave is always called on quitting RWA ********************************* */
+/** ********************************* Modified check and save-before-close dialogue *********************************** */
+
+QByteArray RwaCreator::documentFingerprint()
+{
+    QBuffer buffer;
+    buffer.open(QIODevice::WriteOnly);
+    RwaExport writer(nullptr, QString(), QString(), RWAEXPORT_CONTENTONLY);
+    writer.writeFile(&buffer);
+    return QCryptographicHash::hash(buffer.data(), QCryptographicHash::Sha256);
+}
+
+void RwaCreator::markDocumentSaved()
+{
+    savedDocumentFingerprint = documentFingerprint();
+}
+
+bool RwaCreator::isDocumentModified()
+{
+    return documentFingerprint() != savedDocumentFingerprint;
+}
 
 bool RwaCreator::maybeSave()
 {
+    QString name = backend->projectName.isEmpty() ? tr("Untitled") : backend->projectName;
     const QMessageBox::StandardButton ret
-        = QMessageBox::warning(this, tr("Application"),
-                               tr("The document has been modified.\n"
-                                  "Do you want to save your changes?"),
-                               QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+        = QMessageBox::warning(this, tr("RWA Creator"),
+                               tr("The project \"%1\" has unsaved changes.\n"
+                                  "Do you want to save them before closing?").arg(name),
+                               QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel,
+                               QMessageBox::Save);
     switch (ret) {
     case QMessageBox::Save:
         save();
+        // save() may not have written anything: the user can cancel the file dialogue
+        // of a never-saved project, or the write can fail. Then closing would lose the changes.
+        return !isDocumentModified();
+    case QMessageBox::Discard:
         return true;
-    case QMessageBox::Cancel:
-        return false;
     default:
-        break;
+        return false;
     }
-    return true;
 }
 
 /** ***************************** Event filter calls resize events to the graphic views ******************************** */
@@ -302,6 +333,25 @@ bool RwaCreator::eventFilter(QObject *obj, QEvent *event)
 {
     QDockWidget *myWidget;
     RwaGraphicsView *myView;
+
+    if(obj == QApplication::instance())
+    {
+        // Application quit (Cmd+Q, Quit menu, Dock, logout). Qt handles it by closing every top-level
+        // window in turn and gives up on the first refusal, so if the main window were left to ask
+        // in its closeEvent(), floating views closed before it would stay hidden after a Cancel.
+        // Ask here, before any window is touched. If the main window is already closed (window
+        // close button, which then quits), it has asked and been answered.
+        if(event->type() == QEvent::Quit && isVisible() && isDocumentModified())
+        {
+            if(!maybeSave())
+            {
+                event->ignore();
+                return true;
+            }
+            closeConfirmed = true;   // saved or discarded, closeEvent() must not ask again
+        }
+        return false;
+    }
 
     if (event->type() == QEvent::Resize)
     {
@@ -798,7 +848,7 @@ void RwaCreator::setupMenuBar()
 
 /** ************************************ Writing and export functionality ******************************************** */
 
-void RwaCreator::write1(QString writeMessage, qint32 flags, QString newCompleteFilePath)
+bool RwaCreator::write1(QString writeMessage, qint32 flags, QString newCompleteFilePath)
 {
     backend->refreshAssetFileProperties();
 
@@ -808,19 +858,20 @@ void RwaCreator::write1(QString writeMessage, qint32 flags, QString newCompleteF
         file.remove();
 
     if (!file.open(QFile::WriteOnly | QFile::Text)) {
-        QMessageBox::warning(this, tr("QXmlStream Bookmarks"),
+        QMessageBox::warning(this, tr("RWA Creator"),
                              tr("Cannot write file %1:\n%2.")
                              .arg(newCompleteFilePath)
                              .arg(file.errorString()));
-        return;
+        return false;
     }
 
     RwaExport writer(this, backend->completeProjectPath, path, flags);
-    if (writer.writeFile(&file))
-    {
-        if(!writeMessage.isEmpty())
-            statusBar()->showMessage(writeMessage, 2000);
-    }
+    if (!writer.writeFile(&file))
+        return false;
+
+    if(!writeMessage.isEmpty())
+        statusBar()->showMessage(writeMessage, 2000);
+    return true;
 }
 
 void RwaCreator::prepareWrite1(QString fullpath, int flags)  // fullpath is /RWACreator/Games/test/test.rwa
@@ -935,7 +986,7 @@ void RwaCreator::exportProject()
   for a new game and for the first save of a game which has never been written to disk.
   Only the title of the file dialogue differs, so that it names what the user asked for.
 */
-void RwaCreator::exportProjectAs(const QString &dialogTitle)
+bool RwaCreator::exportProjectAs(const QString &dialogTitle)
 {
     qint32 flags = 0;
     flags |= RWAEXPORT_COPYASSETS
@@ -947,7 +998,7 @@ void RwaCreator::exportProjectAs(const QString &dialogTitle)
                                          tr("RWA Files (*.rwa *.xml)"));
 
     if(fullpath.isEmpty())
-        return;
+        return false;
 
     QString fileName = RwaUtilities::getFileName(fullpath);            // for example test.rwa
     QString directory = RwaUtilities::getFileBaseName(fileName);        // test
@@ -959,7 +1010,7 @@ void RwaCreator::exportProjectAs(const QString &dialogTitle)
         QDir().mkdir(fullDirectory);
 
     prepareWrite1(fullDirectory, flags);
-    write1("Saved full project to new folder", flags, fullpath);
+    bool written = write1("Saved full project to new folder", flags, fullpath);
     QString path = RwaUtilities::getPath(fullpath);
     backend->completeProjectPath = fullDirectory;
     backend->completeFilePath = fullpath;
@@ -968,6 +1019,9 @@ void RwaCreator::exportProjectAs(const QString &dialogTitle)
     undoCounter = 0;
     emit sendReadNewGame();
     writeUndo("Init Game");
+    if(written)
+        markDocumentSaved();
+    return written;
 }
 
 void RwaCreator::saveAs()
@@ -983,7 +1037,8 @@ void RwaCreator::saveAs()
         return;
 
     backend->completeFilePath = fullpath;
-    write1("File saved", flags, fullpath);
+    if(write1("File saved", flags, fullpath))
+        markDocumentSaved();
     QString projectName = RwaUtilities::getFileName(fullpath);
     QStringList pieces = projectName.split( "." );
     projectName = pieces.first();
@@ -993,11 +1048,16 @@ void RwaCreator::saveAs()
 
 void RwaCreator::save()
 {
+    bool saved;
     if(backend->completeFilePath.isEmpty())
-        exportProjectAs(tr("Save RWA Project"));
+        saved = exportProjectAs(tr("Save RWA Project"));   // marks the document saved itself
     else
-      write1("File saved", 0, backend->completeFilePath);
+        saved = write1("File saved", 0, backend->completeFilePath);
 
+    if(!saved)   // file dialogue cancelled or write failed (write1 already warned)
+        return;
+
+    markDocumentSaved();
     setWindowTitle(backend->projectName + " Successfully saved");
     QTimer::singleShot(2000, [this]{setWindowTitle(backend->projectName);});
 }
@@ -1068,6 +1128,7 @@ qint32 RwaCreator::open(QString fileName, bool throwDialogue)
         undoCounter = 0;
         emit sendReadNewGame();
         writeUndo("Init Game");
+        markDocumentSaved();
     }
 
     return 1;
@@ -1102,6 +1163,7 @@ void RwaCreator::newProject()
     undoCounter = 0;
     emptyTmpDirectories();
     backend->reset();
+    markDocumentSaved(); // a pristine new project is nothing to be asked about, even if the dialogue below is cancelled
     setWindowTitle("Not saved");
     exportProjectAs(tr("New RWA Project"));
 }

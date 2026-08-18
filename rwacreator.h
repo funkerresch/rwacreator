@@ -135,25 +135,27 @@ private:
     qint32 headtrackerSerialPortIndex = -1;
     bool allViewsLoaded = false;
     quint32 undoCounter = 0;
+    QByteArray savedDocumentFingerprint;   // content hash of the game as last loaded/saved, see markDocumentSaved()
+    bool closeConfirmed = false;           // save-or-discard already answered for the quit in progress
 
-/**
- * @brief Implemented for RwaCreator for debugging purposes. Currently not in use. <br>
- * @param event The QShowEvent to be handled. <br>
- * Implemented for RwaCreator for debugging purposes. Currently not in use. <br>
- * Could do something with show events of all RWA views
- */
-
+    /**
+    * @brief Implemented for RwaCreator for debugging purposes. Currently not in use.
+    * @param event The QShowEvent to be handled.
+    * Could do something with show events of all RWA views.
+    */
     void showEvent(QShowEvent *event);
 
-/**
- * @brief Implemented as Callback for Resizing Events.<br>
- * @param event The QEvent to be handled. <br>
- * @param obj The QObject sending the event. <br>
- * @return Returns QWidget::eventFilter(obj, event) <br>
- * The eventFilter is installed in order to handle resize <br>
- * events of the main window. The MapViews' mapController must <br>
- * be resized manually here.
- */
+    /**
+    * @brief Implemented as Callback for Resizing Events.
+    * @param event The QEvent to be handled.
+    * @param obj The QObject sending the event.
+    * @return Returns QWidget::eventFilter(obj, event)
+    *
+    * The eventFilter is installed in order to handle resize events of the main
+    * window. The MapViews' mapController must be resized manually here. It is also
+    * installed on the application object, where it catches QEvent::Quit and asks
+    * about unsaved changes before Qt starts closing windows (see closeEvent()).
+    */
     bool eventFilter(QObject *obj, QEvent *event);
 
 /** **************************************** Main application menu ****************************************** */
@@ -228,13 +230,38 @@ private:
     void emptyTmpDirectories();
 
 /**
- * @brief Asks if the game should be saved. <br>
- * @return Returns 1 if the game was successfully saved <br>
- * Currently always called on quitting the RWACreator application. <br>
- * A pop-up dialogue asks the user, if she wants to save the game.
+ * @brief Asks whether the modified game should be saved before it is closed. <br>
+ * @return false if the user cancelled (or a chosen save did not happen), <br>
+ * true if the game was saved or the changes were discarded. <br>
+ * Called from closeEvent() only when isDocumentModified() says so.
  */
 
     bool maybeSave();
+
+/**
+ * @brief Content hash of the game currently in memory. <br>
+ * The game is serialised with RWAEXPORT_CONTENTONLY (no selection, no map
+ * zoom) into a buffer and SHA-256 hashed. Two calls return the same value
+ * exactly when nothing that would go into the .rwa has changed.
+ */
+
+    QByteArray documentFingerprint();
+
+/**
+ * @brief Remembers the current content as the saved reference. <br>
+ * Called after every successful load and write of the project file, and
+ * after a project reset, so that isDocumentModified() compares against
+ * what is on disk (or against the pristine new project).
+ */
+
+    void markDocumentSaved();
+
+/**
+ * @brief True if the game differs from the last loaded/saved reference. <br>
+ * Undoing back to the saved content counts as unmodified again.
+ */
+
+    bool isDocumentModified();
 
 /**
  * @brief Helper function for saving/exporting RWA games. <br>
@@ -250,10 +277,11 @@ private:
  * @param writeMessage Message to appear in the Main Window. <br>
  * @param flags Enables to configure for save, export or export for client. <br>
  * @param newCompleteFilePath Complete file path and name of the game to be saved. <br>
+ * @return true if the file was written. <br>
  * Depending on the flags: save, saveas, export, export for client <br>
  */
 
-    void write1(QString writeMessage, qint32 flags, QString newCompleteFilePath);
+    bool write1(QString writeMessage, qint32 flags, QString newCompleteFilePath);
 
 /**
  * @brief Converts menu index to integer & string sample rate  <br>
@@ -408,9 +436,11 @@ private slots:
  * The implementation behind exportProject(), new() and the first save()
  * of an unsaved game - they only differ in what the file dialogue is
  * called, so that its title says what the user is actually doing.
+ * @return true if the project was written, false if the dialogue was
+ * cancelled or the write failed.
  */
 
-    void exportProjectAs(const QString &dialogTitle);
+    bool exportProjectAs(const QString &dialogTitle);
 
 /**
  * @brief Exports (copies) a project for a mobile client. <br>
@@ -603,19 +633,20 @@ private slots:
 /** ******************************* Save app settings and clean up before quit**************************************** */
 
 /**
- * @brief Callback when application is closed. <br>
+ * @brief Callback when the main window is closed (window close button, Cmd+Q, Quit). <br>
  * @param event The QCloseEvent.
- * The function gets called when the RWACreator <br>
- * is closed (on quit). Currently it does nothing.
+ * Accepts the close when the game is unmodified or the question was already <br>
+ * answered for this quit (eventFilter()). Otherwise maybeSave() asks; Cancel <br>
+ * (or a save that did not happen) ignores the event, which also cancels an <br>
+ * application quit, since Qt closes all windows before quitting.
  */
 
     void closeEvent(QCloseEvent *event);
 
 /**
  * @brief Cleans up before quitting. <br>
- * The function is called when the user is <br>
- * closing the RWACreator. It stops the simulation <br>
- * deletes tmp directories and throws a save dialogue. <br>
+ * Connected to QApplication::aboutToQuit(), i.e. it only runs once the <br>
+ * quit is definite. It stops the simulation and empties the tmp directories. <br>
  */
 
     void cleanUpBeforeQuit();

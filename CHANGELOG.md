@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The save-on-quit dialogue. It used to appear on every quit, whether or not
+  anything had changed, and *Cancel* did not cancel: `closeEvent()` ignored
+  the answer and the application quit regardless.
+
+  - The Creator now knows whether the game is modified. It serialises the game
+    in memory with the same `RwaExport` that writes the `.rwa` (new flag
+    `RWAEXPORT_CONTENTONLY`, which leaves out the selection attributes
+    `currentscene`/`currentstate`/`currentAsset` and the per-scene/state map
+    `zoom`, i.e. view state that is saved along but is no edit) and compares a
+    SHA-256 of that against the one taken at the last load, save, "copy project
+    to", or project reset. So: open a game, look around, zoom, click through
+    scenes, quit: no dialogue. Undoing back to the saved content counts as
+    unmodified again. Everything that ends up in the file counts as a change,
+    including edits that never wrote an undo snapshot.
+
+  - The dialogue only appears for a modified game, names the project, defaults
+    to *Save*, and *Cancel* now keeps the app open. Two hooks: `closeEvent()`
+    ignores the close event (window close button), and an event filter on the
+    application catches `QEvent::Quit` (Cmd+Q, Quit menu, Dock, logout) and
+    vetoes it before Qt starts closing windows. Choosing *Save* on a never-saved
+    project opens the save dialogue; cancelling that keeps the app open too,
+    since nothing was written.
+
 - Audio files edited outside the Creator (trimmed, resampled, converted two
   mono, etc.) no longer leave a stale length behind. Duration, channel count and
   sample rate were read from the file exactly twice: when a game is loaded and

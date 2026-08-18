@@ -22,6 +22,8 @@ RwaExport::RwaExport(QObject *parent, QString originalProjectPath, QString newPr
     this->path = originalProjectPath;
     this->copyAssets = false;
     this->newProjectPath = newProjectPath;
+    this->flags = flags;
+    this->contentOnly = RWAEXPORT_CONTENTONLY & flags;
 
     xml.setAutoFormatting(true);
 
@@ -40,10 +42,13 @@ bool RwaExport::writeFile(QIODevice *device)
     xml.writeStartElement("rwa");
     xml.writeAttribute("version", "1.0");
     xml.writeStartElement("game");
-    if(backend->getLastTouchedScene())
-        xml.writeAttribute("currentscene",  QString::fromStdString(backend->getLastTouchedScene()->objectName()));
-    else
-        xml.writeAttribute("currentscene",  QString::fromStdString(backend->getSceneAt(0)->objectName()));
+    if(!contentOnly)
+    {
+        if(backend->getLastTouchedScene())
+            xml.writeAttribute("currentscene",  QString::fromStdString(backend->getLastTouchedScene()->objectName()));
+        else if(backend->getNumberOfScenes() > 0)
+            xml.writeAttribute("currentscene",  QString::fromStdString(backend->getSceneAt(0)->objectName()));
+    }
 
     xml.writeEndElement();
 
@@ -145,12 +150,13 @@ void RwaExport::writeAssetItem1(RwaAsset1 *item)
 void RwaExport::writeState(RwaState *state)
 {
     xml.writeStartElement("state");
-    if(state->getLastTouchedAsset())
+    if(!contentOnly && state->getLastTouchedAsset())
         xml.writeAttribute("currentAsset", QString::fromStdString(state->getLastTouchedAsset()->objectName()));
     xml.writeAttribute("name", QString::fromStdString(state->objectName()));
     xml.writeAttribute("type", QString::number(state->getType()));
     xml.writeAttribute("areatype", QString::number(state->getAreaType()));
-    xml.writeAttribute("zoom", QString::number(state->getZoom()));
+    if(!contentOnly)
+        xml.writeAttribute("zoom", QString::number(state->getZoom()));
     xml.writeAttribute("assetsfollowstate", QString::number(state->childrenDoFollowMe()));
     xml.writeAttribute("defaultplaybacktype", QString::number(state->getDefaultPlaybackType()));
     xml.writeAttribute("lockposition", QString::number(state->positionIsLocked()));
@@ -231,12 +237,13 @@ void RwaExport::writeState(RwaState *state)
 void RwaExport::writeScene(RwaScene *scene)
 {
     xml.writeStartElement("scene");
-    if(scene->lastTouchedState)
+    if(!contentOnly && scene->lastTouchedState)
         xml.writeAttribute("currentstate", QString::fromStdString(scene->lastTouchedState->objectName()));
     xml.writeAttribute("name", QString::fromStdString(scene->objectName()));
     xml.writeAttribute("lon", QString::number(scene->getCoordinates()[0], 'f', 8));
     xml.writeAttribute("lat", QString::number(scene->getCoordinates()[1], 'f', 8));
-    xml.writeAttribute("zoom", QString::number(scene->getZoom()));
+    if(!contentOnly)
+        xml.writeAttribute("zoom", QString::number(scene->getZoom()));
     xml.writeAttribute("numberofstates", QString::number(scene->getStates().size()));
     xml.writeAttribute("areatype", QString::number(scene->getAreaType()));
     xml.writeAttribute("radius", QString::number(scene->getRadius()));
