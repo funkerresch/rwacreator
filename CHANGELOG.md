@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Shift+double-click on an asset in the asset list opens the file in the OS
+  default application: Pd for patches, the default audio app for sound files
+  (ocenaudio recommended). Plain double-click still renames. A missing file or a
+  missing default handler is reported as a warning in the Log View.
+
 ### Fixed
 
 - File dialogues now start in the last folder a project was opened from or

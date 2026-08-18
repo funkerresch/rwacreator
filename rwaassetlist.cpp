@@ -224,6 +224,37 @@ void RwaAssetList::mousePressEvent(QMouseEvent *event)
     setCurrentAssetFromCurrentItem();
 }
 
+void RwaAssetList::mouseDoubleClickEvent(QMouseEvent *event)
+{
+    // Shift+double-click opens the asset in the OS default application;
+    // plain double-click keeps the inline rename (edit trigger in RwaListView).
+    if(event->button() == Qt::LeftButton && (event->modifiers() & Qt::ShiftModifier))
+    {
+        // itemAt() rather than currentItem(): the shift-press extended the selection.
+        QListWidgetItem *item = itemAt(event->position().toPoint());
+        if(item && currentState)
+            openAssetExternally(currentState->getAsset(item->text().toStdString()));
+        event->accept();
+        return;
+    }
+    QListWidget::mouseDoubleClickEvent(event);
+}
+
+void RwaAssetList::openAssetExternally(RwaAsset1 *asset)
+{
+    if(!asset)
+        return;
+
+    QString path = QString::fromStdString(asset->getFullPath());
+    if(!QFile::exists(path))
+    {
+        qWarning() << "Asset file missing:" << path;
+        return;
+    }
+    if(!QDesktopServices::openUrl(QUrl::fromLocalFile(path)))
+        qWarning() << "No default application to open" << path;
+}
+
 void RwaAssetList::keyPressEvent(QKeyEvent *event)
 {
     QListWidget::keyPressEvent(event);
