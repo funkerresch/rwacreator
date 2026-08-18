@@ -188,6 +188,10 @@ int main(int argc, char *argv[])
                                          &pdMutex, nullptr);
     runtime->entities = std::list<RwaEntity *>{entity};
 
+    // deterministic trace: the "<tag>-seed" init value is a platform-RNG draw in
+    // production, pin it here (the engine sends 1 + (source & 0xFFFFFE), i.e. 1)
+    RwaRuntime::seedSource = []{ return 0u; };
+
     RwaScene *startScene = scenes.front();
     for(RwaScene *scene : scenes)
     {

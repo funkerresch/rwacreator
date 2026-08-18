@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `<tag>-seed` init value for Pd patches: every activation now sends a fresh random
+  seed (`RwaRuntime::sendInitValues2pd`, right before `-play`) so Pd asset patches
+  can reseed `[random]` and friends.
+  The value is a `QRandomGenerator::global()` draw kept in `1..2^24-1` so it survives
+  the float32 conversion exactly. Patches that don't bind the receiver are unaffected.
+
+  - Source is injectable (`RwaRuntime::seedSource`); `rwatrace` pins it so traces
+    always show `-seed 1` and stay deterministic.
+  
+  - Player parity: mirrored in `rwa-player` (`RwaGameLoop`) in the same change, but
+    intentionally *not* value-for-value: each engine draws from its own platform
+    RNG.
+
 - Hierarchical gain for mixing: scenes and states now have a gain of their own,
   next to the existing asset gain. The three are cumulative, Pd receives `scene
   gain * state gain * asset gain` on `<tag>-gain` (`RwaRuntime::effectiveGain()`),

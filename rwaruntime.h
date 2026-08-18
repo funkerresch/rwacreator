@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <mutex>
+#include <functional>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -32,7 +33,10 @@
 
 #ifdef QT_VERSION
 #include <QDebug>
+#include <QRandomGenerator>
 class RwaBackend;
+#else
+#include <random>
 #endif
 
 #define RWARUNTIME_MAXNUMBEROFPATCHERS 40
@@ -83,6 +87,11 @@ RwaRuntime(QObject *parent, const char *pdpath, const char *assetPath, float sam
     static bool logSim;
     static bool logPd;
     static float pdSampleRate; // sample rate of the pd patches (48 kHz), distinct from the device rate passed to the ctor
+
+    // Source of the "<tag>-seed" init value (see sendInitValues2pd).
+    // Defaults to the platform RNG; the headless trace harness installs a
+    // constant so traces stay deterministic.
+    static std::function<uint32_t()> seedSource;
 
     static bool debug;
     static std::list<RwaEntity *> entities;

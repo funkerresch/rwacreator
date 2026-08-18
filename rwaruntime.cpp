@@ -24,6 +24,12 @@ bool RwaRuntime::logPd = false;
 float RwaRuntime::pdSampleRate = 48000;
 
 #ifdef QT_VERSION
+std::function<uint32_t()> RwaRuntime::seedSource = []{ return QRandomGenerator::global()->generate(); };
+#else
+std::function<uint32_t()> RwaRuntime::seedSource = []{ static std::random_device rd; return rd(); };
+#endif
+
+#ifdef QT_VERSION
 #define INIT_LIBPD_QUEUED
 RwaRuntime::RwaRuntime(QObject *parent, const char *pdpath, const char *assetPath, float sampleRate, float schedulerRate, mutex *pdMutex, RwaBackend *_backend) :
     QObject(parent)
@@ -994,6 +1000,14 @@ void RwaRuntime::sendInitValues2pd(RwaAsset1 *asset, int patcherTag)
      sprintf(pdReceiver, "%d-playheadposition", patcherTag);
      pdMutex->lock();
      libpd_float(pdReceiver, asset->playheadPosition);
+     pdMutex->unlock();
+
+     // fresh seed per activation for [random] etc. in Pd asset patches
+     // Kept within 24 bits and non-zero so it
+     // survives the float32 conversion exactly.
+     sprintf(pdReceiver, "%d-seed", patcherTag);
+     pdMutex->lock();
+     libpd_float(pdReceiver, (float)(1 + (seedSource() & 0xFFFFFE)));
      pdMutex->unlock();
 
      fullAssetPath << assetPath << asset->fileName;

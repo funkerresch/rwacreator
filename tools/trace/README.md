@@ -48,6 +48,10 @@ trace's `-play` events and input echoes.
   scene/state transition after each tick.
 - `{"ev":"input",…}` — echo of applied scenario inputs.
 
+The `<tag>-seed` init value is a platform-RNG draw in production; the harness pins
+`RwaRuntime::seedSource` so it is always `1` (the Player's `ScenarioTraceRunner`
+does the same), keeping traces deterministic.
+
 ## Purpose
 
 Golden-trace differential testing against the iOS Player (`rwa-client`),

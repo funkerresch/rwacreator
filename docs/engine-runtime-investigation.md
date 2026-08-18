@@ -93,8 +93,14 @@ end position, loop-until-end (`-end` bang), auto-stop of non-looping assets at
 `-assetlon -assetlat -samplerate -numchannels -dampingfunction -dampingfactor
 -dampingtrim -dampingmin -dampingmax -smoothdist -offset -loop -fadeintime
 -fadeouttime -crossfadetime -crossfadeafter -firstcrossfade
--playheadposition`, then
+-playheadposition -seed`, then
 `libpd_symbol("<tag>-play", <full asset path>)` loads and starts the file.
+
+`-seed` is a new platform-RNG draw per activation, `1 + (rng & 0xFFFFFE)` so it
+is exact in float32. It exists because Pd's `[random]` seeds from a fixed constant,
+every launch replays the same sequence unless the patch
+reseeds. Both engines draw independently (a *wanted* divergence, see §5); the trace harnesses pin
+`RwaRuntime::seedSource` / `RwaGameLoop.seedSource` so the trace shows `-seed 1`.
 
 ### Stop / release
 
@@ -149,6 +155,7 @@ Verified in source on both sides:
 | 4 | Background assets w/o state | serviced regardless (rwaruntime.cpp:1285 comment) | `sendData2ActiveAssets` early-returns if `currentState == nil` **or** `activeAssets.isEmpty` (RwaGameLoop.swift:1369-1375) — background assets then get no data | background audio starves on iOS in fallback-disabled scenes / empty states |
 | 5 | Patcher pools | 40 + 4×5ch + 4×7ch | 30 (+15 stereo etc.) | exhaustion behavior differs |
 | 6 | Latent C++ quirk | `backend->sampleRate` hardcoded 48000 used in `sendInitValues2pd`/playhead math while ctor receives the real device rate (rwaruntime.cpp:809, 846, 1243-1252) | n/a | wrong playhead/offset math on 44.1 kHz devices |
+| 7 | `-seed` init value | `QRandomGenerator::global()` | `UInt32.random` | **intended**: values differ per engine and per run, real randomness preferred over parity. Both harnesses pin the source so traces show `-seed 1`; diff by receiver only |
 
 ## 6. Sync strategy: golden-trace differential testing
 
