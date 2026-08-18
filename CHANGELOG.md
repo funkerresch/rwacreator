@@ -108,6 +108,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `isDocumentModified()` twice since 91de6f6 (the header did not compile from
     a clean checkout); the duplicate block is gone.
 
+- Map tile cache: Related to the undo bugs described above: When launching RWA
+  creator in the debugger the History View listed `build/cmake-debug` and map
+  tiles were written in there. The patched qmapcontrol `ImageManager` starts
+  with persistent caching *on* and its cache dir at `"."`, and the Creator only
+  redirected it on `newGameLoaded`, so every tile fetched between map-view
+  construction and the first loaded game landed in the working directory (the
+  base64-named files in `build/cmake-debug`). New `RwaBackend::tileCachePath()`
+  (project `tilecache/`, or the scratch one while unsaved) is applied in the
+  `RwaGraphicsView` constructor before the first tile request, on
+  `newGameLoaded` and on `projectPathsChanged`.
+
+
 ## [v1.4.9] - 2026-08-18
 
 ### Added

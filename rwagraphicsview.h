@@ -59,6 +59,8 @@ public slots:
     void setEntityCoordinates2CurrentState();
     void setTool(qint32 tool);
     void initNewGame();
+    /** Points the map tile cache at the current project (or the scratch folder while unsaved). */
+    void updateTileCache();
 
     void redrawAssets();
     void redrawAssetsOfCurrentState();

@@ -34,6 +34,7 @@ RwaGraphicsView::RwaGraphicsView(QWidget *parent, RwaScene *scene, QString name)
     zoomOutButton->setStyleSheet(rwaButtonStyleSheet);
 
     mc = new MapControl(QSize(250,250), MapControl::MouseMode::Panning, this);
+    updateTileCache(); // before the first tile request: the map widget's default cache dir is the working directory
     mapadapter = new OSMMapAdapter();
     l = new MapLayer("Custom Layer", mapadapter);
     mc->addLayer(l);
@@ -86,6 +87,7 @@ RwaGraphicsView::RwaGraphicsView(QWidget *parent, RwaScene *scene, QString name)
     mc->setZoom(18);
     mapCoordinates = (QPointF(8.26,50));
     connect(backend, SIGNAL(newGameLoaded()), this, SLOT(initNewGame()));
+    connect(backend, SIGNAL(projectPathsChanged()), this, SLOT(updateTileCache()));
 }
 
 void RwaGraphicsView::setMap2AreaZoomLevel(RwaArea *area)
@@ -147,10 +149,14 @@ void RwaGraphicsView::setCurrentAsset(RwaAsset1 *asset)
     updateReflectionPixmaps();
 }
 
+void RwaGraphicsView::updateTileCache()
+{
+    mc->enablePersistentCache(QDir(backend->tileCachePath()));
+}
+
 void RwaGraphicsView::initNewGame()
 {
-    QDir tilecache(backend->completeProjectPath + "/tilecache");
-    mc->enablePersistentCache(tilecache);
+    updateTileCache();
     entityLayer->clearGeometries();
     entityInitialized = false;
 }

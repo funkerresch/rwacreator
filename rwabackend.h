@@ -169,6 +169,12 @@ public slots:
     void clearScenes();
     void reset();
 
+    /**
+     * Where the map widget may cache tiles: the project's tilecache folder, or
+     * the per-user cache location while no project folder is set. Never a
+     * relative path, so tiles cannot end up in the working directory.
+     */
+    QString tileCachePath() const;
     /** Scratch project folder (undo, tmp, assets, tilecache) used while a new project is not saved yet. */
     QString unsavedProjectPath() const;
 
