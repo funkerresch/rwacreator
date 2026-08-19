@@ -170,7 +170,10 @@ void RwaSimulator::initGandalf()
 void RwaSimulator::receiveUndoGameLoaded()
 {
     qDebug() << "SIMULATOR: received undo signal";
-    runtime->entities.front()->scenes = std::list(backend->getScenes().begin(), backend->getScenes().end());
+    // The simulation was stopped by clearScenes() before the reload (entity reset,
+    // patchers released); only the scene list still points at the deleted objects.
+    if(!runtime->entities.empty())
+        runtime->entities.front()->scenes = std::list(backend->getScenes().begin(), backend->getScenes().end());
 }
 
 void RwaSimulator::receiveNewGameSignal()

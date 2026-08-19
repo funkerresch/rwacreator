@@ -234,8 +234,12 @@ void RwaBackend::receiveReadNewGame()
 
 void RwaBackend::receiveReadUndoFile(QString name)
 {
+    bool wasRunning = simulator->isSimulationRunning();
     emit readUndoFile(name);
     updateLastTouchedSceneStateAndAsset();
+    emit undoGameLoaded();
+    if(wasRunning)
+        simulator->startRwaSimulation();
 }
 
 /** ******* Receives Undo Action as String from Editors and send signal to RwaCreator.c ******** **/
@@ -524,6 +528,9 @@ void RwaBackend::clearScene(RwaScene *scene)
 
 void RwaBackend::clearScenes()
 {
+    if(simulator && simulator->isSimulationRunning())
+        simulator->stopRwaSimulationNow();
+
     foreach(RwaScene *scene, scenes)
         scene->clear();
 

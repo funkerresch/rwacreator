@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.5.1] - 2026-08-19
+
+### Fixed
+
+- Undo (or redo, or opening another project) while the simulation was running
+  crashed on the next game tick. `RwaBackend::clearScenes()` deletes every
+  state and asset before the undo snapshot is re-imported, but the simulator
+  was not told (`undoGameLoaded` was declared and never emitted) and kept
+  dereferencing the freed assets in `sendData2Asset()`. `clearScenes()` now
+  stops a running simulation synchronously first (patchers are released while
+  the assets still exist, the entity is reset), and an undo/redo that
+  interrupted a running simulation restarts it on the reloaded game from the
+  selected scene.
+
 ## [v1.5.0] - 2026-08-19
 
 ### Added
