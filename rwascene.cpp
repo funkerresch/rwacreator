@@ -275,14 +275,12 @@ std::list <RwaState *> &RwaScene::getStates()
 
 RwaState * RwaScene::getState(string stateName)
 {
-    RwaState *state = nullptr;
-    foreach(state, this->states)
+    foreach(RwaState *state, this->states)
     {
         if(state->objectName() == stateName)
-            break;
+            return state;
     }
-    return state;
-
+    return nullptr;
 }
 
 void RwaScene::setCurrentState(string stateName)

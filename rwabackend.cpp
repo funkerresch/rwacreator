@@ -369,6 +369,37 @@ QList<RwaScene *>& RwaBackend::getScenes()
     return scenes;
 }
 
+void RwaBackend::validateRequiredStates()
+{
+    foreach(RwaScene *scene, scenes)
+    {
+        foreach(RwaState *state, scene->getStates())
+        {
+            foreach(const std::string &requiredName, state->getRequiredStates())
+            {
+                QStringList foundInScenes;
+                foreach(RwaScene *candidateScene, scenes)
+                {
+                    if(candidateScene->getState(requiredName))
+                        foundInScenes.append(QString::fromStdString(candidateScene->objectName()));
+                }
+
+                if(foundInScenes.isEmpty())
+                    qWarning() << "State" << QString::fromStdString(state->objectName())
+                               << "in scene" << QString::fromStdString(scene->objectName())
+                               << "requires state" << QString::fromStdString(requiredName)
+                               << "which does not exist in any scene.";
+                else if(foundInScenes.count() > 1)
+                    qWarning() << "State" << QString::fromStdString(state->objectName())
+                               << "in scene" << QString::fromStdString(scene->objectName())
+                               << "requires state" << QString::fromStdString(requiredName)
+                               << "which exists in multiple scenes (" << foundInScenes.join(", ")
+                               << "); visiting any of them will satisfy the requirement.";
+            }
+        }
+    }
+}
+
 RwaScene *RwaBackend::getFirstScene()
 {
     return scenes.first();
@@ -433,6 +464,8 @@ void RwaBackend::newSceneFromSelectedStates()
     foreach (QString name, currentlySelectedStates)
     {
         RwaState *state = lastTouchedScene->getState(name.toStdString());
+        if(!state)
+            continue;
         RwaState *newState = new RwaState(state->objectName());
         state->copyAttributes(newState);
         newState->setScene(newScene);
@@ -612,6 +645,8 @@ void RwaBackend::copySelectedStates2Clipboard()
     foreach (QString name, currentlySelectedStates)
     {
         RwaState *state = lastTouchedScene->getState(name.toStdString());
+        if(!state)
+            continue;
         RwaState *newState = new RwaState(state->objectName());
         state->copyAttributes(newState);
         clipboardStates->getStates().push_back(newState);

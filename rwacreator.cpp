@@ -1184,6 +1184,7 @@ qint32 RwaCreator::open(QString fileName, bool throwDialogue)
     else
     {
         statusBar()->showMessage(tr("File loaded"), 2000);
+        backend->validateRequiredStates();
         undoCounter = 0;
         emit sendReadNewGame();
         writeUndo("Init Game");

@@ -1,0 +1,12 @@
+{
+  "schema": "rwa-scenario/1",
+  "description": "Cross-scene required state, unmet: hero skips KeyState in Scene 0, walks straight to Scene 1 and stands in Door's area. Door requires KeyState (Scene 0) and must NOT be entered.",
+  "game": "scenechange/crossscene-required.rwa",
+  "startScene": "Scene 0",
+  "durationMs": 12000,
+  "timeline": [
+    { "t": 0,     "pos": { "lon": 7.58600000, "lat": 47.57700000 } },
+    { "t": 5000,  "pos": { "lon": 7.59000000, "lat": 47.57700000 } },
+    { "t": 8000,  "pos": { "lon": 7.59030000, "lat": 47.57700000 } }
+  ]
+}

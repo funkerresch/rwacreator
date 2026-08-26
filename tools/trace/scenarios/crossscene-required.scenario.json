@@ -1,0 +1,13 @@
+{
+  "schema": "rwa-scenario/1",
+  "description": "Cross-scene required state, satisfied: hero visits KeyState in Scene 0, walks to Scene 1 and enters Door, whose required state KeyState lives in Scene 0. Door must be entered.",
+  "game": "scenechange/crossscene-required.rwa",
+  "startScene": "Scene 0",
+  "durationMs": 12000,
+  "timeline": [
+    { "t": 0,     "pos": { "lon": 7.58600000, "lat": 47.57700000 } },
+    { "t": 2000,  "pos": { "lon": 7.58630000, "lat": 47.57700000 } },
+    { "t": 5000,  "pos": { "lon": 7.59000000, "lat": 47.57700000 } },
+    { "t": 8000,  "pos": { "lon": 7.59030000, "lat": 47.57700000 } }
+  ]
+}

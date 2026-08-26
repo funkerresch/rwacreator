@@ -149,6 +149,7 @@ public slots:
 
     RwaScene *getLastTouchedScene();
     QList<RwaScene *> &getScenes();
+    void validateRequiredStates();
     RwaScene *getFirstScene();
     RwaScene *getSceneAt(qint32 sceneNumber);
     qint32 getNumberOfScenes();

@@ -128,6 +128,11 @@ state.
    hysteresis.
 2. `requiredStates ⊆ visitedStates` — else entry is blocked
    (`blockUntilRadiusHasBeenLeft`) and an optional `hintState` is routed to.
+   `visitedStates` is a flat, game-wide list of state *names* on the entity
+   (never cleared on scene change), so required states may reference states of
+   **any** scene, but duplicate state names across scenes will make any
+   requirement referring to that name match. The Creator's attribute view warns
+   on unknown/ambiguous names. `hintState` remains scene-scoped in both engines.
 3. `enterOnlyOnce` respected against `visitedStates`.
 4. On enter: `sendEnd2activeAssets`, set current state, append to
    `visitedStates`, `unblockAssets`, reset state timer.
@@ -156,6 +161,8 @@ Verified in source on both sides:
 | 5 | Patcher pools | 40 + 4×5ch + 4×7ch | 30 (+15 stereo etc.) | exhaustion behavior differs |
 | 6 | Latent C++ quirk | `backend->sampleRate` hardcoded 48000 used in `sendInitValues2pd`/playhead math while ctor receives the real device rate (rwaruntime.cpp:809, 846, 1243-1252) | n/a | wrong playhead/offset math on 44.1 kHz devices |
 | 7 | `-seed` init value | `QRandomGenerator::global()` | `UInt32.random` | **intended**: values differ per engine and per run, real randomness preferred over parity. Both harnesses pin the source so traces show `-seed 1`; diff by receiver only |
+| 8 | `blockUntilRadiusHasBeenLeft` re-check after required-state loop | only consulted in the outer enter condition (rwaruntime.cpp:1530); the required-state failure path sets it during the same iteration | additionally re-checks the flag *after* the required-state loop (`RwaGameLoop.swift` ~:1002) and forces `enterConditionsFulfilled = false` | under some orderings C++ can still enter a state in the same tick where Swift cannot |
+| 9 | Blocking on unmet required states | sets `blockUntilRadiusHasBeenLeft` unconditionally on an unmet requirement (rwaruntime.cpp:1543), hint state or not | sets it only inside the `hintState != ""` branch (`RwaGameLoop.swift` ~:989) | without a hint state, the Player re-evaluates (and re-fails) the state every pass instead of blocking until the area is left |
 
 ## 6. Sync strategy: golden-trace differential testing
 

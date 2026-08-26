@@ -98,7 +98,8 @@ void RwaStateList::setCurrentStateFromCurrentListItem()
         if(currentItem())
         {
             state = currentScene->getState(currentItem()->text().toStdString());
-            emit sendCurrentState(state);
+            if(state)
+                emit sendCurrentState(state);
         }
     }
 }

@@ -1,5 +1,7 @@
 #include "rwastateattributeview.h"
 
+#include <QDebug>
+
 RwaStateAttributeView::RwaStateAttributeView(QWidget *parent, RwaScene *scene) :
     RwaAttributeView(parent, scene)
 {
@@ -309,7 +311,8 @@ void RwaStateAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
     foreach(QString stateName, selectedStates)
     {
         state = currentScene->getState(stateName.toStdString());
-        state->setAttribute(id, value);
+        if(state)
+            state->setAttribute(id, value);
     }
 
     return;
@@ -333,13 +336,30 @@ void RwaStateAttributeView::receiveLineEditAttributeValue()
 
         foreach(requiredState, requiredStates)
         {
-            foreach(RwaState *state, currentScene->getStates() )
+            QString name = requiredState.trimmed();
+            if(name.isEmpty())
+                continue;
+
+            QStringList foundInScenes;
+            foreach(RwaScene *scene, backend->getScenes())
             {
-                if(!requiredState.trimmed().compare(QString::fromStdString(state->objectName())))
+                foreach(RwaState *state, scene->getStates())
                 {
-                    currentState->requiredStates.push_back(state->objectName());
+                    if(!name.compare(QString::fromStdString(state->objectName())))
+                    {
+                        foundInScenes.append(QString::fromStdString(scene->objectName()));
+                        break;
+                    }
                 }
             }
+
+            if(foundInScenes.isEmpty())
+                qWarning() << "Required state" << name << "does not exist in any scene.";
+            else if(foundInScenes.count() > 1)
+                qWarning() << "Required state" << name << "exists in multiple scenes ("
+                           << foundInScenes.join(", ") << "); visiting any of them will satisfy the requirement.";
+
+            currentState->requiredStates.push_back(name.toStdString());
         }
 
         emit sendWriteUndo("State edited: "+ senderName);

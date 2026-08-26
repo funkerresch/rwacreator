@@ -1708,6 +1708,11 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
         {
             qDebug() << "auto next state";
             RwaState *nextState = entity->getCurrentScene()->getState(state->getNextState());
+            if(!nextState)
+            {
+                qWarning() << "Next state" << QString::fromStdString(state->getNextState()) << "not found in current scene.";
+                return;
+            }
             unblockAssets(nextState);
             entity->setCurrentState(nextState);
             entity->setTimeInCurrentState(0);

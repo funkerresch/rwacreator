@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- The "Required States" field now accepts state names from any scene, not only
+  the state's own scene. Names are now stored as entered, and the editor warns
+  in the Log View when a name does not exist in any scene or exists in several
+  (duplicate names will let all corresponding requirements match, keep state
+  names unique when using required states). The same validation runs once after
+  a game is loaded (`RwaBackend::validateRequiredStates`), surfacing stale
+  references in existing games.
+- `RwaScene::getState()` returned the last state of the scene instead of
+  `nullptr` when the name was not found, so a hint or next state that does not
+  exist in the current scene silently activated an other state. It now returns
+  `nullptr`; all callers null-guard (unknown next states log a warning and fall
+  through). The Player's `RwaScene.getState` had the matching flavor of the bug
+  (returned a fresh empty `RwaState`) and was fixed the same way. Two
+  pre-existing parity divergences in the required-state blocking path were
+  documented in `docs/engine-runtime-investigation.md` (rows 8 and 9), not
+  changed.
+
 ## [v1.5.2] - 2026-08-20
 
 ### Fixed
