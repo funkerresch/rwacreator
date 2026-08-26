@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.3] - 2026-08-27
+
 ### Fixed
 
 - The "Required States" field now accepts state names from any scene, not only
