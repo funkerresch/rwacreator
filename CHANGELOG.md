@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Decode the binary heading characteristic: rtk-rover >= 0.46.0 sends head
+  orientation as a 16 B binary frame on 713d0005. DeviceHandler now branches on
+  the characteristic UUID: binary frames are decoded (quaternion ->
+  azimuth/elevation, kept identical with rwa-player). ASCII from RWAHT stays as
+  is; anything else is ignored, notably the RTK raw position on 713d0004, which
+  the old catch-all parsed as heading garbage. Both formats funnel into the same
+  calibration / step-detection path in RwaHeadtrackerConnect. Subscribed CCCDs
+  are now all tracked, so disconnect unsubscribes every characteristic instead
+  of only the last one discovered.
+
 ## [1.5.3] - 2026-08-27
 
 ### Fixed

@@ -60,6 +60,8 @@ signals:
 
 private slots:
     void receiveHeadtrackerData(const QString &data);
+    void receiveHeadtrackerSample(float azimuthDeg, float elevationDeg,
+                                  float linAccelZ);
     void unblockSteps();
 };
 

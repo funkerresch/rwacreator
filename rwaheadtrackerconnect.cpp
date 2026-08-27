@@ -25,10 +25,14 @@ RwaHeadtrackerConnect::RwaHeadtrackerConnect(QObject *parent) : QObject(parent)
     m_handler = new DeviceHandler(this);
     m_finder = new DeviceFinder(m_handler, this);
 
-    // The handler forwards every notification from the headtracker
-    // characteristic as a raw ASCII string, which we parse below.
+    // The handler dispatches per characteristic: decoded binary samples
+    // from an RTK headtracker (713d0005), raw ASCII strings from an RWAHT
+    // headtracker (713d0002). Both funnel into the same calibration /
+    // step-detection path below.
     connect(m_handler, &DeviceHandler::headtrackerDataReceived,
             this, &RwaHeadtrackerConnect::receiveHeadtrackerData);
+    connect(m_handler, &DeviceHandler::headtrackerSampleReceived,
+            this, &RwaHeadtrackerConnect::receiveHeadtrackerSample);
 
     headTrackerOrientation = std::vector<float>(3, 0.0);
     headTrackerOffset = std::vector<float>(3, 0.0);
@@ -139,6 +143,24 @@ void RwaHeadtrackerConnect::detectStep(float linAccelZ)
          }
      }
  }
+
+void RwaHeadtrackerConnect::receiveHeadtrackerSample(float azimuthDeg, float elevationDeg,
+                                                     float linAccelZ)
+{
+    std::vector<float> receivedOrientation = {azimuthDeg, elevationDeg, 0.0f};
+
+    if(RwaBackend::getInstance()->logOther) {
+        qInfo() << "BLE heading (azimuth/elevation):"
+                << azimuthDeg << "/" << elevationDeg << "(binary)";
+    }
+
+    detectStep(linAccelZ);
+
+    if(calibrationCounter)
+        collectCalibrationData(headTrackerOffset, receivedOrientation, calibrationCounter);
+    else
+        calculatedOrientation(receivedOrientation);
+}
 
 void RwaHeadtrackerConnect::receiveHeadtrackerData(const QString &data)
 {

@@ -31,8 +31,14 @@
 ****************************************************************************/
 
 // Adapted from the Qt "Heart Rate Game" example for the RWA headtracker:
-// connects to the RWA BLE service and forwards its notify characteristic
-// (an ASCII text payload) as-is via headtrackerDataReceived().
+// connects to the RWA BLE service (713d0000) and forwards heading data,
+// dispatched per characteristic:
+//   713d0005 (rtk-rover >= 0.46.0): 16 B binary frame, decoded here and
+//            emitted as headtrackerSampleReceived(azimuth, elevation, accel)
+//   713d0002 (RWAHT): legacy ASCII text, emitted raw via
+//            headtrackerDataReceived()
+//   anything else (e.g. the RTK raw position on 713d0004) is ignored - it
+//            used to be mis-parsed as heading.
 
 #ifndef DEVICEHANDLER_H
 #define DEVICEHANDLER_H
@@ -68,9 +74,15 @@ public:
 
 signals:
     void aliveChanged();
-    // Emitted for every notification from the headtracker characteristic.
-    // The payload is the raw ASCII string ("azimuth elevation linAccelZ").
+    // Emitted for every ASCII notification from an RWAHT headtracker
+    // (713d0002). The payload is the raw string
+    // ("azimuth elevation linAccelZ").
     void headtrackerDataReceived(const QString &data);
+    // Emitted for every decoded binary heading frame from an RTK
+    // headtracker (713d0005, rtk-rover >= 0.46.0). Degrees / m/s^2,
+    // calibration offsets not yet applied.
+    void headtrackerSampleReceived(float azimuthDeg, float elevationDeg,
+                                   float linAccelZ);
 
 public slots:
     void disconnectService();
@@ -89,7 +101,9 @@ private:
 
     QLowEnergyController *m_control = nullptr;
     QLowEnergyService *m_service = nullptr;
-    QLowEnergyDescriptor m_notificationDesc;
+    // Every CCCD subscribed on the RWA service; drained one confirmed
+    // unsubscribe at a time in confirmedDescriptorWrite on disconnect.
+    QList<QLowEnergyDescriptor> m_notificationDescs;
     DeviceInfo *m_currentDevice = nullptr;
 
     bool m_foundHeadtrackerService = false;

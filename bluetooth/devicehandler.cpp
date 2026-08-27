@@ -33,10 +33,68 @@
 #include "devicehandler.h"
 #include "deviceinfo.h"
 
+#include <QtMath>
+
 // Custom BLE service exposed by the RWA headtracker (RFduino/Simblee style).
-// Its notify characteristic streams orientation as an ASCII text payload.
 static const QBluetoothUuid rwaServiceUuid(
     QStringLiteral("{713d0000-503e-4c75-ba94-3148f18d941e}"));
+
+// Heading characteristics under that service (PROJECT-PLAN.md §5.1/§5.5):
+// binary frames from rtk-rover >= 0.46.0, ASCII text from the plain RWAHT headtracker.
+// Everything else on the service (e.g. the RTK raw position on 713d0004) is not
+// heading data and must not reach the text parser.
+static const QBluetoothUuid binaryHeadingUuid(
+    QStringLiteral("{713d0005-503e-4c75-ba94-3148f18d941e}"));
+static const QBluetoothUuid asciiHeadingUuid(
+    QStringLiteral("{713d0002-503e-4c75-ba94-3148f18d941e}"));
+
+namespace {
+
+struct HeadingSample {
+    float azimuth;
+    float elevation;
+    float linAccelZ;
+};
+
+// One binary heading frame (713d0005): 16 B little-endian,
+// [seq u16][t_dev_ms u32][qi qj qk qw i16 Q14][linAccelZ i16 cm/s^2].
+// seq/t_dev_ms are decoded nowhere here yet, the Creator has no
+// site to show them yet.
+//
+// The angle math is the §5.5 canonical conversion, kept identical
+// with rwa-player (Device.swift HeadingFrame). The atan2 forms are
+// scale-invariant, so the quantized quaternion needs no normalization.
+bool parseBinaryHeadingFrame(const QByteArray &value, HeadingSample &out)
+{
+    if (value.size() != 16)
+        return false;
+
+    const uchar *b = reinterpret_cast<const uchar *>(value.constData());
+    auto i16 = [b](int o) {
+        return qint16(quint16(b[o]) | quint16(b[o + 1]) << 8);
+    };
+
+    const float q14 = 16384.0f;
+    const float qi = i16(6) / q14;
+    const float qj = i16(8) / q14;
+    const float qk = i16(10) / q14;
+    const float qw = i16(12) / q14;
+
+    float yaw = -std::atan2(2.0f * (qi * qj + qk * qw),
+                            qi * qi - qj * qj - qk * qk + qw * qw)
+                * 180.0f / float(M_PI);
+    if (yaw < 0.0f)
+        yaw += 360.0f;
+
+    out.azimuth = yaw;
+    out.elevation = -std::atan2(2.0f * (qj * qk + qi * qw),
+                                -qi * qi - qj * qj + qk * qk + qw * qw)
+                    * 180.0f / float(M_PI);
+    out.linAccelZ = i16(14) / 100.0f;
+    return true;
+}
+
+} // namespace
 
 DeviceHandler::DeviceHandler(QObject *parent) :
     BluetoothBaseClass(parent)
@@ -118,6 +176,7 @@ void DeviceHandler::serviceScanDone()
     if (m_service) {
         delete m_service;
         m_service = nullptr;
+        m_notificationDescs.clear();  // descriptors died with the service
     }
 
     // If the headtracker service was found, create the service object
@@ -147,7 +206,10 @@ void DeviceHandler::serviceStateChanged(QLowEnergyService::ServiceState s)
         // subscribe by writing 0100 to the CCCD of every characteristic that has
         // one. deliberately do NOT filter on the Notify property flag - the
         // RWA headtracker firmware doesn't always report it, and the old working
-        // code subscribed to every characteristic's CCCD too.
+        // code subscribed to every characteristic's CCCD too. Every subscribed
+        // descriptor is tracked so disconnectService() can unsubscribe them all
+        // (this used to keep only the last one found).
+        m_notificationDescs.clear();
         const QList<QLowEnergyCharacteristic> chars = m_service->characteristics();
         qDebug() << "[BLE debug] RWA service characteristics:" << chars.size();
         for (const QLowEnergyCharacteristic &ch : chars) {
@@ -156,13 +218,13 @@ void DeviceHandler::serviceStateChanged(QLowEnergyService::ServiceState s)
             const QLowEnergyDescriptor cccd = ch.descriptor(
                 QBluetoothUuid::DescriptorType::ClientCharacteristicConfiguration);
             if (cccd.isValid()) {
-                m_notificationDesc = cccd;
+                m_notificationDescs.append(cccd);
                 m_service->writeDescriptor(cccd, QByteArray::fromHex("0100"));
                 qDebug() << "[BLE debug]   -> subscribed (wrote 0100 to CCCD)";
             }
         }
 
-        if (!m_notificationDesc.isValid())
+        if (m_notificationDescs.isEmpty())
             setError("No characteristic with a CCCD found on RWA service.");
 
         break;
@@ -177,17 +239,37 @@ void DeviceHandler::serviceStateChanged(QLowEnergyService::ServiceState s)
 
 void DeviceHandler::handleCharacteristicData(const QLowEnergyCharacteristic &c, const QByteArray &value)
 {
-    Q_UNUSED(c);
-    emit headtrackerDataReceived(QString::fromUtf8(value));
+    if (c.uuid() == binaryHeadingUuid) {
+        HeadingSample sample;
+        if (parseBinaryHeadingFrame(value, sample))
+            emit headtrackerSampleReceived(sample.azimuth, sample.elevation,
+                                           sample.linAccelZ);
+        else
+            qDebug() << "[BLE debug] malformed binary heading frame,"
+                     << value.size() << "bytes";
+        return;
+    }
+
+    if (c.uuid() == asciiHeadingUuid) {
+        emit headtrackerDataReceived(QString::fromUtf8(value));
+        return;
+    }
+
+    // Other subscribed characteristics (the RTK raw position on 713d0004,
+    // future additions) carry no heading and are ignored here.
 }
 
 void DeviceHandler::confirmedDescriptorWrite(const QLowEnergyDescriptor &d, const QByteArray &value)
 {
-    if (d.isValid() && d == m_notificationDesc && value == QByteArray::fromHex("0000")) {
+    if (d.isValid() && m_notificationDescs.contains(d)
+            && value == QByteArray::fromHex("0000")) {
         //disabled notifications -> assume disconnect intent
-        m_control->disconnectFromDevice();
-        delete m_service;
-        m_service = nullptr;
+        m_notificationDescs.removeAll(d);
+        if (m_notificationDescs.isEmpty()) {
+            m_control->disconnectFromDevice();
+            delete m_service;
+            m_service = nullptr;
+        }
     }
 }
 
@@ -196,16 +278,24 @@ void DeviceHandler::disconnectService()
     m_foundHeadtrackerService = false;
 
     //disable notifications
-    if (m_notificationDesc.isValid() && m_service
-            && m_notificationDesc.value() == QByteArray::fromHex("0100")) {
-        m_service->writeDescriptor(m_notificationDesc, QByteArray::fromHex("0000"));
-    } else {
+    bool unsubscribing = false;
+    if (m_service) {
+        for (const QLowEnergyDescriptor &d : std::as_const(m_notificationDescs)) {
+            if (d.isValid() && d.value() == QByteArray::fromHex("0100")) {
+                m_service->writeDescriptor(d, QByteArray::fromHex("0000"));
+                unsubscribing = true;
+            }
+        }
+    }
+    if (!unsubscribing) {
         if (m_control)
             m_control->disconnectFromDevice();
 
         delete m_service;
         m_service = nullptr;
+        m_notificationDescs.clear();
     }
+    // else: confirmedDescriptorWrite disconnects once every 0000 is confirmed.
 }
 
 bool DeviceHandler::alive() const
