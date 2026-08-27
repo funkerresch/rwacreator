@@ -51,6 +51,7 @@ private:
     void collectCalibrationData(std::vector<float> &offsetVector, std::vector<float> &receivedOrientation, uint32_t &counter);
     void calculatedOrientation(std::vector<float> &receivedOrientation);
     void detectStep(float linAccelZ);
+    void logStep(float linAccelZ);
 
 signals:
     void sendAzimuth(float azimuth);

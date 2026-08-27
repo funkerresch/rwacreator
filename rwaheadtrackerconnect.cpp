@@ -125,6 +125,7 @@ void RwaHeadtrackerConnect::detectStep(float linAccelZ)
                  float dif = linAccelZ-averageAccel;
                  if(dif > 0.6f)
                  {
+                     logStep(linAccelZ);
                      emit sendStep();
                      QTimer::singleShot(500, this, SLOT(unblockSteps()));
                      blockSteps = true;
@@ -135,6 +136,7 @@ void RwaHeadtrackerConnect::detectStep(float linAccelZ)
                  float dif = linAccelZ+averageAccel;
                  if(dif > 0.6f)
                  {
+                     logStep(linAccelZ);
                      emit sendStep();
                      QTimer::singleShot(500, this, SLOT(unblockSteps()));
                      blockSteps = true;
@@ -144,14 +146,28 @@ void RwaHeadtrackerConnect::detectStep(float linAccelZ)
      }
  }
 
+// Step events are derived here from linAccelZ (they are not wire data on
+// either heading format), so this is their one log site - shared by the
+// binary and ASCII paths.
+void RwaHeadtrackerConnect::logStep(float linAccelZ)
+{
+    if(RwaBackend::getInstance()->logOther) {
+        qInfo() << "Step detected (linAccelZ" << linAccelZ
+                << ", moving avg" << averageAccel << ")";
+    }
+}
+
 void RwaHeadtrackerConnect::receiveHeadtrackerSample(float azimuthDeg, float elevationDeg,
                                                      float linAccelZ)
 {
     std::vector<float> receivedOrientation = {azimuthDeg, elevationDeg, 0.0f};
 
+    // Payload parity with the ASCII path, which echoes the whole raw string:
+    // the binary frame carries azimuth, elevation and linAccelZ.
     if(RwaBackend::getInstance()->logOther) {
         qInfo() << "BLE heading (azimuth/elevation):"
-                << azimuthDeg << "/" << elevationDeg << "(binary)";
+                << azimuthDeg << "/" << elevationDeg
+                << "(binary, linAccelZ" << linAccelZ << ")";
     }
 
     detectStep(linAccelZ);
