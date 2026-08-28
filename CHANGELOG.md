@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.4] - 2026-08-28
+
 ### Added
 
 - Decode the binary heading characteristic: rtk-rover >= 0.46.0 sends head
