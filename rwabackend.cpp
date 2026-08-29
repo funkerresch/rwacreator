@@ -537,10 +537,11 @@ void RwaBackend::removeScene(RwaScene *scene)
         index = 0;
 
     lastTouchedScene = scenes.at(index);
-    scene->clear();
     lastTouchedState = nullptr;
     lastTouchedAssetItem = nullptr;
     updateLastTouchedSceneStateAndAsset();
+    delete scene;
+
     emit sendWriteUndo("Delete Scene");
 }
 
@@ -652,6 +653,10 @@ void RwaBackend::copySelectedStates2Clipboard()
             continue;
         RwaState *newState = new RwaState(state->objectName());
         state->copyAttributes(newState);
+        // copyAttributes carries myScene over from the source state, which would
+        // dangle once that scene is deleted. The copy belongs to the clipboard
+        // until pasteStatesFromClipboard() gives it its new scene.
+        newState->setScene(clipboardStates);
         clipboardStates->getStates().push_back(newState);
     }
 }

@@ -112,6 +112,9 @@ void RwaSimulator::receiveLastTouchedScene(RwaScene *scene)
         if(entity->getCurrentScene() == scene)
             continue;
         entity->setCurrentScene(scene);
+        // currentState belongs to the scene we are leaving and may be deleted
+        // with it (removeScene); the next start picks a state of the new scene.
+        entity->setCurrentState(nullptr);
         entity->setTimeInCurrentScene(0);
         sendSelectedScene2Devices();
     }
@@ -333,8 +336,10 @@ void RwaSimulator::startRwaSimulation()
     if(!startScene)
         startScene = backend->getScenes().front();
 
-    runtime->unblockStates(entity);
+    // Refresh the snapshot before unblockStates() walks it: scenes deleted since
+    // the last run are still in the old list.
     runtime->entities.front()->scenes = std::list(backend->getScenes().begin(), backend->getScenes().end());
+    runtime->unblockStates(entity);
     runtime->initDynamicPdPatchers(entity);
     runtime->setScene(entity, startScene);
 

@@ -22,6 +22,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `mouseDownArea()`. Refresh the whole selection in both backend paths, carry
   `currentState` with the scene, and null-guard the area functions.
 
+- `removeScene()` leaked the deleted scene: it took it out of `scenes` and only
+  cleared it, so the `RwaScene` (plus the fallback and background states
+  `clear()` re-created in it) stayed allocated for the rest of the session. It
+  is now deleted, after the selection broadcast that makes every view drop its
+  pointer to it. Two pointers that outlived the scene had to be cut first: the
+  simulator's entity kept a `currentState` of the scene it was leaving (now
+  reset in `RwaSimulator::receiveLastTouchedScene`), and `startRwaSimulation()`
+  ran `unblockStates()` over the previous run's scene snapshot before refreshing
+  it (order swapped). Clipboard state copies also inherited `myScene` from their
+  source scene, and now belong to the clipboard scene until they are pasted.
+
 ## [1.5.4] - 2026-08-28
 
 ### Added
