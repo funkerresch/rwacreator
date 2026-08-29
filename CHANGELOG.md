@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Crash (SIGSEGV) when selecting a state after adding a second Map View from the
+  View menu. A second Map View starts with `currentScene = nullptr` and doesn't
+  receive the load-time scene broadcast, so the next state selection crashed in
+  RwaView::setCurrentState. Fall back to the state's own scene and re-broadcast
+  the current selection in `addMapView()`.
+
 ## [1.5.4] - 2026-08-28
 
 ### Added

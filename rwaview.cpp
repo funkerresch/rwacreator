@@ -131,9 +131,16 @@ void RwaView::setCurrentState(RwaState *state)
     if(!state)
         return;
 
+    // set current scene for (secondary) views created after loading a project,
+    // before receiving state selections.
+    if(!currentScene)
+        currentScene = state->getScene();
+
     lastState = currentState;
     currentState = state;
-    currentScene->lastTouchedState = state;
+
+    if(currentScene)
+        currentScene->lastTouchedState = state;
 
     if(currentState->getAssets().size() > 0)
     {

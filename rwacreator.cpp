@@ -197,6 +197,13 @@ void RwaCreator::addMapView() // qt bug: stylesheet is applied only if widget is
     dw->setWindowFlags(Qt::WindowStaysOnTopHint );
     addDockWidget(Qt::TopDockWidgetArea, dw);
     rwaDockWidgets.append(dw);
+
+    if(RwaScene *scene = backend->getLastTouchedScene())
+    {
+        backend->receiveLastTouchedScene(scene);
+        if(scene->lastTouchedState)
+            backend->receiveLastTouchedState(scene->lastTouchedState);
+    }
 }
 
 void RwaCreator::addLogView()
