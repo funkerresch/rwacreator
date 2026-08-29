@@ -177,6 +177,11 @@ void RwaView::setCurrentScene(RwaScene *scene)
     currentScene = scene;
     if(!currentScene->lastTouchedState)
         currentScene->lastTouchedState = currentScene->getStates().front();
+
+    // currentState belonged to the previous scene and may well have been
+    // deleted along with it. Don't keep it across a scene change.
+    currentState = currentScene->lastTouchedState;
+    currentAsset = currentState ? currentState->getLastTouchedAsset() : nullptr;
 }
 
 void RwaView::setCurrentScene(qint32 sceneNumber)

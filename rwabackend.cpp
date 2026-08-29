@@ -538,8 +538,9 @@ void RwaBackend::removeScene(RwaScene *scene)
 
     lastTouchedScene = scenes.at(index);
     scene->clear();
-    emit updateGame();
-    emit sendLastTouchedScene(lastTouchedScene);
+    lastTouchedState = nullptr;
+    lastTouchedAssetItem = nullptr;
+    updateLastTouchedSceneStateAndAsset();
     emit sendWriteUndo("Delete Scene");
 }
 
@@ -556,7 +557,9 @@ void RwaBackend::clearScene(RwaScene *scene)
 {
     scene->clear();
     lastTouchedScene = scene;
-    emit sendLastTouchedScene(lastTouchedScene);
+    lastTouchedState = nullptr;
+    lastTouchedAssetItem = nullptr;
+    updateLastTouchedSceneStateAndAsset();
 }
 
 void RwaBackend::clearScenes()

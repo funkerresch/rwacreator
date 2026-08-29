@@ -15,6 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   RwaView::setCurrentState. Fall back to the state's own scene and re-broadcast
   the current selection in `addMapView()`.
 
+- Crash (SIGSEGV) when clicking the map after deleting or clearing a scene.
+  `RwaScene::clear()` deletes every state of the scene, but `removeScene()` and
+  `clearScene()` only broadcast the scene, and `RwaView::setCurrentScene()`
+  never touched `currentState`, so the next map click passed a freed state to
+  `mouseDownArea()`. Refresh the whole selection in both backend paths, carry
+  `currentState` with the scene, and null-guard the area functions.
+
 ## [1.5.4] - 2026-08-28
 
 ### Added

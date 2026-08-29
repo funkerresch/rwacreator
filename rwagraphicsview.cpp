@@ -588,6 +588,9 @@ void RwaGraphicsView::resizeArea(QPointF myPoint, RwaArea *currentArea)
 
 bool RwaGraphicsView::mouseDownArea(QPointF myPoint, RwaArea *currentArea)
 {
+     if(!currentArea) // no scene/state selected yet, or the selection was deleted
+         return false;
+
      double clickDistance;
      double radiusInPx;
      double bearing;
@@ -687,6 +690,9 @@ bool RwaGraphicsView::mouseDownArea(QPointF myPoint, RwaArea *currentArea)
 
 bool RwaGraphicsView::mouseDoubleClickArea(QPointF myPoint, RwaArea *currentArea)
 {
+    if(!currentArea)
+        return false;
+
     if(currentArea->getAreaType() == RWAAREATYPE_POLYGON)
     {
         std::vector<double> corner(2, 0.0);
