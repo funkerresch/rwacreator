@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.5] - 2026-08-29
+
 ### Fixed
 
 - Crash (SIGSEGV) when selecting a state after adding a second Map View from the
