@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Crash (SIGSEGV) at startup after updating the `libpd` submodule to 0.16.1.
+  `RwaRuntime` set the queued receiver hooks (and the concatenated print hook)
+  before calling `libpd_queued_init()`. Since libpd 0.14 those hooks live in
+  per-instance storage that is only allocated by init, so the first
+  `libpd_set_queued_printhook()` wrote through a null pointer. Init now runs
+  first, then the hooks are installed.
+
 ### Changed
 
 - `libpd` submodule updated to 0.16.1.

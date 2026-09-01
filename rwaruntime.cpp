@@ -47,21 +47,25 @@ RwaRuntime::RwaRuntime(const char *pdpath, const char *assetPath, float sampleRa
     backend = _backend;
 #endif
 
+    // Init first: since libpd 0.14 the hook storage (queued ring buffers, the
+    // print concatenator's buffer) lives in per-instance state that init
+    // allocates, so setting a hook before it writes through a null pointer.
+    //
     // Pd emits a print in pieces ("print", ": ", "1", " ", "2", "\n"); route them
     // through libpd's concatenator so printpd sees one complete line instead of
     // one log entry per symbol plus a trailing empty one.
-    libpd_set_concatenated_printhook (static_cast<t_libpd_printhook>(RwaRuntime::printpd));
-
 #ifdef INIT_LIBPD_QUEUED
+    libpd_queued_init();
+    libpd_set_concatenated_printhook (static_cast<t_libpd_printhook>(RwaRuntime::printpd));
     libpd_set_queued_printhook (libpd_print_concatenator);
     libpd_set_queued_floathook (static_cast<t_libpd_floathook>(RwaRuntime::floatpd));
     libpd_set_queued_banghook (static_cast<t_libpd_banghook>(RwaRuntime::bangpd));
-    libpd_queued_init();
 #else
+    libpd_init();
+    libpd_set_concatenated_printhook (static_cast<t_libpd_printhook>(RwaRuntime::printpd));
     libpd_set_printhook (libpd_print_concatenator);
     libpd_set_floathook (static_cast<t_libpd_floathook>(RwaRuntime::floatpd));
     libpd_set_banghook (static_cast<t_libpd_banghook>(RwaRuntime::bangpd));
-    libpd_init();
 #endif
     // Put the bundled Pd resources on Pd's search path. The FABIAN HRTF set
     // (fabian_dir256.txt, 38 MB) lives there next to the playback patches, so the
