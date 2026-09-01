@@ -41,7 +41,7 @@ void RwaView::writeSplitterLayout()
     if(!windowSplitter)
         return;
 
-    QSettings settings("Intrinsic Audio", "Rwa Creator");
+    QSettings settings;
     settings.setValue(objectName()+"Geometry", windowSplitter->saveGeometry());
     settings.setValue(objectName()+"State", windowSplitter->saveState());
 }
@@ -51,7 +51,7 @@ void RwaView::readSplitterLayout()
     if(!windowSplitter || objectName().isEmpty())
         return;
 
-    QSettings settings("Intrinsic Audio", "Rwa Creator");
+    QSettings settings;
     windowSplitter->restoreGeometry(settings.value(objectName()+"Geometry").toByteArray());
     windowSplitter->restoreState(settings.value(objectName()+"State").toByteArray());
 }
@@ -131,9 +131,16 @@ void RwaView::setCurrentState(RwaState *state)
     if(!state)
         return;
 
+    // set current scene for (secondary) views created after loading a project,
+    // before receiving state selections.
+    if(!currentScene)
+        currentScene = state->getScene();
+
     lastState = currentState;
     currentState = state;
-    currentScene->lastTouchedState = state;
+
+    if(currentScene)
+        currentScene->lastTouchedState = state;
 
     if(currentState->getAssets().size() > 0)
     {
@@ -142,6 +149,8 @@ void RwaView::setCurrentState(RwaState *state)
 
         currentAsset = currentState->getLastTouchedAsset();
     }
+    else
+        currentAsset = nullptr; // keeping the old pointer risks a dangling asset after deletion
 }
 
 void RwaView::setCurrentState(qint32 stateNumber)
@@ -168,6 +177,11 @@ void RwaView::setCurrentScene(RwaScene *scene)
     currentScene = scene;
     if(!currentScene->lastTouchedState)
         currentScene->lastTouchedState = currentScene->getStates().front();
+
+    // currentState belonged to the previous scene and may well have been
+    // deleted along with it. Don't keep it across a scene change.
+    currentState = currentScene->lastTouchedState;
+    currentAsset = currentState ? currentState->getLastTouchedAsset() : nullptr;
 }
 
 void RwaView::setCurrentScene(qint32 sceneNumber)
@@ -190,4 +204,3 @@ void RwaView::setCurrentAsset(RwaAsset1 *asset)
     currentAsset = asset;
     currentState->setLastTouchedAsset(this->currentAsset);
 }
-

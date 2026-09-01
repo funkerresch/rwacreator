@@ -49,14 +49,14 @@ namespace qmapcontrol
         QNetworkRequest request;
         QString completeUrl;
 
-        request.setUrl(QUrl("http://"+host+url));
-        request.setRawHeader("User-Agent", "MyOwnBrowser 1.0");
+        request.setUrl(QUrl("https://"+host+url));
+        request.setRawHeader("User-Agent", "RWACreator/1.0 (+https://www.fhnw.ch/de/musik/forschung-dienstleistungen/forschung/institut-klassik)");
         //httpManager->connectToHost(host, 80);
 
 
        // if (vectorMutex.tryLock())
         {
-            completeUrl = "http://"+host+url;
+            completeUrl = "https://"+host+url;
             if(!loadingMap.contains(completeUrl))
             {
                 reply = httpManager->get(request);
@@ -74,7 +74,7 @@ namespace qmapcontrol
        // reply->id();
         QByteArray ax = reply->readAll();
         //qDebug() << reply->errorString();
-        QString urlWithoutHost = reply->url().toString().replace("http://tile.openstreetmap.org", "");
+        QString urlWithoutHost = reply->url().toString().replace("https://tile.openstreetmap.org", "");
         QPixmap pm;
 
        // if (vectorMutex.tryLock())
@@ -128,7 +128,7 @@ namespace qmapcontrol
         //return loadingMap.values().contains(url);
         QString completeURL;
         bool isLoading;
-        completeURL = "http://tile.openstreetmap.org"+url;
+        completeURL = "https://tile.openstreetmap.org"+url;
 
         isLoading = loadingMap.contains(completeURL);
         //if(isLoading)

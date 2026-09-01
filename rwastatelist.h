@@ -19,7 +19,7 @@ public slots:
     virtual void update() override;
 
     void setSelectedStates(QStringList states);
-    void setCurrentScene(RwaScene *scene);
+    void setCurrentScene(RwaScene *scene) override;
 protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;

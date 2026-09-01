@@ -1,5 +1,26 @@
 #include "rwaassetlist.h"
 
+#include <QFile>
+
+struct PlaybackBadge { QString icon; QString label; };
+
+static PlaybackBadge playbackBadge(int32_t playbackType)
+{
+    switch(playbackType)
+    {
+        case RWAPLAYBACKTYPE_MONO: return {"playbackSpeaker1", "Mono"};
+        case RWAPLAYBACKTYPE_STEREO: return {"playbackSpeaker2", "Stereo"};
+        case RWAPLAYBACKTYPE_BINAURALMONO:
+        case RWAPLAYBACKTYPE_BINAURALMONO_FABIAN: return {"playbackHeadphones1", "Binaural Mono"};
+        case RWAPLAYBACKTYPE_BINAURALSTEREO:
+        case RWAPLAYBACKTYPE_BINAURALSTEREO_FABIAN: return {"playbackHeadphones2", "Binaural Stereo"};
+        case RWAPLAYBACKTYPE_BINAURAL5CHANNEL:
+        case RWAPLAYBACKTYPE_BINAURAL5CHANNEL_FABIAN: return {"playbackHeadphones5", "Binaural 5 channel"};
+        case RWAPLAYBACKTYPE_BINAURAL7CHANNEL_FABIAN: return {"playbackHeadphones7", "Binaural 7 channel"};
+        default: return {QString(), QString()}; // undetermined playback gets no badge
+    }
+}
+
 RwaAssetList::RwaAssetList(QWidget* parent, RwaScene *scene) :
     RwaListView(parent, scene)
 {
@@ -20,6 +41,10 @@ void RwaAssetList::ListWidgetEditEnd(QWidget *editor, QAbstractItemDelegate::End
 {
     (void) hint;
     QString newName = reinterpret_cast<QLineEdit*>(editor)->text();
+
+    if(!currentAsset || !currentItem())
+        return;
+
     if(currentAsset->objectName() != newName.toStdString())
     {
         QString path = backend->completeAssetPath;
@@ -29,7 +54,9 @@ void RwaAssetList::ListWidgetEditEnd(QWidget *editor, QAbstractItemDelegate::End
         tmp = newFullPath.split(".");
         QString end = tmp.last();
 
-        if(end != newEnd)
+        if(end != newEnd) // don't allow changes to filetype, not really save but..
+            currentItem()->setText(QString::fromStdString(currentAsset->getFileName()));
+        else if(backend->fileUsedByAnotherAsset(currentAsset))
             currentItem()->setText(QString::fromStdString(currentAsset->getFileName()));
         else
         {
@@ -37,7 +64,6 @@ void RwaAssetList::ListWidgetEditEnd(QWidget *editor, QAbstractItemDelegate::End
             currentAsset->setObjectName(newName.toStdString());
             currentAsset->setFullPath(newFullPath.toStdString());
             currentAsset->setFileName(newName.toStdString());
-
             emit sendCurrentState(currentState);
         }
     }
@@ -50,16 +76,19 @@ void RwaAssetList::setCurrentState(RwaState *state)
 
     currentState = state;
 
+    currentAsset = nullptr;
     clear();
 
     foreach(RwaAsset1 *asset , state->getAssets() )
     {
         QListWidgetItem *item = new QListWidgetItem(RwaUtilities::getFileName(QString::fromStdString(asset->getFullPath())), this);
         item->setFlags( item->flags() | Qt::ItemIsEditable );
+        setAssetBadges(item, asset);
         addItem(item);
     }
 
     setCurrentAsset(state->getLastTouchedAsset());
+    emit sendSelectedAssets(getSelectedAssets()); // empties a stale selection when the state has no assets
 }
 
 void RwaAssetList::setCurrentScene(RwaScene *scene)
@@ -71,8 +100,73 @@ void RwaAssetList::setCurrentScene(RwaScene *scene)
 
     if(currentScene->lastTouchedState)
         setCurrentState(currentScene->lastTouchedState);
-    else
+    else if(!currentScene->getStates().empty())
         setCurrentState(currentScene->getStates().front());
+    else
+        clear();
+}
+
+void RwaAssetList::setAssetBadges(QListWidgetItem *item, RwaAsset1 *asset)
+{
+    QStringList badges;
+    QStringList toolTipLines;
+    bool isPatch = (asset->getType() == RWAASSETTYPE_PD);
+    bool fileMissing = !QFile::exists(QString::fromStdString(asset->getFullPath()));
+
+    if(fileMissing)
+    {
+        badges << "badgeFileMissing";
+        toolTipLines << "File not found in the assets folder";
+    }
+
+    if(!isPatch && !fileMissing)
+    {
+        if(asset->getOriginalSampleRate() == 0) // never read (the file was missing when the project was loaded)
+            asset->refreshFileProperties();
+
+        if(asset->getOriginalSampleRate() > 0 && asset->getOriginalSampleRate() != backend->getSampleRate())
+        {
+            badges << "badgeSamplerateMismatch";
+            toolTipLines << QString("Sample rate mismatch: %1 Hz (Pd: %2 Hz)")
+                            .arg(asset->getOriginalSampleRate()).arg(backend->getSampleRate());
+        }
+    }
+
+    if(isPatch)
+    {
+        badges << "badgePd";
+        toolTipLines << "Pd patch";
+    }
+    else
+    {
+        PlaybackBadge playback = playbackBadge(asset->getPlaybackType());
+        if(!playback.icon.isEmpty())
+        {
+            badges << playback.icon;
+            toolTipLines << "Playback: " + playback.label;
+        }
+    }
+
+    if(asset->getMute())
+    {
+        badges << "badgeMuted";
+        toolTipLines << "Muted";
+    }
+
+    if(asset->getLoop())
+    {
+        badges << "badgeLooped";
+        toolTipLines << "Looped";
+    }
+
+    if(asset->getMoveFromStartPosition() || asset->getAutoRotate())
+    {
+        badges << "badgeMoving";
+        toolTipLines << "Moving/rotating";
+    }
+
+    item->setData(RwaListBadgeDelegate::BadgeRole, badges);
+    item->setToolTip(toolTipLines.join("\n"));
 }
 
 int RwaAssetList::getNumberOfSelectedAssets()
@@ -96,21 +190,15 @@ void RwaAssetList::setCurrentAsset(RwaAsset1 *asset)
     if(!asset)
         return;
 
-    if(!(QObject::sender() == this->backend))
-        emit sendCurrentAsset(asset);
+    QList<QListWidgetItem *> items = findItems(QString::fromStdString(asset->getFileName()), Qt::MatchExactly);
 
-    else
+    if(!items.empty())
     {
-        QList<QListWidgetItem *> items = findItems(QString::fromStdString(asset->getFileName()), Qt::MatchExactly);
-
-        if(!items.empty())
-        {
-            currentAsset = asset;
-            setCurrentItem(items.at(0));
-            int row = QListWidget::row(currentItem());
-            setCurrentRow(row);
-            emit sendSelectedAssets( getSelectedAssets() );
-        }
+        currentAsset = asset;
+        setCurrentItem(items.at(0));
+        int row = QListWidget::row(currentItem());
+        setCurrentRow(row);
+        emit sendSelectedAssets( getSelectedAssets() );
     }
 }
 
@@ -119,7 +207,7 @@ void RwaAssetList::setCurrentAssetFromCurrentItem()
     if(currentItem())
     {
         RwaAsset1 *asset = currentState->getAsset(currentItem()->text().toStdString());
-        setCurrentAsset(asset);
+        emit sendCurrentAsset(asset);
     }
 }
 
@@ -132,8 +220,39 @@ void RwaAssetList::mouseReleaseEvent(QMouseEvent *event)
 
 void RwaAssetList::mousePressEvent(QMouseEvent *event)
 {
-    QListWidget::mousePressEvent(event);
+    RwaListView::mousePressEvent(event);
     setCurrentAssetFromCurrentItem();
+}
+
+void RwaAssetList::mouseDoubleClickEvent(QMouseEvent *event)
+{
+    // Shift+double-click opens the asset in the OS default application;
+    // plain double-click keeps the inline rename (edit trigger in RwaListView).
+    if(event->button() == Qt::LeftButton && (event->modifiers() & Qt::ShiftModifier))
+    {
+        // itemAt() rather than currentItem(): the shift-press extended the selection.
+        QListWidgetItem *item = itemAt(event->position().toPoint());
+        if(item && currentState)
+            openAssetExternally(currentState->getAsset(item->text().toStdString()));
+        event->accept();
+        return;
+    }
+    QListWidget::mouseDoubleClickEvent(event);
+}
+
+void RwaAssetList::openAssetExternally(RwaAsset1 *asset)
+{
+    if(!asset)
+        return;
+
+    QString path = QString::fromStdString(asset->getFullPath());
+    if(!QFile::exists(path))
+    {
+        qWarning() << "Asset file missing:" << path;
+        return;
+    }
+    if(!QDesktopServices::openUrl(QUrl::fromLocalFile(path)))
+        qWarning() << "No default application to open" << path;
 }
 
 void RwaAssetList::keyPressEvent(QKeyEvent *event)
@@ -151,11 +270,13 @@ void RwaAssetList::keyPressEvent(QKeyEvent *event)
         case Qt::Key_Insert:
           qDebug() << "Insert";
           break;
-        case 16777219:
-          qDebug() << "ITEM TEXT" << currentItem()->text();
-          emit deleteAsset(currentItem()->text());
-          takeItem(getSelectedIndex());
-          break;
+        case Qt::Key_Backspace:
+        case Qt::Key_Delete:
+            qDebug() << "Delete";
+            if(!currentItem())
+                break;
+            emit deleteAsset(currentItem()->text());
+            break;
         case 16777237:
             setCurrentAssetFromCurrentItem();
             break;
@@ -218,8 +339,18 @@ void RwaAssetList::add2ListAndCopy(QString fullpath)
         emit newAsset(fullAssetPath, RWAASSETTYPE_AIF);
     }
 
+    else if(!info.completeSuffix().compare("ogg") )
+    {
+        QListWidgetItem *item = new QListWidgetItem(RwaUtilities::getFileName(fullAssetPath), this);
+        item->setFlags( item->flags() | Qt::ItemIsEditable );
+        addItem(item);
+        if(!fileExists)
+            QFile::copy(strippedPath, fullAssetPath);
+        emit newAsset(fullAssetPath, RWAASSETTYPE_OGG);
+    }
+
     else
-    {      
+    {
 
     }
 }
@@ -227,7 +358,7 @@ void RwaAssetList::add2ListAndCopy(QString fullpath)
 void RwaAssetList::dropEvent(QDropEvent *event)
 {
     QString str = event->mimeData()->text();
-    QStringList newItems = str.split( "\n", QString::SkipEmptyParts );
+    QStringList newItems = str.split( "\n", Qt::SkipEmptyParts );
 
     foreach( const QString fullpath, newItems )
         add2ListAndCopy(fullpath);

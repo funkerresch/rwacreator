@@ -1,49 +1,77 @@
 #include "rwalogview.h"
 #include <QMetaType>
 #include <QVBoxLayout>
+#include <QtLogging>
 #include "rwabackend.h"
 
 RwaLogWindow::RwaLogWindow(QWidget *parent) :
  QWidget(parent)
 {
-     backend = RwaBackend::getInstance();
-     qRegisterMetaType<QtMsgType>("QtMsgType");
-     QVBoxLayout *layout = new QVBoxLayout;
+    backend = RwaBackend::getInstance();
+    qRegisterMetaType<QtMsgType>("QtMsgType");
+    qSetMessagePattern("[%{time hh:mm:ss.zzz}] [%{type}]\t%{message}%{if-debug}:%{line}, %{function})%{endif}");
+    QVBoxLayout *layout = new QVBoxLayout;
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
 
-     setLayout(layout);
-     browser = new QTextBrowser(this);
-     layout->addWidget(browser);
+    setLayout(layout);
+    logView = new QPlainTextEdit(this);
+    logView->setReadOnly(true);
+    QFont logFont("Andale Mono");
+    logFont.setStyleHint(QFont::Monospace); // fallback if Andale Mono is missing
+    logFont.setPointSize(12);
+    logView->setFont(logFont);
+    layout->addWidget(logView);
 
-      QHBoxLayout *buttonLayout = new QHBoxLayout;
-      buttonLayout->setContentsMargins(0, 0, 0, 0);
-      layout->addLayout(buttonLayout);
+    QHBoxLayout *buttonLayout = new QHBoxLayout;
+    buttonLayout->setContentsMargins(4, 4, 4, 4);
+    layout->addLayout(buttonLayout);
 
-      buttonLayout->addStretch(10);
+    // Left: clear button
+    clearButton = new QPushButton(this);
+    clearButton->setText("clear");
+    buttonLayout->addWidget(clearButton);
+    connect(clearButton, SIGNAL (clicked()), this, SLOT (clearLog()));
 
-      clearButton = new QPushButton(this);
-      clearButton->setText("clear");
-      buttonLayout->addWidget(clearButton);
-      connect(clearButton, SIGNAL (clicked()), browser, SLOT (clear()));
+    buttonLayout->addStretch(1);
 
-      logLongAndLatCheckbox = new QCheckBox(this);
-      logLongAndLatCheckbox->setText("Lon & Lat");
-      buttonLayout->addWidget(logLongAndLatCheckbox);
-      connect(logLongAndLatCheckbox, SIGNAL (stateChanged(int)), backend, SLOT (receiveLogLonAndLat(int)) );
+    // Middle: filter toggles
+    logLongAndLatCheckbox = new QCheckBox(this);
+    logLongAndLatCheckbox->setText("Coords");
+    buttonLayout->addWidget(logLongAndLatCheckbox);
+    connect(logLongAndLatCheckbox, SIGNAL (stateChanged(int)), backend, SLOT (receiveLogLonAndLat(int)) );
 
-      logLibPdPrint = new QCheckBox(this);
-      logLibPdPrint->setText("LibPd");
-      buttonLayout->addWidget(logLibPdPrint);
-      connect(logLibPdPrint, SIGNAL (stateChanged(int)), backend, SLOT (receiveLogLibPd(int)) );
+    logLibPdPrint = new QCheckBox(this);
+    logLibPdPrint->setText("LibPd");
+    buttonLayout->addWidget(logLibPdPrint);
+    connect(logLibPdPrint, SIGNAL (stateChanged(int)), backend, SLOT (receiveLogLibPd(int)) );
 
-      logSimulatorStates = new QCheckBox(this);
-      logSimulatorStates->setText("Simulator");
-      buttonLayout->addWidget(logSimulatorStates);
-      connect(logSimulatorStates, SIGNAL (stateChanged(int)), backend, SLOT (receiveLogSimulator(int)) );
+    logSimulatorStates = new QCheckBox(this);
+    logSimulatorStates->setText("Simulator");
+    buttonLayout->addWidget(logSimulatorStates);
+    connect(logSimulatorStates, SIGNAL (stateChanged(int)), backend, SLOT (receiveLogSimulator(int)) );
 
-      logOther = new QCheckBox(this);
-      logOther->setText("Other");
-      buttonLayout->addWidget(logOther);
-      connect(logOther, SIGNAL (stateChanged(int)), backend, SLOT (receiveLogOther(int)) );
+    logOther = new QCheckBox(this);
+    logOther->setText("Other");
+    buttonLayout->addWidget(logOther);
+    connect(logOther, SIGNAL (stateChanged(int)), backend, SLOT (receiveLogOther(int)) );
+
+    for (QCheckBox *cb : {logLongAndLatCheckbox, logLibPdPrint, logSimulatorStates, logOther})
+        cb->setMinimumWidth(cb->sizeHint().width() + 10);
+
+    buttonLayout->addStretch(1);
+
+    // Right: log level selector
+    buttonLayout->addWidget(new QLabel("Log Level:", this));
+    logLevelComboBox = new QComboBox(this);
+    logLevelComboBox->addItems({"Debug", "Info", "Warning", "Critical", "Fatal"});
+    logLevelComboBox->setCurrentIndex(1); // Info
+    buttonLayout->addWidget(logLevelComboBox);
+
+    connect(logLevelComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index) {
+        static const QtMsgType levels[] = { QtDebugMsg, QtInfoMsg, QtWarningMsg, QtCriticalMsg, QtFatalMsg };
+        logLevel = levels[index];
+    });
 }
 
 RwaLogWindow::~RwaLogWindow()
@@ -51,36 +79,37 @@ RwaLogWindow::~RwaLogWindow()
 
 }
 
+void RwaLogWindow::clearLog()
+{
+    logView->clear();
+}
+
+static int msgSeverity(QtMsgType type)
+{
+    switch(type) {
+        case QtDebugMsg:    return 0;
+        case QtInfoMsg:     return 1;
+        case QtWarningMsg:  return 2;
+        case QtCriticalMsg: return 3;
+        case QtFatalMsg:    return 4;
+    }
+    return 0;
+}
+
 void RwaLogWindow::outputMessage(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
-    QByteArray localMsg = msg.toLocal8Bit();
-    if(localMsg.size() > 512)
+    if (msgSeverity(type) < msgSeverity(logLevel))
         return;
 
-    const char *file = context.file ? context.file : "";
-    const char *function = context.function ? context.function : "";
-    char output[1024];
-
-    switch (type)
-    {
-        case QtDebugMsg:
-        sprintf(output, "Debug: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
-        browser->append(output);
-        break;
-
-        case QtInfoMsg:
-        break;
-
-        case QtWarningMsg:
-        //browser->append(tr("— WARNING: %1").arg(msg));
-        break;
-
-        case QtCriticalMsg:
-        //browser->append(tr("— CRITICAL: %1").arg(msg));
-        break;
-
-        case QtFatalMsg:
-        //browser->append(tr("— FATAL: %1").arg(msg));
-        break;
+    if (msg.length() > 512) {
+        return;
     }
+
+    // extract filename safely
+    // quirky fix around qSetMessagePattern showing the whole path
+    QString file = (type == QtDebugMsg && context.file) ? QString::fromUtf8(context.file) : QString();
+    if (!file.isEmpty())
+        file = " (" + QFileInfo(file).fileName();
+
+    logView->appendPlainText(qFormatLogMessage(type, context, msg + file));
 }

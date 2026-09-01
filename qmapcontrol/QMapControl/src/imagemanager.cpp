@@ -24,6 +24,7 @@
 */
 
 #include "imagemanager.h"
+#include "mapnetwork.h"
 namespace qmapcontrol
 {
     ImageManager* ImageManager::m_Instance = 0;
@@ -108,8 +109,8 @@ namespace qmapcontrol
     {
         QPixmap pm;
         QString urlCopy = url;
-        QStringList tmp = url.split("/", QString::SkipEmptyParts );
-        QStringList tmp2 = tmp[2].split(".", QString::SkipEmptyParts );
+        QStringList tmp = url.split("/", Qt::SkipEmptyParts );
+        QStringList tmp2 = tmp[2].split(".", Qt::SkipEmptyParts );
         QString zoom = tmp[0];
         int x = tmp[1].toInt();
         int y = tmp2[0].toInt();
@@ -152,8 +153,8 @@ namespace qmapcontrol
     void ImageManager::receivedImage(const QPixmap pixmap, const QString& url)
     {
         QPixmapCache::insert(url, pixmap);
-        QStringList tmp = url.split("/", QString::SkipEmptyParts );
-        QStringList tmp2 = tmp[2].split(".", QString::SkipEmptyParts );
+        QStringList tmp = url.split("/", Qt::SkipEmptyParts );
+        QStringList tmp2 = tmp[2].split(".", Qt::SkipEmptyParts );
         QString zoom = tmp[0];
         int x = tmp[1].toInt();
         int y = tmp2[0].toInt();
@@ -169,7 +170,7 @@ namespace qmapcontrol
 
         if (!prefetch.contains(url))
         {
-            emit(imageReceived());
+            emit imageReceived();
         }
         else
         {
@@ -182,7 +183,7 @@ namespace qmapcontrol
 
     void ImageManager::loadingQueueEmpty()
     {
-        emit(loadingFinished());
+        emit loadingFinished();
     }
 
     void ImageManager::abortLoading()

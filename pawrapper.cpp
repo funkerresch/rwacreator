@@ -8,15 +8,19 @@
  * You should have received a copy of the GNU General Public License along with this program;
  * if not, see <http://www.gnu.org/licenses/>.
 */
+
 #include "pawrapper.h"
 #include <cstdlib>
 #include <stdio.h>
 #include <iostream>
+#include <QDebug>
 
 using namespace std;
 
 //PaStream *stream; //now as class member?
 
+// don't put (QT) logging in processingCallback(): it runs on the audio
+// thread, where logging (allocating, locking) would cause dropouts.
 int paWrapper::processingCallback(const void *inputBuffer,
                                   void *outputBuffer,
                                   unsigned long framesPerBuffer,
@@ -33,71 +37,176 @@ int paWrapper::processingCallback(const void *inputBuffer,
 
 paWrapper::paWrapper()
 {
-    printf("paWrapper::paWrapper()\n"); flush(cout);
     isRunning=false; //currently nothing is running
     initAudio();
 }
 
+/**
+  Selecting a device from the menu is an explicit choice by the user: it is remembered by name and
+  wins over the system default on every following rescan, even if the device is temporarily
+  unplugged in between. useSystemDefault*Device() gives that up again.
+*/
 int paWrapper::setInputDevice(int deviceIndex)
 {
-    const PaDeviceInfo* di;
-    int i = 0;
-    while(i < Pa_GetDeviceCount())
-    {
-        if(deviceIndex == i)
-        {
-            di = Pa_GetDeviceInfo(i);
-            inputStreamParam.device = deviceIndex;
-            inputStreamParam.channelCount = di->maxInputChannels;
-            inputStreamParam.sampleFormat = paFloat32;
-            inputStreamParam.hostApiSpecificStreamInfo = NULL;
-            return 0;
-        }
-        i++;
-    }
+    int err = applyInputDevice(deviceIndex);
+    if(err == 0)
+        explicitInputDeviceName = getDeviceName(deviceIndex);
 
-    return -1;
+    return err;
 }
 
 int paWrapper::setOutputDevice(int deviceIndex)
 {
-    const PaDeviceInfo* di;
-    int i = 0;
-    while(i < Pa_GetDeviceCount())
+    int err = applyOutputDevice(deviceIndex);
+    if(err == 0)
+        explicitOutputDeviceName = getDeviceName(deviceIndex);
+
+    return err;
+}
+
+void paWrapper::setOutputDeviceByName(const QString &name)
+{
+    if(name.isEmpty())
     {
-        if(deviceIndex == i)
-        {
-            di = Pa_GetDeviceInfo(i);
-            outputStreamParam.device = deviceIndex;
-            outputStreamParam.channelCount = di->maxOutputChannels;
-            outputStreamParam.sampleFormat = paFloat32;
-            outputStreamParam.hostApiSpecificStreamInfo = NULL;
-            return 0;
-        }
-        i++;
+        useSystemDefaultOutputDevice();
+        return;
     }
 
-    return -1;
+    explicitOutputDeviceName = name;
+
+    int deviceIndex = findDeviceByName(name, true);
+    if(deviceIndex < 0)
+        deviceIndex = Pa_GetDefaultOutputDevice(); // remembered, but not connected right now
+
+    applyOutputDevice(deviceIndex);
+}
+
+void paWrapper::setInputDeviceByName(const QString &name)
+{
+    if(name.isEmpty())
+    {
+        useSystemDefaultInputDevice();
+        return;
+    }
+
+    explicitInputDeviceName = name;
+
+    int deviceIndex = findDeviceByName(name, false);
+    if(deviceIndex < 0)
+        deviceIndex = Pa_GetDefaultInputDevice(); // remembered, but not connected right now
+
+    applyInputDevice(deviceIndex);
+}
+
+void paWrapper::useSystemDefaultInputDevice()
+{
+    explicitInputDeviceName.clear();
+    applyInputDevice(Pa_GetDefaultInputDevice());
+}
+
+void paWrapper::useSystemDefaultOutputDevice()
+{
+    explicitOutputDeviceName.clear();
+    applyOutputDevice(Pa_GetDefaultOutputDevice());
+}
+
+int paWrapper::applyInputDevice(int deviceIndex)
+{
+    if(deviceIndex < 0 || deviceIndex >= Pa_GetDeviceCount())
+        return -1;
+
+    const PaDeviceInfo* di = Pa_GetDeviceInfo(deviceIndex);
+    inputStreamParam.device = deviceIndex;
+    inputStreamParam.channelCount = di->maxInputChannels;
+    inputStreamParam.sampleFormat = paFloat32;
+    inputStreamParam.hostApiSpecificStreamInfo = NULL;
+
+    return 0;
+}
+
+int paWrapper::applyOutputDevice(int deviceIndex)
+{
+    if(deviceIndex < 0 || deviceIndex >= Pa_GetDeviceCount())
+        return -1;
+
+    const PaDeviceInfo* di = Pa_GetDeviceInfo(deviceIndex);
+    outputStreamParam.device = deviceIndex;
+    outputStreamParam.channelCount = di->maxOutputChannels;
+    outputStreamParam.sampleFormat = paFloat32;
+    outputStreamParam.hostApiSpecificStreamInfo = NULL;
+
+    return 0;
 }
 
 void paWrapper::initAudio()
 {
-    const PaDeviceInfo* di;
-    int sampleFormat;
-    int inputChannels = 0;
-    int outputChannels = 0;
     int err = Pa_Initialize();
 
     if( err != paNoError )
-        printf(  "PortAudio error: %s\n", Pa_GetErrorText( err ) );
+        qWarning() << "PortAudio error (Pa_Initialize):" << Pa_GetErrorText( err );
+
+    sampleRate = 48000.0;
+    applyDefaultDevices();
+}
+
+/**
+  PortAudio enumerates the devices in Pa_Initialize() and never updates that list, so devices
+  connected or removed while the app is running are invisible and the stored device indices go
+  stale. Terminating and re-initializing is the only way to pick up the new device list.
+
+  The scan then follows the system default; macOS already switches that to a headset when one is
+  connected. A device the user picked from the menu overrides the default whenever
+  it is present; it stays remembered by name while it is unplugged, so it is taken
+  again once it comes back.
+
+  Must not be called while the stream is open.
+*/
+int paWrapper::rescanDevices()
+{
+    if(isRunning)
+        return pawErrorAudioIsRunning;
+
+    int err = Pa_Terminate();
+    if( err != paNoError )
+    {
+        qWarning() << "PortAudio error (Pa_Terminate):" << Pa_GetErrorText( err );
+        return err;
+    }
+
+    err = Pa_Initialize();
+    if( err != paNoError )
+    {
+        qWarning() << "PortAudio error (Pa_Initialize):" << Pa_GetErrorText( err );
+        return err;
+    }
+
+    applyDefaultDevices();
+
+    int deviceIndex = findDeviceByName(explicitOutputDeviceName, true);
+    if(deviceIndex >= 0)
+        applyOutputDevice(deviceIndex);
+
+    deviceIndex = findDeviceByName(explicitInputDeviceName, false);
+    if(deviceIndex >= 0)
+        applyInputDevice(deviceIndex);
+
+    return paNoError;
+}
+
+void paWrapper::applyDefaultDevices()
+{
+    const PaDeviceInfo* di;
+    int inputChannels = 0;
+    int outputChannels = 0;
 
     selectedHostApi = Pa_GetDefaultHostApi();
 
     int noOfHostApis = Pa_GetHostApiCount();
-    printf("%d host apis available\n",noOfHostApis);
-
     int noOfAudioDevices = Pa_GetDeviceCount();
-    printf("%d audio devices available\n",noOfAudioDevices);
+
+    // The full device list is logged as debug: a rescan runs on every simulation start and would
+    // otherwise flood the log view. RwaSimulator::rescanAudioDevices() logs the outcome as info.
+    qDebug() << noOfHostApis << "host apis and" << noOfAudioDevices << "audio devices available";
 
     PaDeviceIndex selectedOutputDevice = Pa_GetDefaultOutputDevice();
     PaDeviceIndex selectedInputDevice = Pa_GetDefaultInputDevice();
@@ -106,7 +215,7 @@ void paWrapper::initAudio()
     {
         di = Pa_GetDeviceInfo(i);
 
-        printf("Device %d: %s\n",i,di->name);
+        // qDebug() << "Device" << i << ":" << di->name;
 
         if(i == selectedInputDevice)
         {
@@ -133,20 +242,15 @@ void paWrapper::initAudio()
     inputStreamParam.suggestedLatency = suggestedLatency;
     inputStreamParam.hostApiSpecificStreamInfo = NULL;
 
-    sampleRate = 44100.0;
-
-    printf("default output device is %d\n",Pa_GetDefaultOutputDevice());
-    printf("default input device is %d\n",Pa_GetDefaultInputDevice());
-
-    flush(cout);
+    qDebug() << "Default output device:" << Pa_GetDefaultOutputDevice()
+             << "- default input device:" << Pa_GetDefaultInputDevice();
 }
 
 paWrapper::~paWrapper()
 {
-    printf("paWrapper::~paWrapper()\n"); flush(cout);
     int err = Pa_Terminate();
     if( err != paNoError )
-       printf("PortAudio error (Pa_Terminate): %s\n", Pa_GetErrorText( err ) );
+       qWarning() << "PortAudio error (Pa_Terminate):" << Pa_GetErrorText( err );
 }
 
 int paWrapper::startAudio(void)
@@ -204,6 +308,35 @@ bool paWrapper::isInputDevice(int deviceIndex)
         return false;
 }
 
+QString paWrapper::getDeviceName(int deviceIndex)
+{
+    if(deviceIndex < 0 || deviceIndex >= Pa_GetDeviceCount())
+        return QString();
+
+    const PaDeviceInfo* di = Pa_GetDeviceInfo(deviceIndex);
+    if(!di)
+        return QString();
+
+    return QString("%1: %2").arg(Pa_GetHostApiInfo(di->hostApi)->name, di->name);
+}
+
+int paWrapper::findDeviceByName(const QString &name, bool output)
+{
+    if(name.isEmpty())
+        return -1;
+
+    for(int i = 0; i < Pa_GetDeviceCount(); i++)
+    {
+        if(output ? !isOutputDevice(i) : !isInputDevice(i))
+            continue;
+
+        if(getDeviceName(i) == name)
+            return i;
+    }
+
+    return -1;
+}
+
 bool paWrapper::isOutputDevice(int deviceIndex)
 {
     const PaDeviceInfo* di;
@@ -243,4 +376,3 @@ const char* paWrapper::getErrorText(int errorId)
           return Pa_GetErrorText(errorId);
     }
 }
-

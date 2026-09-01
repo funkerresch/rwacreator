@@ -19,14 +19,19 @@ RwaSceneAttributeView::RwaSceneAttributeView(QWidget *parent, RwaScene *scene) :
 
     addComboBoxAndLabel(attributeGridLayout, "Next Scene", nextScenes);
     addLineEditAndLabel(attributeGridLayout, "Time Out");
-    QLineEdit *requiredScenes = addLineEditAndLabel(attributeGridLayout, "Required Scenes");
-    setLineEditSignal2editingFinished(requiredScenes);
+
+    // "Required Scenes" is an unfinished scene-entry condition: neither engine
+    // evaluates RwaScene::requiredScenes and it is never serialised, so anything
+    // entered here was silently lost. Field hidden until the feature exists —
+    // see docs/planned-features.md.
+    // QLineEdit *requiredScenes = addLineEditAndLabel(attributeGridLayout, "Required Scenes");
+    // setLineEditSignal2editingFinished(requiredScenes);
 
     addLineEditAndLabel(attributeGridLayout, "Level");
+    addLineEditAndLabel(attributeGridLayout, "Gain (dB)");
     addLineEditAndLabel(attributeGridLayout, "Scene Radius");
     addLineEditAndLabel(attributeGridLayout, "Scene Width");
     addLineEditAndLabel(attributeGridLayout, "Scene Height");
-    addLineEditAndLabel(attributeGridLayout, "Enter Offset");
     addLineEditAndLabel(attributeGridLayout, "Exit Offset");
 
     addAttrCheckbox(attributeGridLayout, "States follow scene", RWASTATEATTRIBUTE_FOLLOWINGASSETS);
@@ -38,16 +43,15 @@ RwaSceneAttributeView::RwaSceneAttributeView(QWidget *parent, RwaScene *scene) :
     connect(this, SIGNAL(sendCurrentScene(RwaScene*)),
               backend, SLOT(receiveLastTouchedScene(RwaScene*)));
 
-    this->setMinimumHeight((assetAttrCounter)*18);
-    this->setMinimumWidth(20);
-    this->setMaximumWidth(240);
+    this->setMinimumHeight(calculate_window_height());
+    this->setFixedWidth(240);
 }
 
-void RwaSceneAttributeView::setCurrentScene(RwaScene *currentScene)
+void RwaSceneAttributeView::setCurrentScene(RwaScene *scene)
 {
-    this->currentScene = currentScene;
+    this->currentScene = scene;
 
-    if(!currentScene)
+    if(!scene)
         return;
 
     QCheckBox *attrCheckBox = nullptr;
@@ -55,25 +59,38 @@ void RwaSceneAttributeView::setCurrentScene(RwaScene *currentScene)
     QLineEdit *attrLineEdit = nullptr;
 
     updateSceneArea();
+    attrComboBox = this->findChild<QComboBox *>("Next Scene");
+    updateSceneComboBox(attrComboBox);
+    updateSceneAttr(attrComboBox, QString::fromStdString(currentScene->getNextScene()));
 
-    attrLineEdit = this->findChild<QLineEdit *>("Required States");
-    if(attrLineEdit)
-    {
-        QString requiredStatesText;
-        attrLineEdit->clear();
-        foreach(std::string state, currentState->requiredStates)
-            requiredStatesText.append(QString::fromStdString(state)).append(", ");
-
-        attrLineEdit->setText(requiredStatesText);
-    }
+    // Display block for the hidden "Required Scenes" field (see constructor /
+    // docs/planned-features.md). Never executed even when the field existed: it
+    // looks up the wrong widget name, and it reads the globally last-touched
+    // state's requiredStates instead of currentScene->requiredScenes — a real
+    // implementation must not resurrect it as-is.
+    // attrLineEdit = this->findChild<QLineEdit *>("Required States");
+    // if(attrLineEdit)
+    // {
+    //     QString requiredStatesText;
+    //     attrLineEdit->clear();
+    //     foreach(std::string state, currentState->requiredStates)
+    //         requiredStatesText.append(QString::fromStdString(state)).append(", ");
+    //
+    //     attrLineEdit->setText(requiredStatesText);
+    // }
 
     attrLineEdit = this->findChild<QLineEdit *>("Level");
     if(attrLineEdit)
         attrLineEdit->setText(QString::number(currentScene->getLevel()));
 
-//    attrLineEdit = this->findChild<QLineEdit *>("Enter Offset");
-//    if(attrLineEdit)
-//        attrLineEdit->setText(QString::number(currentScene->getEnterOffset()));
+    attrLineEdit = this->findChild<QLineEdit *>("Gain (dB)");
+    if(attrLineEdit)
+    {
+        // block: setText() would re-enter receiveLineEditAttributeValue and write the
+        // dB->linear round trip of the displayed value back into the scene on every refresh
+        QSignalBlocker blocker(attrLineEdit);
+        attrLineEdit->setText(gainToDbText(currentScene->getGain()));
+    }
 
     attrLineEdit = this->findChild<QLineEdit *>("Exit Offset");
     if(attrLineEdit)
@@ -133,14 +150,14 @@ void RwaSceneAttributeView::updateSceneComboBox(QComboBox *attrComboBox)
 
     RwaScene *scene;
 
-    disconnect(attrComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(receiveComboBoxAttributeValue(QString)));
+    //disconnect(attrComboBox, &QComboBox::currentTextChanged, this, QOverload<QString>::of(&RwaSceneAttributeView::receiveComboBoxAttributeValue));
     attrComboBox->clear();
     attrComboBox->addItem("None");
 
     foreach(scene, backend->getScenes())
         attrComboBox->addItem(QString::fromStdString(scene->objectName()));
 
-    connect(attrComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(receiveComboBoxAttributeValue(QString)));
+    //connect(attrComboBox, &QComboBox::currentTextChanged, this, QOverload<QString>::of(&RwaSceneAttributeView::receiveComboBoxAttributeValue));
 }
 
 void RwaSceneAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
@@ -179,26 +196,30 @@ void RwaSceneAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
 
 void RwaSceneAttributeView::receiveLineEditAttributeValue()
 {
-    if(!currentState)
-        return;
-
-    if(!QObject::sender()->objectName().compare("Required Scenes"))
-    {
-        QLineEdit *attrLineEdit = (QLineEdit *)QObject::sender();
-        QStringList requiredScenes = attrLineEdit->text().split(",",QString::SkipEmptyParts);
-
-        currentScene->requiredScenes.clear();
-        QString requiredScene;
-        foreach(requiredScene, requiredScenes)
-        {
-            foreach(RwaScene *scene, backend->getScenes() )
-            {
-                if(!requiredScene.trimmed().compare(QString::fromStdString(scene->objectName())))
-                    currentScene->requiredScenes.push_back(scene->objectName());
-
-            }
-        }
-    }
+    // Write-back for the hidden "Required Scenes" field (see constructor /
+    // docs/planned-features.md). RwaScene::requiredScenes is not serialised and
+    // not evaluated by either engine, so this only ever filled an in-memory
+    // list that was lost on save.
+    // if(!currentState)
+    //     return;
+    //
+    // if(!QObject::sender()->objectName().compare("Required Scenes"))
+    // {
+    //     QLineEdit *attrLineEdit = (QLineEdit *)QObject::sender();
+    //     QStringList requiredScenes = attrLineEdit->text().split(",",Qt::SkipEmptyParts);
+    //
+    //     currentScene->requiredScenes.clear();
+    //     QString requiredScene;
+    //     foreach(requiredScene, requiredScenes)
+    //     {
+    //         foreach(RwaScene *scene, backend->getScenes() )
+    //         {
+    //             if(!requiredScene.trimmed().compare(QString::fromStdString(scene->objectName())))
+    //                 currentScene->requiredScenes.push_back(scene->objectName());
+    //
+    //         }
+    //     }
+    // }
 }
 
 void RwaSceneAttributeView::receiveEditingFinished()
@@ -267,6 +288,13 @@ void RwaSceneAttributeView::receiveLineEditAttributeValue(const QString &value)
     {
         currentScene->setLevel(value.toInt());
     }
+
+    if(!QObject::sender()->objectName().compare("Gain (dB)"))
+    {
+        float gain;
+        if(dbTextToGain(value, gain))
+            currentScene->setGain(gain); // picked up by the running simulation on the next tick
+    }
 }
 
 void RwaSceneAttributeView::receiveComboBoxAttributeValue(int index)
@@ -324,7 +352,6 @@ void RwaSceneAttributeView::receiveComboBoxAttributeValue(QString value)
 
     QComboBox *attrComboBox = nullptr;
 
-
     if(!QObject::sender()->objectName().compare("Area Type"))
     {
         if(!value.compare("Undetermined"))
@@ -360,4 +387,3 @@ void RwaSceneAttributeView::receiveFaderAttributeValue(int id)
 {
 
 }
-

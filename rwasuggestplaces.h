@@ -44,6 +44,11 @@
 #include <QtWidgets>
 #include <QtNetwork>
 #include <QObject>
+#include <QString>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QTextDocument>
 
 QT_BEGIN_NAMESPACE
 class QLineEdit;
@@ -81,4 +86,3 @@ private:
 };
 //! [1]
 #endif // GOOGLESUGGEST_H
-

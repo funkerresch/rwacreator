@@ -4,8 +4,8 @@ RwaScene::RwaScene(std::vector<double> gps) :
    RwaArea()
 {
     locationType = RWALOCATIONTYPE_SCENE;
-    gpsLocation[0] = gps[0];
-    gpsLocation[1] = gps[1];
+    gpsLocation = gps;
+    currentViewCoordinates = gps;
     clear();
 }
 
@@ -17,6 +17,7 @@ RwaScene::RwaScene(std::string sceneName, std::vector<double> gps, int32_t zoom)
     backgroundState = nullptr;
     lastTouchedState = nullptr;
     gpsLocation = gps;
+    currentViewCoordinates = gps;
     this->zoom = zoom;
     areaType = RWAAREATYPE_CIRCLE;
     radius = 200;
@@ -65,6 +66,7 @@ void RwaScene::copyAttributes(RwaScene * dest)
 {
     dest->zoom = zoom;
     dest->level = level;
+    dest->gain = gain;
     dest->areaType = areaType;
     dest->radius = radius;
     dest->width = width;
@@ -98,7 +100,7 @@ RwaState *RwaScene::addState(std::string stateName,  std::vector<double> gpsCoor
     newState->setHeight(100);
     newState->isGpsState = true;
     newState->setType(RWASTATETYPE_GPS);
-    newState->setDefaultPlaybackType(RWAPLAYBACKTYPE_BINAURAL);
+    newState->setDefaultPlaybackType(RWAPLAYBACKTYPE_BINAURAL_FABIAN);
     newState->isImmortal = false;
     states.push_back(newState);
     lastTouchedState = newState;
@@ -273,14 +275,12 @@ std::list <RwaState *> &RwaScene::getStates()
 
 RwaState * RwaScene::getState(string stateName)
 {
-    RwaState *state = nullptr;
-    foreach(state, this->states)
+    foreach(RwaState *state, this->states)
     {
         if(state->objectName() == stateName)
-            break;
+            return state;
     }
-    return state;
-
+    return nullptr;
 }
 
 void RwaScene::setCurrentState(string stateName)
@@ -297,7 +297,13 @@ void RwaScene::setCurrentState(string stateName)
 
 RwaState * RwaScene::getBackgroundState()
 {
-    return this->backgroundState;
+    foreach(RwaState *state, states) // don't trust the cached pointer, it can go stale when states are copied or deleted
+    {
+        if(state->getType() == RWASTATETYPE_BACKGROUND)
+            return state;
+    }
+
+    return nullptr;
 }
 
 void RwaScene::setBackgroundState(RwaState *backgroundState)
@@ -314,6 +320,16 @@ int32_t RwaScene::getLevel() const
 void RwaScene::setLevel(int value)
 {
     level = value;
+}
+
+float RwaScene::getGain() const
+{
+    return gain;
+}
+
+void RwaScene::setGain(float value)
+{
+    gain = value < 0 ? 0 : value;
 }
 
 std::list<std::string> RwaScene::getRequiredScenes() const
@@ -351,8 +367,11 @@ void RwaScene::resetAssets()
 
 void RwaScene::removeState(RwaState *state)
 {
-    lastTouchedState = states.front();
+    if(!state)
+        return;
+
     states.remove(state);
+    lastTouchedState = states.empty() ? nullptr : states.front();
     delete state;
 }
 
@@ -360,6 +379,3 @@ void RwaScene::setName(string name)
 {
     setObjectName(name);
 }
-
-
-

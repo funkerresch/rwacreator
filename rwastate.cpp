@@ -30,6 +30,8 @@ RwaState::RwaState(std::string stateName) :
     setEnterOnlyAfterAssetsFinish(false);
     setEnterOnlyOnce(false);
     isExclusive = false;
+    isImmortal = false;
+    isSelected = false;
     exitOffset = 0;
     positionLocked = false;
     childrenFollowMe = true;
@@ -37,7 +39,7 @@ RwaState::RwaState(std::string stateName) :
 
 RwaState::~RwaState() // Delete Audio Files from Disk??
 {
-    foreach(RwaAsset1 *asset, assets)       
+    foreach(RwaAsset1 *asset, assets)
         delete asset;
 
     qDebug() << "delete State";
@@ -46,11 +48,14 @@ RwaState::~RwaState() // Delete Audio Files from Disk??
 void RwaState::copyAttributes(RwaState *dest)
 {
     RwaAsset1 *asset;
+    dest->lastTouchedAsset = nullptr; // must point into dest's own copies, never into this state's assets
     foreach(asset, this->getAssets())
     {
         RwaAsset1 *assetCopy = new RwaAsset1("", std::vector<double>(2, 0.0), RWA_UNDETERMINED, "");
         asset->copyAttributes(assetCopy);
         assetCopy->myState = dest;
+        if(asset == this->lastTouchedAsset)
+            dest->lastTouchedAsset = assetCopy;
         dest->assets.push_back(assetCopy);
     }
 
@@ -64,7 +69,6 @@ void RwaState::copyAttributes(RwaState *dest)
     dest->areaType = this->areaType;
     dest->gpsLocation = std::vector<double>(this->gpsLocation);
     dest->myScene = this->myScene;
-    dest->lastTouchedAsset = this->lastTouchedAsset;
     dest->selectedAssetIndex = this->selectedAssetIndex;
     dest->isGpsState = this->isGpsState;
     dest->blockUntilRadiusHasBeenLeft = this->blockUntilRadiusHasBeenLeft;
@@ -74,18 +78,19 @@ void RwaState::copyAttributes(RwaState *dest)
     dest->hintState = this->hintState;
     dest->defaultPlaybackType = this->defaultPlaybackType;
     dest->zoom = this->zoom;
-    dest->setType(this->getType());
+    dest->type = this->getType(); // don't use setType() here, its side effect would register the copy as background state of the source scene
     dest->letChildrenFollowMe(this->childrenDoFollowMe());
     dest->radius = this->radius;
     dest->width = this->width;
     dest->height = this->height;
     dest->minimumStayTime = this->minimumStayTime;
+    dest->gain = this->gain;
     dest->leaveAfterAssetsFinish = this->getLeaveAfterAssetsFinish();
     dest->leaveOnlyAfterAssetsFinish = this->getLeaveOnlyAfterAssetsFinish();
     dest->enterOnlyAfterAssetsFinish = this->getEnterOnlyAfterAssetsFinish();
     dest->enterOnlyOnce =  this->getEnterOnlyOnce();
     dest->isExclusive = this->isExclusive;
-    //dest->enterOffset = this->enterOffset;
+    dest->isImmortal = this->isImmortal;
     dest->exitOffset = this->exitOffset;
     dest->positionLocked = this->positionLocked;
 }
@@ -130,6 +135,9 @@ void RwaState::deleteAsset(const std::string &path)
         if(item->getFileName() == path)
         {
             assets.remove (item);
+            if(lastTouchedAsset == item)
+                lastTouchedAsset = nullptr;
+            delete item;
             qDebug() << "remove Asset";
             break;
         }
@@ -271,6 +279,16 @@ void RwaState::setHintState(const std::string &value)
     hintState = value;
 }
 
+float RwaState::getGain() const
+{
+    return gain;
+}
+
+void RwaState::setGain(float value)
+{
+    gain = value < 0 ? 0 : value;
+}
+
 std::string RwaState::getNextState() const
 {
     return nextState;
@@ -348,7 +366,6 @@ int32_t RwaState::getDefaultPlaybackType() const
 
 void RwaState::setDefaultPlaybackType(const int32_t &value)
 {
-    qDebug() << "Set Default Playback Type";
     defaultPlaybackType = value;
 }
 
@@ -366,7 +383,3 @@ void RwaState::setType(const int32_t &value)
             this->myScene->setBackgroundState(this);
     }
 }
-
-
-
-

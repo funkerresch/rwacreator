@@ -15,79 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "FA2927EB1A899B4C005A2BA9"
-               BuildableName = "rwa_binauralsimple~.pd_darwin"
-               BlueprintName = "rwa_binauralsimple~"
-               ReferencedContainer = "container:rwa_binauralsimple~.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "84FFFFAB2125808F00294898"
-               BuildableName = "rwa_binauralrir~.pd_darwin"
-               BlueprintName = "rwa_binauralrir~"
-               ReferencedContainer = "container:rwa_binauralsimple~.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "84C9E38D213ACA5D004C6B54"
-               BuildableName = "rwa_reverb~.pd_darwin"
-               BlueprintName = "rwa_reverb~"
-               ReferencedContainer = "container:rwa_binauralsimple~.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "84E5E14621FB48E6002216EF"
-               BuildableName = "rwa_hpcomp~.pd_darwin"
-               BlueprintName = "rwa_hpcomp~"
-               ReferencedContainer = "container:rwa_binauralsimple~.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "84C08264223F99F400918A05"
-               BuildableName = "tr_pitchtrack~.pd_darwin"
-               BlueprintName = "tr_pitchtrack~"
-               ReferencedContainer = "container:rwa_binauralsimple~.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "843A832722560C4D00CC7F80"
-               BuildableName = "tr_biquad~.pd_darwin"
-               BlueprintName = "tr_biquad~"
-               ReferencedContainer = "container:rwa_binauralsimple~.xcodeproj">
+               BuildableName = "oggread~.pd_darwin"
+               BlueprintName = "oggread~"
+               ReferencedContainer = "container:oggread.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -99,17 +29,6 @@
       shouldUseLaunchSchemeArgsEnv = "YES">
       <Testables>
       </Testables>
-      <MacroExpansion>
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "FA2927EB1A899B4C005A2BA9"
-            BuildableName = "rwa_binauralsimple~.pd_darwin"
-            BlueprintName = "rwa_binauralsimple~"
-            ReferencedContainer = "container:rwa_binauralsimple~.xcodeproj">
-         </BuildableReference>
-      </MacroExpansion>
-      <AdditionalOptions>
-      </AdditionalOptions>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Release"
@@ -125,23 +44,12 @@
          runnableDebuggingMode = "0"
          FilePath = "/Applications/Pd-0.48-0.app/Contents/Resources/bin/pd">
       </PathRunnable>
-      <MacroExpansion>
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "FA2927EB1A899B4C005A2BA9"
-            BuildableName = "rwa_binauralsimple~.pd_darwin"
-            BlueprintName = "rwa_binauralsimple~"
-            ReferencedContainer = "container:rwa_binauralsimple~.xcodeproj">
-         </BuildableReference>
-      </MacroExpansion>
       <CommandLineArguments>
          <CommandLineArgument
             argument = "-open /Users/admin/Desktop/PDTEST/pdmushra_00.pd"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
-      <AdditionalOptions>
-      </AdditionalOptions>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -153,9 +61,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "FA2927EB1A899B4C005A2BA9"
-            BuildableName = "rwa_binauralsimple~.pd_darwin"
-            BlueprintName = "rwa_binauralsimple~"
-            ReferencedContainer = "container:rwa_binauralsimple~.xcodeproj">
+            BuildableName = "oggread~.pd_darwin"
+            BlueprintName = "oggread~"
+            ReferencedContainer = "container:oggread.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
    </ProfileAction>

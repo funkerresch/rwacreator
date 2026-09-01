@@ -1,3 +1,16 @@
+/*
+ * This file is part of the Rwa Creator.
+ * An open-source cross-platform Middleware for creating interactive Soundwalks
+ *
+ * Copyright (C) 2015 - 2022 Thomas Resch
+ *
+ * License: MIT
+ *
+ * rwamapview.h
+ * by Thomas Resch
+ *
+ */
+
 #ifndef RWAMAPVIEW_H
 #define RWAMAPVIEW_H
 
@@ -12,6 +25,7 @@ class RwaMapView : public RwaGraphicsView
 public:
 
     explicit RwaMapView(QWidget* parent = nullptr, RwaScene *scene = nullptr, QString name = "");
+    ~RwaMapView();
 
     void mouseDownArrow(const QMouseEvent *event, const QPointF myPoint);
     void mouseDownRubber(const QMouseEvent *event, const QPointF myPoint);
@@ -36,6 +50,7 @@ public slots:
     void receiveSelectRect(QRectF selectRect);
     void receiveSceneName(QString name);
     void receiveUpdateCurrentStateRadius();
+    void setCurrentSceneWithoutRepositioning(RwaScene *scene);
     //void receiveUpdateCurrentSceneRadius();
 
     bool mouseDownStates(const QPointF myPoint);
@@ -60,6 +75,7 @@ signals:
      void sendMapCoordinates(double lon, double lat);
      void sendStateCoordinate(QPointF);
      void sendSelectedStates(QStringList states);
+     void sendCurrentSceneWithoutRepositioning(RwaScene *scene);
 };
 
 #endif // RWAMAPVIEW_H

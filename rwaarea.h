@@ -1,11 +1,18 @@
 /*
+ * This file is part of the Rwa Creator.
+ * An open-source cross-platform Middleware for creating interactive Soundwalks
+ *
+ * Copyright (C) 2015 - 2022 Thomas Resch
+ *
+ * License: MIT
+ *
  * rwaarea.h
  * by Thomas Resch
  * Base Class for Rwa Scenes, States and Assets
  * Represents either a polygon, a circle or rectangle
  * in addition to several attributes shared by the mentioned derived classes
-*/
-
+ *
+ */
 
 #ifndef RWAAREA_H
 #define RWAAREA_H

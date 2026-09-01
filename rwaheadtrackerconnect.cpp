@@ -1,5 +1,7 @@
 #include "rwaheadtrackerconnect.h"
+#include "rwabackend.h"
 #include <QTimer>
+
 
 RwaHeadtrackerConnect *RwaHeadtrackerConnect::instance = nullptr;
 
@@ -19,23 +21,32 @@ float RwaHeadtrackerConnect::getAzimuth()
 }
 
 RwaHeadtrackerConnect::RwaHeadtrackerConnect(QObject *parent) : QObject(parent)
-{   
-    rwaBluetooth = new Device();
+{
+    m_handler = new DeviceHandler(this);
+    m_finder = new DeviceFinder(m_handler, this);
+
+    // The handler dispatches per characteristic: decoded binary samples
+    // from an RTK headtracker (713d0005), raw ASCII strings from an RWAHT
+    // headtracker (713d0002). Both funnel into the same calibration /
+    // step-detection path below.
+    connect(m_handler, &DeviceHandler::headtrackerDataReceived,
+            this, &RwaHeadtrackerConnect::receiveHeadtrackerData);
+    connect(m_handler, &DeviceHandler::headtrackerSampleReceived,
+            this, &RwaHeadtrackerConnect::receiveHeadtrackerSample);
+
     headTrackerOrientation = std::vector<float>(3, 0.0);
     headTrackerOffset = std::vector<float>(3, 0.0);
 }
 
 void RwaHeadtrackerConnect::startBluetoothScanning()
 {
-    qDebug() << "Start Headtracker Discovery";
-    rwaBluetooth->startDeviceDiscovery(name);
-    connect (rwaBluetooth, SIGNAL(sendHeadtrackerData(QString)),
-             this, SLOT(receiveHeadtrackerData(QString)));
+    m_finder->setTargetName(name);
+    m_finder->startSearch();
 }
 
 void RwaHeadtrackerConnect::disconnectHeadtracker()
 {
-    rwaBluetooth->disconnectFromDevice();
+    m_handler->disconnectService();
 }
 
 void RwaHeadtrackerConnect::setName(QString newName)
@@ -114,6 +125,7 @@ void RwaHeadtrackerConnect::detectStep(float linAccelZ)
                  float dif = linAccelZ-averageAccel;
                  if(dif > 0.6f)
                  {
+                     logStep(linAccelZ);
                      emit sendStep();
                      QTimer::singleShot(500, this, SLOT(unblockSteps()));
                      blockSteps = true;
@@ -124,6 +136,7 @@ void RwaHeadtrackerConnect::detectStep(float linAccelZ)
                  float dif = linAccelZ+averageAccel;
                  if(dif > 0.6f)
                  {
+                     logStep(linAccelZ);
                      emit sendStep();
                      QTimer::singleShot(500, this, SLOT(unblockSteps()));
                      blockSteps = true;
@@ -133,6 +146,38 @@ void RwaHeadtrackerConnect::detectStep(float linAccelZ)
      }
  }
 
+// Step events are derived here from linAccelZ (they are not wire data on
+// either heading format), so this is their one log site - shared by the
+// binary and ASCII paths.
+void RwaHeadtrackerConnect::logStep(float linAccelZ)
+{
+    if(RwaBackend::getInstance()->logOther) {
+        qInfo() << "Step detected (linAccelZ" << linAccelZ
+                << ", moving avg" << averageAccel << ")";
+    }
+}
+
+void RwaHeadtrackerConnect::receiveHeadtrackerSample(float azimuthDeg, float elevationDeg,
+                                                     float linAccelZ)
+{
+    std::vector<float> receivedOrientation = {azimuthDeg, elevationDeg, 0.0f};
+
+    // Payload parity with the ASCII path, which echoes the whole raw string:
+    // the binary frame carries azimuth, elevation and linAccelZ.
+    if(RwaBackend::getInstance()->logOther) {
+        qInfo() << "BLE heading (azimuth/elevation):"
+                << azimuthDeg << "/" << elevationDeg
+                << "(binary, linAccelZ" << linAccelZ << ")";
+    }
+
+    detectStep(linAccelZ);
+
+    if(calibrationCounter)
+        collectCalibrationData(headTrackerOffset, receivedOrientation, calibrationCounter);
+    else
+        calculatedOrientation(receivedOrientation);
+}
+
 void RwaHeadtrackerConnect::receiveHeadtrackerData(const QString &data)
 {
     std::vector<float> receivedOrientation = std::vector<float>(3, 0.0);
@@ -140,18 +185,23 @@ void RwaHeadtrackerConnect::receiveHeadtrackerData(const QString &data)
     if(data.isEmpty())
         return;
 
-    QStringList list = data.split(QRegExp("\\s+"), QString::SkipEmptyParts);
-
+   // QStringList list = data.split(QRegExp("\\s+"), Qt::SkipEmptyParts);
+    QStringList list = data.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
     if(list.empty())
         return;
 
     if(list.length() >= 1)
         receivedOrientation[0] = list.at(0).toFloat();
 
-    qDebug() << receivedOrientation[0];
-
     if(list.length() >= 2)
-       receivedOrientation[1] = list.at(1).toFloat();
+        receivedOrientation[1] = list.at(1).toFloat();
+
+    if(RwaBackend::getInstance()->logOther && list.length() >= 2) {
+        qInfo() << "BLE heading (azimuth/elevation):"
+                << receivedOrientation[0]
+                << "/" << receivedOrientation[1]
+                << "(" << data << ")";
+    }
 
     if(list.length() >= 3)
         detectStep(list.at(2).toFloat());

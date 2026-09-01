@@ -44,7 +44,7 @@
 //http://nominatim.openstreetmap.org/?format=xml&addressdetails=1&q=[church]+berlin+mitte&format=xml&limit=10
 //http://nominatim.openstreetmap.org/search?q=[church]&format=xml&limit=10&viewbox=7.98435,49.40889,8.95440,48.77371&bounded=1
 
-#define GSUGGEST_URL "https://nominatim.openstreetmap.org/search?q=%1&format=xml"
+#define GSUGGEST_URL "https://api3.geo.admin.ch/rest/services/ech/SearchServer"
 
 RwaSuggestPlaces::RwaSuggestPlaces(QLineEdit *parent): QObject(parent), editor(parent)
 {
@@ -183,8 +183,21 @@ void RwaSuggestPlaces::doneCompletion()
 void RwaSuggestPlaces::autoSuggest()
 {
     QString str = editor->text();
-    QString url = QString(GSUGGEST_URL).arg(str);
-    networkManager.get(QNetworkRequest(QString(url)));
+
+    QUrl url(GSUGGEST_URL);
+    QUrlQuery q;
+    q.addQueryItem("type", "locations");
+    q.addQueryItem("origins", "address");
+    q.addQueryItem("searchText", str);
+    q.addQueryItem("limit", QString::number(10));
+    q.addQueryItem("sr", "4326");
+    url.setQuery(q);
+
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::UserAgentHeader, "RWA Creator/1.0 (Qt; address autocomplete)");
+    request.setRawHeader("Accept", "application/json");
+
+    networkManager.get(request);
 }
 
 void RwaSuggestPlaces::preventSuggest()
@@ -195,32 +208,40 @@ void RwaSuggestPlaces::preventSuggest()
 void RwaSuggestPlaces::handleNetworkData(QNetworkReply *networkReply)
 {
     QUrl url = networkReply->url();
+    QNetworkReply::NetworkError error = networkReply->error();
 
-    if (!networkReply->error())
-    {     
+    if (error == QNetworkReply::NoError)
+    {
         QStringList choices;
         QStringList lon;
         QStringList lat;
 
         QByteArray response(networkReply->readAll());
-        QXmlStreamReader xml(response);
+
+        QJsonParseError parseError;
+        QJsonDocument jsonDoc = QJsonDocument::fromJson(response, &parseError);
+
         //qDebug() << QString(response);
-        while (!xml.atEnd())
+        if (parseError.error == QJsonParseError::NoError && jsonDoc.isObject())
         {
-            xml.readNext();
-            if (xml.tokenType() == QXmlStreamReader::StartElement)
+            QJsonObject jsonObj = jsonDoc.object();
+            QJsonArray results = jsonObj["results"].toArray();
+
+            for (const QJsonValue &result : results)
             {
-                if (xml.name() == "place")
-                {
-                    QStringRef str = xml.attributes().value("display_name");
-                    choices << str.toString();
+                QJsonObject resultObj = result.toObject();
+                QJsonObject attrs = resultObj["attrs"].toObject();
 
-                    QStringRef latitude = xml.attributes().value("lat");
-                    lat << latitude.toString();
+                QTextDocument doc;
+                doc.setHtml(attrs["label"].toString());
+                QString label = doc.toPlainText();
 
-                    QStringRef longitude = xml.attributes().value("lon");
-                    lon << longitude.toString();
-                }
+                double latitude = attrs["lat"].toDouble();
+                double longitude = attrs["lon"].toDouble();
+
+                choices << label;
+                lat << QString::number(latitude, 'f', 6);
+                lon << QString::number(longitude, 'f', 6);
             }
         }
 
@@ -228,10 +249,8 @@ void RwaSuggestPlaces::handleNetworkData(QNetworkReply *networkReply)
     }
     else
     {
-        qDebug("network Error");
+        qDebug("network Error: %s", qPrintable(networkReply->errorString()));
     }
 
     networkReply->deleteLater();
 }
-
-

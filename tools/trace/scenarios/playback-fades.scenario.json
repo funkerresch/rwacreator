@@ -1,0 +1,14 @@
+{
+  "schema": "rwa-scenario/1",
+  "description": "Check in what sequence playback messages arrive in Pd patchers",
+  "game": "fixtures/test_playback-fades/test_playback-fades.rwa",
+  "startScene": "Scene 0",
+  "durationMs": 30000,
+  "timeline": [
+    { "t": 0,     "pos": { "lon": 7.58600000, "lat": 47.55500000 }, "comment": "start outside states" },
+    { "t": 2000,  "pos": { "lon": 7.58550000, "lat": 47.55500000 }, "comment": "enter state" },
+    { "t": 8000,  "pos": { "lon": 7.58600000, "lat": 47.55500000 }, "comment": "leave state before asset finishes playing" },
+    { "t": 8100,  "playFinished": { "asset": "test-counter.wav" }, "comment": "send end after leaving" },
+    { "t": 12000,  "pos": { "lon": 7.58550000, "lat": 47.55500000 }, "comment": "enter state to observe if to observe playheadposition" }
+  ]
+}

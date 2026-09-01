@@ -14,7 +14,7 @@ static QString rwaSimulationOnLabelActive  ("color: rgba(0, 0, 0, 100%);"
                                      "border-color: rgba(222, 222, 222, 0%);"
                                      "border-radius: 2px;"
                                      "font-size: 14px;"
-                                     "font-family: Helvetica Neue DeskInterface;");
+                                     "font-family: Helvetica Neue;");
 
 static QString rwaSimulationOnLabelNotActive  ("color: rgba(0, 100, 0, 100%);"
                                      "background-color: rgba(222, 222, 222, 0%);"
@@ -25,7 +25,7 @@ static QString rwaSimulationOnLabelNotActive  ("color: rgba(0, 100, 0, 100%);"
                                      "border-color: rgba(222, 222, 222, 0%);"
                                      "border-radius: 2px;"
                                      "font-size: 10px;"
-                                     "font-family: Helvetica Neue DeskInterface;");
+                                     "font-family: Helvetica Neue;");
 
 static QString rwaButtonStyleSheet  ("color: rgba(0, 0, 0, 100%);"
                                      "background-color: rgba(222, 222, 222, 90%);"
@@ -36,7 +36,7 @@ static QString rwaButtonStyleSheet  ("color: rgba(0, 0, 0, 100%);"
                                      "border-color: #666666;"
                                      "border-radius: 2px;"
                                      "font-size: 10px;"
-                                     "font-family: Helvetica Neue DeskInterface;");
+                                     "font-family: Helvetica Neue;");
 
 static QString rwaLargeLineEditStyle("color: rgba(0, 0, 0, 100%);"
                                      "background-color: rgba(222, 222, 222, 90%);"
@@ -47,7 +47,7 @@ static QString rwaLargeLineEditStyle("color: rgba(0, 0, 0, 100%);"
                                      "border-color: #666666;"
                                      "border-radius: 2px;"
                                      "font-size: 10px;"
-                                     "font-family: Helvetica Neue DeskInterface;");
+                                     "font-family: Helvetica Neue;");
 
 
 static QString rwaSmallLineEditStyle( "color: rgba(0, 0, 0, 100%);"
@@ -59,7 +59,7 @@ static QString rwaSmallLineEditStyle( "color: rgba(0, 0, 0, 100%);"
                                       "border-color: #666666;"
                                       "border-radius: 2px;"
                                       "font-size: 10px;"
-                                      "font-family: Helvetica Neue DeskInterface;");
+                                      "font-family: Helvetica Neue;");
 
 static QString rwaInactiveLableStyle( "color: rgba(0, 0, 222, 60%);"
                                       "background-color: rgba(222, 222, 222, 40%);"
@@ -70,7 +70,6 @@ static QString rwaInactiveLableStyle( "color: rgba(0, 0, 222, 60%);"
                                       "border-color: #666666;"
                                       "border-radius: 2px;"
                                       "font-size: 10px;"
-                                      "font-family: Helvetica Neue DeskInterface;");
+                                      "font-family: Helvetica Neue;");
 
 #endif // RWASTYLES
-

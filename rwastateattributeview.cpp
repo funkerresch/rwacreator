@@ -1,5 +1,7 @@
 #include "rwastateattributeview.h"
 
+#include <QDebug>
+
 RwaStateAttributeView::RwaStateAttributeView(QWidget *parent, RwaScene *scene) :
     RwaAttributeView(parent, scene)
 {
@@ -51,15 +53,16 @@ RwaStateAttributeView::RwaStateAttributeView(QWidget *parent, RwaScene *scene) :
     addComboBoxAndLabel(attributeGridLayout, "Next Scene", nextScenes);
     addLineEditAndLabel(attributeGridLayout, "Time Out");
     editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Min stay time");
+    addLineEditAndLabel(attributeGridLayout, "Gain (dB)");
 
     QLineEdit *requiredStates = addLineEditAndLabel(attributeGridLayout, "Required States");
     setLineEditSignal2editingFinished(requiredStates);
 
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Longitude");
     editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Latitude");
-    editingFinishedLineEdit =addLineEditAndLabel(attributeGridLayout, "State Radius");
-    editingFinishedLineEdit =addLineEditAndLabel(attributeGridLayout, "State Width");
-    editingFinishedLineEdit =addLineEditAndLabel(attributeGridLayout, "State Height");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Longitude");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "State Radius");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "State Width");
+    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "State Height");
     addLineEditAndLabel(attributeGridLayout, "Exit Offset");
 
     addAttrCheckbox(attributeGridLayout, "Assets follow state", RWASTATEATTRIBUTE_FOLLOWINGASSETS);
@@ -78,12 +81,14 @@ RwaStateAttributeView::RwaStateAttributeView(QWidget *parent, RwaScene *scene) :
     connect(this, SIGNAL(sendCurrentScene(RwaScene*)),
               backend, SLOT(receiveLastTouchedScene(RwaScene*)));
 
+    connect(this, SIGNAL(sendCurrentSceneWithoutRepositioning(RwaScene*)),
+              backend, SLOT(receiveCurrentSceneWithouRepositioning(RwaScene*)));
+
     connect(backend, SIGNAL(sendSelectedStates(QStringList)),
               this, SLOT(receiveSelectedStates(QStringList)));
 
-    this->setMinimumHeight((assetAttrCounter)*18);
-    this->setMinimumWidth(20);
-    this->setMaximumWidth(240);
+    this->setMinimumHeight(calculate_window_height());
+    this->setFixedWidth(240);
 }
 
 void RwaStateAttributeView::receiveEditingFinished()
@@ -102,7 +107,7 @@ void RwaStateAttributeView::receiveEditingFinished()
         lastSenderName = senderName;
         setFocus();
 
-        emit sendCurrentScene(currentScene);
+        emit sendCurrentSceneWithoutRepositioning(currentScene);
     }
 }
 
@@ -178,10 +183,6 @@ void RwaStateAttributeView::setCurrentState(RwaState *state)
         attrLineEdit->setText(requiredStatesText);
     }
 
-//    attrLineEdit = this->findChild<QLineEdit *>("Enter Offset");
-//    if(attrLineEdit)
-//        attrLineEdit->setText(QString::number(currentState->getEnterOffset()));
-
     attrLineEdit = this->findChild<QLineEdit *>("Exit Offset");
     if(attrLineEdit)
         attrLineEdit->setText(QString::number(currentState->getExitOffset()));
@@ -193,6 +194,15 @@ void RwaStateAttributeView::setCurrentState(RwaState *state)
     attrLineEdit = this->findChild<QLineEdit *>("Min stay time");
     if(attrLineEdit)
         attrLineEdit->setText(QString::number(currentState->getMinimumStayTime()));
+
+    attrLineEdit = this->findChild<QLineEdit *>("Gain (dB)");
+    if(attrLineEdit)
+    {
+        // block: setText() would re-enter receiveLineEditAttributeValue and write the
+        // dB->linear round trip of the displayed value back into the state on every refresh
+        QSignalBlocker blocker(attrLineEdit);
+        attrLineEdit->setText(gainToDbText(currentState->getGain()));
+    }
 
     attrCheckBox = this->findChild<QCheckBox *>("Assets follow state");
     if(attrCheckBox)
@@ -239,7 +249,7 @@ void RwaStateAttributeView::updateStateAttr(QComboBox *attrComboBox, QString sta
 {
     int index = 0;
 
-    if(state2compare.compare(""))   
+    if(state2compare.compare(""))
          index = attrComboBox->findText(state2compare);
 
     attrComboBox->setCurrentIndex(index);
@@ -252,21 +262,21 @@ void RwaStateAttributeView::updateStateComboBox(QComboBox *attrComboBox)
 
     RwaState *state;
 
-    //disconnect(attrComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(receiveComboBoxAttributeValue(QString)));
+    //disconnect(attrComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &RwaStateAttributeView::receiveComboBoxAttributeValue);
     attrComboBox->clear();
     attrComboBox->addItem("None");
 
     foreach(state, currentScene->getStates())
         attrComboBox->addItem(QString::fromStdString(state->objectName()));
 
-    //connect(attrComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(receiveComboBoxAttributeValue(QString)));
+    //connect(attrComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &RwaStateAttributeView::receiveComboBoxAttributeValue);
 }
 
 void RwaStateAttributeView::updateSceneAttr(QComboBox *attrComboBox, QString scene2compare)
 {
     int index = 0;
 
-    if(scene2compare.compare(""))   
+    if(scene2compare.compare(""))
        index = attrComboBox->findText(scene2compare);
 
     attrComboBox->setCurrentIndex(index);
@@ -276,14 +286,11 @@ void RwaStateAttributeView::updateSceneComboBox(QComboBox *attrComboBox)
 {
     RwaScene *scene;
 
-    //disconnect(attrComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(receiveComboBoxAttributeValue(QString)));
     attrComboBox->clear();
     attrComboBox->addItem("None");
 
     foreach(scene, backend->getScenes())
         attrComboBox->addItem(QString::fromStdString(scene->objectName()));
-
-   // connect(attrComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(receiveComboBoxAttributeValue(QString)));
 }
 
 void RwaStateAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
@@ -304,7 +311,8 @@ void RwaStateAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
     foreach(QString stateName, selectedStates)
     {
         state = currentScene->getState(stateName.toStdString());
-        state->setAttribute(id, value);
+        if(state)
+            state->setAttribute(id, value);
     }
 
     return;
@@ -321,20 +329,37 @@ void RwaStateAttributeView::receiveLineEditAttributeValue()
         lastSenderName = senderName;
 
         QLineEdit *attrLineEdit = (QLineEdit *)QObject::sender();
-        QStringList requiredStates = attrLineEdit->text().split(",",QString::SkipEmptyParts);
+        QStringList requiredStates = attrLineEdit->text().split(",",Qt::SkipEmptyParts);
 
         currentState->requiredStates.clear();
         QString requiredState;
 
         foreach(requiredState, requiredStates)
         {
-            foreach(RwaState *state, currentScene->getStates() )
+            QString name = requiredState.trimmed();
+            if(name.isEmpty())
+                continue;
+
+            QStringList foundInScenes;
+            foreach(RwaScene *scene, backend->getScenes())
             {
-                if(!requiredState.trimmed().compare(QString::fromStdString(state->objectName())))
+                foreach(RwaState *state, scene->getStates())
                 {
-                    currentState->requiredStates.push_back(state->objectName());
+                    if(!name.compare(QString::fromStdString(state->objectName())))
+                    {
+                        foundInScenes.append(QString::fromStdString(scene->objectName()));
+                        break;
+                    }
                 }
             }
+
+            if(foundInScenes.isEmpty())
+                qWarning() << "Required state" << name << "does not exist in any scene.";
+            else if(foundInScenes.count() > 1)
+                qWarning() << "Required state" << name << "exists in multiple scenes ("
+                           << foundInScenes.join(", ") << "); visiting any of them will satisfy the requirement.";
+
+            currentState->requiredStates.push_back(name.toStdString());
         }
 
         emit sendWriteUndo("State edited: "+ senderName);
@@ -360,6 +385,13 @@ void RwaStateAttributeView::receiveLineEditAttributeValue(const QString &value)
     if(!QObject::sender()->objectName().compare("Min stay time"))
     {
         currentState->setMinimumStayTime(value.toFloat());
+    }
+
+    if(!QObject::sender()->objectName().compare("Gain (dB)"))
+    {
+        float gain;
+        if(dbTextToGain(value, gain))
+            currentState->setGain(gain); // picked up by the running simulation on the next tick
     }
 
     if(!QObject::sender()->objectName().compare("State Radius"))
@@ -526,4 +558,3 @@ void RwaStateAttributeView::receiveFaderAttributeValue(int id)
 {
 
 }
-

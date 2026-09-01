@@ -1,15 +1,13 @@
 [submodule "vas_library"]
 	path = vas_library
-	url = https://github.com/funkerresch/vas_library.git
-[submodule "libpd"]
-	path = libpd
-	url = https://github.com/libpd/libpd.git
+	url = https://github.com/rnd-hsm-klassik/vas_library.git
+	branch = rwa-player-fixes
 [submodule "portaudio"]
 	path = portaudio
 	url = https://github.com/PortAudio/portaudio.git
 [submodule "ofq"]
 	path = ofq
-	url = https://github.com/kampfschlaefer/ofq.git
+	url = https://github.com/funkerresch/ofq.git
 [submodule "pd-extra/pd"]
 	path = pd-extra/pd
 	url = https://github.com/pd-l2ork/pd.git
@@ -19,3 +17,16 @@
 [submodule "vorbis"]
 	path = vorbis
 	url = https://gitlab.xiph.org/xiph/vorbis.git
+[submodule "taglib"]
+	path = taglib
+	url = https://github.com/taglib/taglib.git
+[submodule "cpp-httplib"]
+	path = cpp-httplib
+	url = https://github.com/yhirose/cpp-httplib.git
+[submodule "libpd"]
+	path = libpd
+	url = https://github.com/libpd/libpd.git
+[submodule "pd-lib-builder"]
+	path = pd-lib-builder
+	url = https://github.com/pure-data/pd-lib-builder.git
+	branch = master

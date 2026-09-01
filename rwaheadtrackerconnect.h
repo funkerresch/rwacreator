@@ -1,8 +1,23 @@
+/*
+ * This file is part of the Rwa Creator.
+ * An open-source cross-platform Middleware for creating interactive Soundwalks
+ *
+ * Copyright (C) 2015 - 2022 Thomas Resch
+ *
+ * License: MIT
+ *
+ * rwaheadtrackerconnect.h
+ * by Thomas Resch
+ *
+ */
+
 #ifndef RWAHEADTRACKERCONNECT_H
 #define RWAHEADTRACKERCONNECT_H
 
 #include <QObject>
-#include "bluetooth/device.h"
+#include <QRegularExpression>
+#include "bluetooth/devicefinder.h"
+#include "bluetooth/devicehandler.h"
 
 class RwaHeadtrackerConnect : public QObject
 {
@@ -21,7 +36,8 @@ public slots:
     void calibrateHeadtracker();
 
 private:
-    Device *rwaBluetooth;
+    DeviceHandler *m_handler;
+    DeviceFinder *m_finder;
     QString name = "rwaht84";
     std::vector<float> headTrackerOrientation;
     std::vector<float> headTrackerOffset;
@@ -35,6 +51,7 @@ private:
     void collectCalibrationData(std::vector<float> &offsetVector, std::vector<float> &receivedOrientation, uint32_t &counter);
     void calculatedOrientation(std::vector<float> &receivedOrientation);
     void detectStep(float linAccelZ);
+    void logStep(float linAccelZ);
 
 signals:
     void sendAzimuth(float azimuth);
@@ -44,6 +61,8 @@ signals:
 
 private slots:
     void receiveHeadtrackerData(const QString &data);
+    void receiveHeadtrackerSample(float azimuthDeg, float elevationDeg,
+                                  float linAccelZ);
     void unblockSteps();
 };
 

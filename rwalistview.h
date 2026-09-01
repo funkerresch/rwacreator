@@ -1,3 +1,17 @@
+/*
+ * This file is part of the Rwa Creator.
+ * An open-source cross-platform Middleware for creating interactive Soundwalks
+ *
+ * Copyright (C) 2015 - 2022 Thomas Resch
+ *
+ * License: MIT
+ *
+ * rwalistview.h
+ * by Thomas Resch
+ * Base class for asset, state, and scene list editors
+ *
+ */
+
 #ifndef RWALISTVIEW_H
 #define RWALISTVIEW_H
 
@@ -11,6 +25,7 @@
 #include "rwautilities.h"
 #include "rwabackend.h"
 #include "rwaview.h"
+#include "rwalistbadgedelegate.h"
 #include <QFileInfo>
 #include <QFile>
 
@@ -35,6 +50,7 @@ class RwaListView : public QListWidget
         virtual void setCurrentScene(qint32 sceneNumber);
 
     protected:
+        void mousePressEvent(QMouseEvent *event);
         void mouseMoveEvent(QMouseEvent *event);
         void dragMoveEvent(QDragMoveEvent *event);
         void dropEvent(QDropEvent *event);

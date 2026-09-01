@@ -1,24 +1,33 @@
 #include "rwaruntime.h"
-#ifdef QT_VERSION
-#include "rwabackend.h"
-#endif
 
 std::list <RwaEntity *> RwaRuntime::entities;
 bool RwaRuntime::debug;
 
-float RwaRuntime::assetDuration;
-float RwaRuntime::assetChannelCount;
-float RwaRuntime::assetSampleRate;
-
 pdPatcher RwaRuntime::binauralStereoPatchers_fabian[RWARUNTIME_MAXNUMBEROFPATCHERS];
+pdPatcher RwaRuntime::binauralStereoPatchersOgg_fabian[RWARUNTIME_MAXNUMBEROFPATCHERS];
 pdPatcher RwaRuntime::binauralMonoPatchers_fabian[RWARUNTIME_MAXNUMBEROFPATCHERS];
+pdPatcher RwaRuntime::binauralMonoPatchersOgg_fabian[RWARUNTIME_MAXNUMBEROFPATCHERS];
 pdPatcher RwaRuntime::binaural5channelPatchers_fabian[RWARUNTIME_MAXNUMBEROF5CHANNELPATCHERS];
 pdPatcher RwaRuntime::binaural7channelPatchers_fabian[RWARUNTIME_MAXNUMBEROF7CHANNELPATCHERS];
 pdPatcher RwaRuntime::stereoPatchers[RWARUNTIME_MAXNUMBEROFPATCHERS];
+pdPatcher RwaRuntime::stereoPatchersOgg[RWARUNTIME_MAXNUMBEROFPATCHERS];
 pdPatcher RwaRuntime::monoPatchers[RWARUNTIME_MAXNUMBEROFPATCHERS];
+pdPatcher RwaRuntime::monoPatchersOgg[RWARUNTIME_MAXNUMBEROFPATCHERS];
 
 std::list<pdPatcher *> RwaRuntime::dynamicPatchers1;
+std::list<RwaEntity::AssetMapItem> RwaRuntime::assetsPendingRelease;
+
 RwaBackend *RwaRuntime::backend;
+
+bool RwaRuntime::logSim = false;
+bool RwaRuntime::logPd = false;
+float RwaRuntime::pdSampleRate = 48000;
+
+#ifdef QT_VERSION
+std::function<uint32_t()> RwaRuntime::seedSource = []{ return QRandomGenerator::global()->generate(); };
+#else
+std::function<uint32_t()> RwaRuntime::seedSource = []{ static std::random_device rd; return rd(); };
+#endif
 
 #ifdef QT_VERSION
 #define INIT_LIBPD_QUEUED
@@ -38,26 +47,36 @@ RwaRuntime::RwaRuntime(const char *pdpath, const char *assetPath, float sampleRa
     backend = _backend;
 #endif
 
+    // Pd emits a print in pieces ("print", ": ", "1", " ", "2", "\n"); route them
+    // through libpd's concatenator so printpd sees one complete line instead of
+    // one log entry per symbol plus a trailing empty one.
+    libpd_set_concatenated_printhook (static_cast<t_libpd_printhook>(RwaRuntime::printpd));
+
 #ifdef INIT_LIBPD_QUEUED
-    libpd_set_queued_printhook (static_cast<t_libpd_printhook>(RwaRuntime::printpd));
+    libpd_set_queued_printhook (libpd_print_concatenator);
     libpd_set_queued_floathook (static_cast<t_libpd_floathook>(RwaRuntime::floatpd));
     libpd_set_queued_banghook (static_cast<t_libpd_banghook>(RwaRuntime::bangpd));
     libpd_queued_init();
 #else
-    libpd_set_printhook (static_cast<t_libpd_printhook>(RwaRuntime::printpd));
+    libpd_set_printhook (libpd_print_concatenator);
     libpd_set_floathook (static_cast<t_libpd_floathook>(RwaRuntime::floatpd));
     libpd_set_banghook (static_cast<t_libpd_banghook>(RwaRuntime::bangpd));
     libpd_init();
 #endif
+    // Put the bundled Pd resources on Pd's search path. The FABIAN HRTF set
+    // (fabian_dir256.txt, 38 MB) lives there next to the playback patches, so the
+    // bundled patches find it by sitting in the same directory - a creator's own
+    // patcher, opened from the game's assets folder, does not. With the resources
+    // on the search path, [rwa_binauralsimple~ 256 fabian_dir256.txt] resolves from
+    // any patch and the file no longer has to be copied into every project.
+    libpd_add_to_search_path(pdpath);
+
     rwa_binauralsimple_tilde_setup();
+    vas_reverb_tilde_setup();
     freeverb_tilde_setup();
     oggread_tilde_setup();
 
     libpd_openfile("stereoout.pd", pdpath);
-    libpd_openfile("rwagetmetadata.pd", pdpath);
-    libpd_bind("duration4metadata");
-    libpd_bind("channels4metadata");
-    libpd_bind("samplerate4metadata");
 
     for(uint32_t i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
     {
@@ -69,10 +88,26 @@ RwaRuntime::RwaRuntime(const char *pdpath, const char *assetPath, float sampleRa
 
     for(uint32_t i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
     {
+        void *d = libpd_openfile("rwaloopplayermonoogg.pd", pdpath);
+        monoPatchersOgg[i].patcherTag = d;
+        monoPatchersOgg[i].isBusy = false;
+        createAndBindPlayFinishedReceiver(&monoPatchersOgg[i]);
+    }
+
+    for(uint32_t i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
+    {
         void *d = libpd_openfile("rwaloopplayerstereo.pd", pdpath);
         stereoPatchers[i].patcherTag = d;
         stereoPatchers[i].isBusy = false;
         createAndBindPlayFinishedReceiver(&stereoPatchers[i]);
+    }
+
+    for(uint32_t i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
+    {
+        void *d = libpd_openfile("rwaloopplayerstereoogg.pd", pdpath);
+        stereoPatchersOgg[i].patcherTag = d;
+        stereoPatchersOgg[i].isBusy = false;
+        createAndBindPlayFinishedReceiver(&stereoPatchersOgg[i]);
     }
 
     for(uint32_t i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
@@ -91,6 +126,22 @@ RwaRuntime::RwaRuntime(const char *pdpath, const char *assetPath, float sampleRa
         createAndBindPlayFinishedReceiver(&binauralMonoPatchers_fabian[i]);
     }
 
+    for(uint32_t i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
+    {
+        void *d = libpd_openfile("rwaplayermonobinauralogg_fabian.pd", pdpath);
+        binauralMonoPatchersOgg_fabian[i].patcherTag = d;
+        binauralMonoPatchersOgg_fabian[i].isBusy = false;
+        createAndBindPlayFinishedReceiver(&binauralMonoPatchersOgg_fabian[i]);
+    }
+
+    for(uint32_t i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
+    {
+        void *d = libpd_openfile("rwaplayerstereobinauralogg_fabian.pd", pdpath);
+        binauralStereoPatchersOgg_fabian[i].patcherTag = d;
+        binauralStereoPatchersOgg_fabian[i].isBusy = false;
+        createAndBindPlayFinishedReceiver(&binauralStereoPatchersOgg_fabian[i]);
+    }
+
     for(uint32_t i=0; i<RWARUNTIME_MAXNUMBEROF5CHANNELPATCHERS; i++)
     {
         void *d = libpd_openfile("rwaplayer5_1channelbinaural_fabian.pd", pdpath);
@@ -106,23 +157,17 @@ RwaRuntime::RwaRuntime(const char *pdpath, const char *assetPath, float sampleRa
         binaural7channelPatchers_fabian[i].isBusy = false;
         createAndBindPlayFinishedReceiver(&binaural7channelPatchers_fabian[i]);
     }
+}
 
-    openFile4MetaData("unitclick.wav"); // first message gets lost somehow, sending an init dummy message
+extern "C" void *RwaRuntime_new(QObject *parent, const char *pdpath, const char *assetPath, float sampleRate, float schedulerRate, mutex *pdMutex, RwaBackend *_backend) // wrapper function
+{
+    RwaRuntime *runtime = new RwaRuntime(parent, pdpath, assetPath, sampleRate, schedulerRate, pdMutex, _backend);
+    return runtime;
 }
 
 RwaRuntime::~RwaRuntime()
 {
 
-}
-
-void RwaRuntime::openFile4MetaData(const char *fileName)
-{
-    pdMutex->lock();
-    libpd_symbol("filename4metadata", fileName);
-#ifdef INIT_LIBPD_QUEUED
-    libpd_queued_receive_pd_messages();
-#endif
-    pdMutex->unlock();
 }
 
 void RwaRuntime::createAndBindPlayFinishedReceiver(pdPatcher *patcher)
@@ -134,29 +179,27 @@ void RwaRuntime::createAndBindPlayFinishedReceiver(pdPatcher *patcher)
 
 void RwaRuntime::printpd(const char *s)
 {
-    if(!backend)
+    if(!logPd)
         return;
 
-    if(backend->logPd)
-        qDebug() << s;
+    QString line = QString::fromUtf8(s).trimmed();
+    if(line.isEmpty())
+        return;
+
+    // the log view drops messages longer than 512 chars, so shorten here
+    // instead of losing the whole line
+    if(line.length() > 500)
+        line = line.left(500) + QStringLiteral("...");
+
+    // noquote(): keep the line as pd wrote it, no surrounding quotes and no
+    // backslash escaping of the contained symbols
+    qInfo().noquote() << "[pd]" << line;
 }
 
 void RwaRuntime::floatpd(const char *source, float value)
 {
-    if(!backend)
-        return;
-
-     if(!strcmp(source, "duration4metadata"))
-        assetDuration = value;
-
-     if(!strcmp(source, "channels4metadata"))
-        assetChannelCount = value;
-
-     if(!strcmp(source, "samplerate4metadata"))
-        assetSampleRate = value;
-
-     if(backend->logPd)
-         qDebug() << source << " " << value;
+     if(logPd)
+         qInfo().noquote() << "[pd]" << source << value;
 }
 
 pdPatcher *RwaRuntime::findDynamicPatcher(int32_t patcherTag)
@@ -183,6 +226,30 @@ void RwaRuntime::releasePatcherFromItem(RwaEntity::AssetMapItem item)
             patcher->isBusy = false;
     }
 
+    else if(asset->type == RWAASSETTYPE_OGG)
+    {
+        switch(playbackType)
+        {
+            case RWAPLAYBACKTYPE_MONO:
+                monoPatchersOgg[getMonoPatcherOggIndex(patcherTag)].isBusy = false;
+                break;
+
+            case RWAPLAYBACKTYPE_STEREO:
+                stereoPatchersOgg[getStereoPatcherOggIndex(patcherTag)].isBusy = false;
+                break;
+
+            case RWAPLAYBACKTYPE_BINAURALMONO_FABIAN:
+                binauralMonoPatchersOgg_fabian[getBinauralMonoFabianOggPatcherIndex(patcherTag)].isBusy = false;
+                break;
+
+            case RWAPLAYBACKTYPE_BINAURALSTEREO_FABIAN:
+                binauralStereoPatchersOgg_fabian[getBinauralStereoFabianOggPatcherIndex(patcherTag)].isBusy = false;
+                break;
+
+            default: break;
+        }
+    }
+
     else
     {
         switch(playbackType)
@@ -197,7 +264,7 @@ void RwaRuntime::releasePatcherFromItem(RwaEntity::AssetMapItem item)
                 break;
 
             case RWAPLAYBACKTYPE_MONO:
-                monoPatchers[getStereoPatcherIndex(patcherTag)].isBusy = false;
+                monoPatchers[getMonoPatcherIndex(patcherTag)].isBusy = false;
                 break;
 
             case RWAPLAYBACKTYPE_STEREO:
@@ -243,8 +310,8 @@ void RwaRuntime::bangpdHelp(int32_t patcherTag, std::map<string, RwaEntity::Asse
         {
             i = assetItemMap.erase(i);
             releasePatcherFromItem(item);
-            if(backend->logSim)
-                qDebug() <<  "Released Asset" << ": " << QString::fromStdString(assetItem->fileName);
+            if(logSim)
+                qInfo() <<  "Released Asset" << ": " << QString::fromStdString(assetItem->fileName);
 
             return;
         }
@@ -271,6 +338,8 @@ void RwaRuntime::bangpd(const char *source)
 
     if(!strcmp(receiver, "playfinished"))
     {
+        if(logSim)
+            qDebug() << "playfinished";
         RwaEntity *entity;
         RwaEntity::AssetMapItem item;
 
@@ -278,6 +347,21 @@ void RwaRuntime::bangpd(const char *source)
         {
             bangpdHelp(intPatcherTag, entity->activeAssets);
             bangpdHelp(intPatcherTag, entity->backgroundAssets);
+        }
+
+        // superseded background instance finished its fade-out
+        std::list<RwaEntity::AssetMapItem>::iterator p = assetsPendingRelease.begin();
+        while(p != assetsPendingRelease.end())
+        {
+            if(p->getPatcherTag() == intPatcherTag)
+            {
+                releasePatcherFromItem(*p);
+                p = assetsPendingRelease.erase(p);
+                if(logSim)
+                    qInfo() << "Released superseded background patcher: " << intPatcherTag;
+            }
+            else
+                ++p;
         }
     }
 }
@@ -312,11 +396,42 @@ int32_t RwaRuntime::getBinaural7channelFabianPatcherIndex(int32_t patcherTag)
     return RWARUNTIME_INVALIDPATCHERINDEX;
 }
 
+int32_t RwaRuntime::getBinauralMonoFabianOggPatcherIndex(int32_t patcherTag)
+{
+    for(int i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
+    {
+        if(libpd_getdollarzero(binauralMonoPatchersOgg_fabian[i].patcherTag) == patcherTag)
+            return i;
+    }
+    return RWARUNTIME_INVALIDPATCHERINDEX;
+}
+
+int32_t RwaRuntime::getBinauralStereoFabianOggPatcherIndex(int32_t patcherTag)
+{
+    for(int i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
+    {
+        if(libpd_getdollarzero(binauralStereoPatchersOgg_fabian[i].patcherTag) == patcherTag)
+            return i;
+    }
+    return RWARUNTIME_INVALIDPATCHERINDEX;
+}
+
+
 int32_t RwaRuntime::getBinauralMonoFabianPatcherIndex(int32_t patcherTag)
 {
     for(int i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
     {
         if(libpd_getdollarzero(binauralMonoPatchers_fabian[i].patcherTag) == patcherTag)
+            return i;
+    }
+    return RWARUNTIME_INVALIDPATCHERINDEX;
+}
+
+int32_t RwaRuntime::getStereoPatcherOggIndex(int32_t patcherTag)
+{
+    for(int i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
+    {
+        if(libpd_getdollarzero(stereoPatchersOgg[i].patcherTag) == patcherTag)
             return i;
     }
     return RWARUNTIME_INVALIDPATCHERINDEX;
@@ -342,6 +457,16 @@ int32_t RwaRuntime::getMonoPatcherIndex(int32_t patcherTag)
     return RWARUNTIME_INVALIDPATCHERINDEX;
 }
 
+int32_t RwaRuntime::getMonoPatcherOggIndex(int32_t patcherTag)
+{
+    for(int i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
+    {
+        if(libpd_getdollarzero(monoPatchersOgg[i].patcherTag) == patcherTag)
+            return i;
+    }
+    return RWARUNTIME_INVALIDPATCHERINDEX;
+}
+
 void *RwaRuntime::findFreeDynamicPatcher(RwaAsset1 *asset)
 {
     pdPatcher *patcher;
@@ -351,8 +476,8 @@ void *RwaRuntime::findFreeDynamicPatcher(RwaAsset1 *asset)
         {
              patcher->isBusy = true;
 
-             if(backend->logSim)
-                 qDebug() <<  "Found Dynamic PD Asset" << ": " << QString::fromStdString(patcher->name);
+             if(logSim)
+                 qInfo() <<  "Found Dynamic PD Asset" << ": " << QString::fromStdString(patcher->name);
 
              return patcher->patcherTag;
         }
@@ -376,8 +501,8 @@ void RwaRuntime::freeDynamicPdPatchers1()
 
     dynamicPatchers1.clear();
 
-    if(backend->logSim)
-        qDebug() <<  "Freed all dynamic Patchers";
+    if(logSim)
+        qDebug() << "Freed all dynamic Patchers";
 }
 
 void RwaRuntime::initDynamicPdPatchers(RwaEntity *entitiy)
@@ -393,7 +518,7 @@ void RwaRuntime::initDynamicPdPatchers(RwaEntity *entitiy)
             foreach(asset, state->getAssets())
             {
                 if(asset->type == RWAASSETTYPE_PD && !asset->mute)
-                {   
+                {
                     void *d = libpd_openfile(asset->fileName.c_str(), assetPath.c_str());
                     if(d != nullptr)
                     {
@@ -403,8 +528,8 @@ void RwaRuntime::initDynamicPdPatchers(RwaEntity *entitiy)
                         newPatcher->name = asset->fileName;
                         createAndBindPlayFinishedReceiver(newPatcher);
                         dynamicPatchers1.push_back(newPatcher);
-                        if(backend->logSim)
-                            qDebug() <<  "Initialize Pd Asset" << ": " << QString::fromStdString(newPatcher->name);
+                        if(logSim)
+                            qInfo() <<  "Initialize Pd Asset" << ": " << QString::fromStdString(newPatcher->name);
                     }
                 }
             }
@@ -435,8 +560,7 @@ void RwaRuntime::sendEnd2backgroundAssets(RwaEntity *entity)
             if(pdMutex != nullptr)
                 pdMutex->unlock();
 
-            if(backend->logSim)
-                qDebug() <<  "End background asset: "  << QString::fromStdString(assetItem->fileName);
+            qInfo() <<  "End background asset: "  << QString::fromStdString(assetItem->fileName);
 
             ++i;
         }
@@ -466,8 +590,8 @@ void RwaRuntime::sendEnd2activeAssets(RwaEntity *entity)
             if(pdMutex != nullptr)
                 pdMutex->unlock();
 
-            if(backend->logSim)
-                qDebug() <<  "End active asset: "  << QString::fromStdString(assetItem->fileName);
+            if(logSim)
+                qInfo() <<  "End active asset: "  << QString::fromStdString(assetItem->fileName);
 
             ++i;
         }
@@ -508,6 +632,8 @@ void RwaRuntime::unblockStates(RwaEntity *entity)
                 asset->playheadPosition = 0;
                 asset->playheadPositionWithoutOffset = 0;
                 asset->updatePlayheadPosition = true;
+                asset->blockedForever = false;
+                asset->blocked = false;
             }
         }
     }
@@ -520,9 +646,33 @@ void *RwaRuntime::findFreeBinauralMonoFabianPatcher()
         if(!binauralMonoPatchers_fabian[i].isBusy)
         {
             binauralMonoPatchers_fabian[i].isBusy = true;
-
             return binauralMonoPatchers_fabian[i].patcherTag;
+        }
+    }
+    return nullptr;
+}
 
+void *RwaRuntime::findFreeBinauralMonoFabianOggPatcher()
+{
+    for(int i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
+    {
+        if(!binauralMonoPatchersOgg_fabian[i].isBusy)
+        {
+            binauralMonoPatchersOgg_fabian[i].isBusy = true;
+            return binauralMonoPatchersOgg_fabian[i].patcherTag;
+        }
+    }
+    return nullptr;
+}
+
+void *RwaRuntime::findFreeBinauralStereoFabianOggPatcher()
+{
+    for(int i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
+    {
+        if(!binauralStereoPatchersOgg_fabian[i].isBusy)
+        {
+            binauralStereoPatchersOgg_fabian[i].isBusy = true;
+            return binauralStereoPatchersOgg_fabian[i].patcherTag;
         }
     }
     return nullptr;
@@ -567,6 +717,19 @@ void *RwaRuntime::findFreeBinaural7channelFabianPatcher()
     return nullptr;
 }
 
+void *RwaRuntime::findFreeStereoOggPatcher()
+{
+    for(int i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
+    {
+        if(!stereoPatchersOgg[i].isBusy)
+        {
+            stereoPatchersOgg[i].isBusy = true;
+            return stereoPatchersOgg[i].patcherTag;
+        }
+    }
+    return nullptr;
+}
+
 void *RwaRuntime::findFreeStereoPatcher()
 {
     for(int i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
@@ -593,10 +756,39 @@ void *RwaRuntime::findFreeMonoPatcher()
     return nullptr;
 }
 
+void *RwaRuntime::findFreeMonoOggPatcher()
+{
+    for(int i=0; i<RWARUNTIME_MAXNUMBEROFPATCHERS; i++)
+    {
+        if(!monoPatchersOgg[i].isBusy)
+        {
+            monoPatchersOgg[i].isBusy = true;
+            return monoPatchersOgg[i].patcherTag;
+        }
+    }
+    return nullptr;
+}
+
 int32_t RwaRuntime::findFreePatcher(RwaAsset1 *asset)
 {
     if(asset->type == RWAASSETTYPE_PD)
         return libpd_getdollarzero(findFreeDynamicPatcher(asset));
+
+    else if (asset->type == RWAASSETTYPE_OGG)
+    {
+        switch(asset->playbackType)
+        {
+            case RWAPLAYBACKTYPE_MONO: return libpd_getdollarzero(findFreeMonoOggPatcher());
+
+            case RWAPLAYBACKTYPE_STEREO: return libpd_getdollarzero(findFreeStereoOggPatcher());
+
+            case RWAPLAYBACKTYPE_BINAURALMONO_FABIAN: return libpd_getdollarzero(findFreeBinauralMonoFabianOggPatcher());
+
+            case RWAPLAYBACKTYPE_BINAURALSTEREO_FABIAN: return libpd_getdollarzero(findFreeBinauralStereoFabianOggPatcher());
+
+            default: return RWARUNTIME_INVALIDPATCHERINDEX;
+        }
+    }
 
     else
     {
@@ -645,9 +837,29 @@ int32_t RwaRuntime::findFreePatcher(RwaAsset1 *asset)
     }
 }
 
+// The gain that actually reaches Pd: asset gain scaled by the gain of the state
+// and the scene the asset belongs to.
+// Owners resolved through asset (not through the entity's current state):
+// background assets belong to the scene's background state, which is not the
+// entity's current state. RwaAsset1::myScene is not reliably set, so the scene
+// is reached via the state.
+// Mirrored in RwaGameLoop.effectiveGain (rwa-player).
+float RwaRuntime::effectiveGain(RwaAsset1 *asset)
+{
+    float gain = asset->gain;
+    RwaState *state = asset->myState;
+    if(state)
+    {
+        gain *= state->gain;
+        if(state->myScene)
+            gain *= state->myScene->gain;
+    }
+    return gain;
+}
+
 void RwaRuntime::sendInitValues2pd(RwaAsset1 *asset, int patcherTag)
 {
-    if(backend->logSim)
+    if(logSim)
         qDebug();
 
     char pdReceiver[50];
@@ -660,7 +872,7 @@ void RwaRuntime::sendInitValues2pd(RwaAsset1 *asset, int patcherTag)
         asset->playheadPosition = 0;
     else
     {
-        firstCrossfadeAfter-= (asset->playheadPosition/44.1);
+        firstCrossfadeAfter-= (asset->playheadPosition/(pdSampleRate/1000.));
 
         if(firstCrossfadeAfter <0)
         {
@@ -669,13 +881,17 @@ void RwaRuntime::sendInitValues2pd(RwaAsset1 *asset, int patcherTag)
         }
     }
 
+    // ctor sets both startPosition and gpsLocation to "gps" vector argument
+    // creator allows to set new start position, at which point they differ
     if(asset->getMoveFromStartPosition())
     {
+        // RwaAsset1::currentPostion <- RwaAsset1::startPosition
         asset->setCurrentPosition(asset->getStartPosition());
         asset->setReachedEndPosition(false);
     }
     else
     {
+        // RwaAsset1::currentPostion <- RwaLocation1::gpsLocation
         asset->setCurrentPosition(asset->getCoordinates());
         asset->setReachedEndPosition(true);
     }
@@ -684,6 +900,31 @@ void RwaRuntime::sendInitValues2pd(RwaAsset1 *asset, int patcherTag)
      asset->movingDistancePerTick = asset->getMovementSpeed() * ((float)schedulerRate/1000.);
      asset->rotateOffsetPerTick = asset->rotateFrequency * 360 * schedulerRate/1000;
      asset->setCurrentRotateAngleOffset(0);
+
+     sprintf(pdReceiver, "%d-assetlon", patcherTag);
+     pdMutex->lock();
+     // shouldn't this be asset->getCurrentPosition()? so that moving assets start  in the right place?
+     libpd_float(pdReceiver, asset->getCoordinates()[0]);
+     pdMutex->unlock();
+
+     sprintf(pdReceiver, "%d-assetlat", patcherTag);
+     pdMutex->lock();
+     // dito, see -assetlon above
+     libpd_float(pdReceiver, asset->getCoordinates()[1]);
+     pdMutex->unlock();
+
+     sprintf (pdReceiver, "%d-samplerate", patcherTag);
+     pdMutex->lock();
+     libpd_float(pdReceiver, pdSampleRate);
+     pdMutex->unlock();
+
+     // how many azimuthN/distanceN/elevationN channels this asset will be
+     // streamed, so patches can adapt (derived from the playback mode; the
+     // channelcount XML attribute is unreliable and not used)
+     sprintf(pdReceiver, "%d-numchannels", patcherTag);
+     pdMutex->lock();
+     libpd_float(pdReceiver, asset->playbackChannelCount());
+     pdMutex->unlock();
 
      sprintf (pdReceiver, "%d-dampingfunction", patcherTag);
      pdMutex->lock();
@@ -710,6 +951,11 @@ void RwaRuntime::sendInitValues2pd(RwaAsset1 *asset, int patcherTag)
      libpd_float(pdReceiver, asset->getDampingMax());
      pdMutex->unlock();
 
+     sprintf(pdReceiver, "%d-smoothdist", patcherTag);
+     pdMutex->lock();
+     libpd_float(pdReceiver, asset->getSmoothDist());
+     pdMutex->unlock();
+
      sprintf(pdReceiver, "%d-offset", patcherTag);
      pdMutex->lock();
      libpd_float(pdReceiver, asset->getOffset());
@@ -720,14 +966,20 @@ void RwaRuntime::sendInitValues2pd(RwaAsset1 *asset, int patcherTag)
      libpd_float(pdReceiver, asset->getLoop());
      pdMutex->unlock();
 
+     // new, sync to RWA Player
+     sprintf(pdReceiver, "%d-gain", patcherTag);
+     pdMutex->lock();
+     libpd_float(pdReceiver, effectiveGain(asset));
+     pdMutex->unlock();
+
      sprintf(pdReceiver, "%d-fadeintime", patcherTag);
      pdMutex->lock();
-     libpd_float(pdReceiver, asset->fadeInTime);
+     libpd_float(pdReceiver, asset->getFadeInTime());
      pdMutex->unlock();
 
      sprintf(pdReceiver, "%d-fadeouttime", patcherTag);
      pdMutex->lock();
-     libpd_float(pdReceiver, asset->fadeOutTime);
+     libpd_float(pdReceiver, asset->getFadeOutTime());
      pdMutex->unlock();
 
      sprintf(pdReceiver, "%d-crossfadetime", patcherTag);
@@ -750,11 +1002,22 @@ void RwaRuntime::sendInitValues2pd(RwaAsset1 *asset, int patcherTag)
      libpd_float(pdReceiver, asset->playheadPosition);
      pdMutex->unlock();
 
+     // fresh seed per activation for [random] etc. in Pd asset patches
+     // Kept within 24 bits and non-zero so it
+     // survives the float32 conversion exactly.
+     sprintf(pdReceiver, "%d-seed", patcherTag);
+     pdMutex->lock();
+     libpd_float(pdReceiver, (float)(1 + (seedSource() & 0xFFFFFE)));
+     pdMutex->unlock();
+
      fullAssetPath << assetPath << asset->fileName;
      sprintf(pdReceiver,"%d-play", patcherTag);
      pdMutex->lock();
      libpd_symbol(pdReceiver, fullAssetPath.str().c_str());
      pdMutex->unlock();
+
+     if(logSim)
+         qDebug() << "Initialised asset: " << asset->fileName << " sent to patcher id " << patcherTag << ", gain: " << asset->gain;
 }
 
 void RwaRuntime::processAssets(RwaEntity *entity)
@@ -767,99 +1030,46 @@ void RwaRuntime::processAssets(RwaEntity *entity)
 
     foreach(asset, entity->getCurrentState()->getAssets())
     {
-        if(!entity->isActiveAsset(asset->uniqueId) && !asset->getBlocked() && !asset->mute)
+        if(!entity->isActiveAsset(asset->uniqueId) && !asset->getBlocked() && !asset->mute && !asset->getBlockedForever())
         {
-             patcherTag = findFreePatcher(asset);
-             sendInitValues2pd(asset, patcherTag);
-             entity->addActiveAsset(asset->uniqueId, asset, patcherTag);
+            patcherTag = findFreePatcher(asset);
+            sendInitValues2pd(asset, patcherTag);
 
-             if(backend->logSim)
-                qDebug() << "Add Active Asset: " << QString::fromStdString(asset->fileName);
-             break;
+            if(asset->playOnlyOnce)
+                asset->setBlockedForever(true);
+
+            entity->addActiveAsset(asset->uniqueId, asset, patcherTag);
+
+            if(logSim) {
+                qInfo() << "Add Active Asset: " << QString::fromStdString(asset->fileName);
+                qDebug() << asset->type;
+            }
+
+            break;
         }
     }
 }
 
-int RwaRuntime::getOffsetForChannel(int channel, int playbackType)
-{
-    switch (playbackType) {
-    case RWAPLAYBACKTYPE_BINAURALMONO:
-        return 0;
-
-    case RWAPLAYBACKTYPE_BINAURALMONO_FABIAN:
-        return 0;
-
-    case RWAPLAYBACKTYPE_BINAURALSTEREO:
-        if(channel == 0)
-            return -60;
-        if(channel == 1)
-            return 60;
-        break;
-
-    case RWAPLAYBACKTYPE_BINAURALSTEREO_FABIAN:
-        if(channel == 0)
-            return -60;
-        if(channel == 1)
-            return 60;
-        break;
-
-    case RWAPLAYBACKTYPE_BINAURAL5CHANNEL:
-        if(channel == 0)
-            return -60;
-        if(channel == 1)
-            return 0;
-        if(channel == 2)
-            return 60;
-        if(channel == 3)
-            return -120;
-        if(channel == 4)
-            return 120;
-        break;
-
-    case RWAPLAYBACKTYPE_BINAURAL5CHANNEL_FABIAN:
-        if(channel == 0)
-            return -60;
-        if(channel == 1)
-            return 0;
-        if(channel == 2)
-            return 60;
-        if(channel == 3)
-            return -120;
-        if(channel == 4)
-            return 120;
-        break;
-
-    case RWAPLAYBACKTYPE_BINAURALAUTO:
-
-        break;
-    case RWAPLAYBACKTYPE_STEREO:
-
-        break;
-    default:
-        return 0;//
-    }
-    return 0;
-}
-
 void RwaRuntime::calculateChannelBearingAndDistance(RwaEntity *entity, RwaAsset1 *asset, int channel)
 {
-    int offset = getOffsetForChannel(channel, asset->getPlaybackType());
+    int offset = RwaAsset1::channelOffsetForPlaybackType(asset->getPlaybackType(), channel);
     offset += (360-asset->getRotateOffset()) % 360;
-    QPointF tmp;
-    QPointF tmp2;
 
-    if(!asset->individuellChannelPosition[channel])
+    if(!asset->hasCustomChannelPosition[channel])
     {
-        tmp2 = QPointF(asset->getCurrentPosition()[0], asset->getCurrentPosition()[1]);
-        tmp = RwaUtilities::calculateDestination(tmp2, asset->getChannelRadius(), (qint32)(offset+asset->currentRotateAngleOffset)%360);
-        asset->channelcoordinates[channel][0] = tmp.x();
-        asset->channelcoordinates[channel][1] = tmp.y();
+        float channelRadius = asset->getChannelRadius();
+        if(asset->playbackType == RWAPLAYBACKTYPE_MONO || asset->playbackType == RWAPLAYBACKTYPE_STEREO)
+            channelRadius = 0;
+
+        std::vector<double> destination = RwaUtilities::calculateDestination1(asset->getCurrentPosition(), channelRadius, (qint32)(offset+asset->currentRotateAngleOffset)%360);
+        asset->channelcoordinates[channel] = destination;
     }
+
     if(asset->getFixedDistance() < 0)
     {
-        if(asset->minDistance == -1)
+        if(asset->minDistance < 0)
         {
-            asset->channelDistance[channel] = RwaUtilities::calculateDistance1(entity->getCoordinates(), asset->channelcoordinates[channel])*1000 + asset->minDistance; // we do not want assets moving through us
+            asset->channelDistance[channel] = RwaUtilities::calculateDistanceInMeters(entity->getCoordinates(), asset->channelcoordinates[channel]); // we do not want assets moving through us
         }
         else
         {
@@ -922,96 +1132,47 @@ void RwaRuntime::sendData2Asset(RwaEntity *entity, RwaEntity::AssetMapItem item)
     asset = item.getAssetItem();
 
     intPatcherTag = item.getPatcherTag();
+
     sprintf(gain2pd, "%d-gain", intPatcherTag);
     sprintf(lon2pd, "%d-lon", intPatcherTag);
     sprintf(lat2pd, "%d-lat", intPatcherTag);
     sprintf(step2pd, "%d-step", intPatcherTag);
 
     pdMutex->lock();
-    libpd_float(gain2pd, asset->gain);
+    libpd_float(gain2pd, effectiveGain(asset));
     libpd_float(lon2pd, entity->getCoordinates()[0]);
     libpd_float(lat2pd, entity->getCoordinates()[1]);
     pdMutex->unlock();
 
-    asset->elevation = -entity->elevation();
-
-    if(asset->type == RWAASSETTYPE_PD)
+    if(step)
     {
-        calculateChannelBearingAndDistance(entity, asset, 0);
-        sendDistance(0, intPatcherTag, asset->channelDistance[0]);
-
-        if(step)
-        {
-            pdMutex->lock();
-            libpd_bang(step2pd);
-            pdMutex->unlock();
-        }
-
-        if(asset->headtrackerRelative2Source)
-        {
-            sendBearing(0, intPatcherTag, asset->channelBearing[0]);
-            sendElevation(0, intPatcherTag, asset->elevation);
-
-        }
-        else
-        {
-            sendBearing(0, intPatcherTag, entity->azimuth());
-            sendElevation(0, intPatcherTag, entity->elevation());
-        }
+        pdMutex->lock();
+        libpd_bang(step2pd);
+        pdMutex->unlock();
     }
 
+    if(asset->type == RWAASSETTYPE_PD && !asset->headtrackerRelative2Source)
+    {
+        // The patch spatialises on its own from the raw head orientation:
+        // one set of data, azimuth/elevation are the head values, not source-relative.
+        calculateChannelBearingAndDistance(entity, asset, 0);
+        double totalDistance = RwaUtilities::calculateDistanceWithAltitude(asset->channelDistance[0], asset->getElevation());
+        sendDistance(0, intPatcherTag, totalDistance);
+        sendBearing(0, intPatcherTag, entity->azimuth());
+        sendElevation(0, intPatcherTag, entity->elevation());
+    }
     else
     {
-        if(asset->playbackType == RWAPLAYBACKTYPE_BINAURALMONO
-          || asset->playbackType == RWAPLAYBACKTYPE_BINAURALMONO_FABIAN
-          || asset->playbackType == RWAPLAYBACKTYPE_MONO
-          || asset->playbackType == RWAPLAYBACKTYPE_STEREO
-          || asset->playbackType == RWAPLAYBACKTYPE_CUSTOM1
-          || asset->playbackType == RWAPLAYBACKTYPE_CUSTOM2
-          || asset->playbackType == RWAPLAYBACKTYPE_CUSTOM3 )
-        {
-            calculateChannelBearingAndDistance(entity, asset, 0);
-            sendDistance(0, intPatcherTag, asset->channelDistance[0]);
-            sendBearing(0, intPatcherTag, asset->channelBearing[0]);
-            sendElevation(0, intPatcherTag, asset->elevation);
-           // qDebug() << "Distance: " << asset->channelDistance[0];
-            //qDebug() << "Bearing for libPd" << headtrackerX;
-        }
+        int numChannels = asset->playbackChannelCount();
 
-        if(asset->playbackType == RWAPLAYBACKTYPE_BINAURALSTEREO
-           || asset->playbackType == RWAPLAYBACKTYPE_BINAURALSTEREO_FABIAN)
+        for(int i = 0; i < numChannels; i++)
         {
-            for(int i = 0;i < 2; i++)
-            {
-                calculateChannelBearingAndDistance(entity, asset, i);
-                sendDistance(i, intPatcherTag, asset->channelDistance[i]);
-                sendBearing(i, intPatcherTag, asset->channelBearing[i]);
-                sendElevation(i, intPatcherTag, asset->elevation);
-               // qDebug() << asset->channelDistance[0];
-            }
-        }
-
-        if(asset->playbackType == RWAPLAYBACKTYPE_BINAURAL5CHANNEL
-           || asset->playbackType == RWAPLAYBACKTYPE_BINAURAL5CHANNEL_FABIAN)
-        {
-            for(int i = 0;i < 5; i++)
-            {
-                calculateChannelBearingAndDistance(entity, asset, i);
-                sendDistance(i, intPatcherTag, asset->channelDistance[i]);
-                sendBearing(i, intPatcherTag, asset->channelBearing[i]);
-                sendElevation(i, intPatcherTag, asset->elevation);
-            }
-        }
-
-        if(asset->playbackType == RWAPLAYBACKTYPE_BINAURAL7CHANNEL_FABIAN)
-        {
-            for(int i = 0;i < 7; i++)
-            {
-                calculateChannelBearingAndDistance(entity, asset, i);
-                sendDistance(i, intPatcherTag, asset->channelDistance[i]);
-                sendBearing(i, intPatcherTag, asset->channelBearing[i]);
-                sendElevation(i, intPatcherTag, asset->elevation);
-            }
+            calculateChannelBearingAndDistance(entity, asset, i);
+            double elevation = RwaUtilities::calculateElevationEasy(entity->getCoordinates(), asset->channelcoordinates[i], asset->getElevation(), entity->elevation());
+            double totalDistance = RwaUtilities::calculateDistanceWithAltitude(asset->channelDistance[i], asset->getElevation());
+            sendDistance(i, intPatcherTag, totalDistance);
+            sendBearing(i, intPatcherTag, asset->channelBearing[i]);
+            sendElevation(i, intPatcherTag, elevation);
         }
     }
 
@@ -1020,9 +1181,8 @@ void RwaRuntime::sendData2Asset(RwaEntity *entity, RwaEntity::AssetMapItem item)
         if(asset->distanceForMovement > 0)
         {
             asset->distanceForMovement -= asset->getMovingDistancePerTick();
-            //qDebug() << asset->distanceForMovement;
             std::vector<double> tmp = RwaUtilities::calculateDestination1(asset->getCoordinates(), asset->distanceForMovement, asset->bearingForMovement);
-            asset->setCurrentPosition(tmp );
+            asset->setCurrentPosition(tmp);
         }
         else
         {
@@ -1061,16 +1221,17 @@ void RwaRuntime::sendData2Asset(RwaEntity *entity, RwaEntity::AssetMapItem item)
     {
         asset->playheadPositionWithoutOffset += schedulerRate;
         if(asset->playheadPositionWithoutOffset >= asset->offset)
-            asset->playheadPosition += ((float)schedulerRate/1000. * 44100);
+            asset->playheadPosition += ((float)schedulerRate/1000. * pdSampleRate);
 
-        if(asset->playheadPosition >= asset->fadeOutAfter/1000. * 44100)
+        if(asset->playheadPosition >= asset->fadeOutAfter/1000. * pdSampleRate)
         {
             asset->playheadPosition = 0;
             if(!asset->getLoop())
                 asset->updatePlayheadPosition = false;
 
         }
-        //qDebug() << asset->playheadPosition;
+        if(asset->playheadPosition - lastP > pdSampleRate)
+            lastP = asset->playheadPosition;
     }
 }
 
@@ -1080,16 +1241,16 @@ void RwaRuntime::sendData2activeAssets(RwaEntity *entity)
     RwaEntity::AssetMapItem item;
     string key;
 
-    QPointF assetCoordinates;
-
     if(entities.empty())
         return;
 
     foreach(entity, entities)
     {
+        // having an active state,
         entityState = entity->getCurrentState();
         if(entityState != NULL)
         {
+            // update active assets
             if(!entity->activeAssets.empty())
             {
                 std::map<string, RwaEntity::AssetMapItem>::iterator i;
@@ -1097,21 +1258,20 @@ void RwaRuntime::sendData2activeAssets(RwaEntity *entity)
                 {
                     key = i->first;
                     item = i->second;
-
                     sendData2Asset(entity, item);
                 }
                 step = 0;
             }
 
+            // update background assets
             if(!entity->backgroundAssets.empty())
             {
-                std::map<string, RwaEntity::AssetMapItem>::iterator i = entity->backgroundAssets.begin();
-                while(i != entity->backgroundAssets.end())
+                std::map<string, RwaEntity::AssetMapItem>::iterator i;
+                for (i = entity->backgroundAssets.begin(); i != entity->backgroundAssets.end(); ++i)
                 {
                     key = i->first;
                     item = i->second;
                     sendData2Asset(entity, item);
-                    ++i;
                 }
                 step = 0;
             }
@@ -1141,10 +1301,11 @@ bool RwaRuntime::entityIsWithinArea(RwaEntity *entity, RwaArea *area, int offset
     if(area->getAreaType() == RWAAREATYPE_CIRCLE)
     {
         distance = RwaUtilities::calculateDistance1( entity->getCoordinates(), area->getCoordinates());
-        radiusInKm = area->getRadius()/1000.;
+        radiusInKm = static_cast<double>(area->getRadius())/1000.;
         if(distance <= radiusInKm + areaOffsetInKm)
         {
-            //qDebug() << "Within Circle Area";
+           // qDebug() << "Within Circle Area";
+           // qDebug() << distance << " " << radiusInKm << " " << areaOffsetInKm;
             return true;
         }
     }
@@ -1184,8 +1345,67 @@ bool RwaRuntime::entityIsWithinArea(RwaEntity *entity, RwaArea *area, int offset
     return false;
 }
 
+/**
+ * Transition entity into a new scene
+ *
+ * - end old bg assets
+ * - unblock old state
+ * - switch scene
+ * - if fallback activates: end old active assets, enter fallback state
+ * - else assets keep playing until new state is triggered
+ * - start new bg state.
+ */
+void RwaRuntime::setScene(RwaEntity *entity, RwaScene *scene)
+{
+    if(logSim)
+        qInfo() << "Enter new scene: " << QString::fromStdString(scene->objectName());
+
+    // let bg assets of current scene fade out
+    sendEnd2backgroundAssets(entity);
+
+    // release the current state's re-entry latch
+    if(entity->getCurrentState()) {
+        entity->getCurrentState()->setBlockUntilRadiusHasBeenLeft(false);
+        if(logSim)
+            qDebug() << "Unblocking state " << entity->getCurrentState()->objectName();
+    }
+
+    // switch to the new/first scene
+    entity->setCurrentScene(scene);
+    entity->setTimeInCurrentScene(0);
+
+    // activate fallback
+    // if fallback of new scene can be activated, notify active assets of previous state/scene to end
+    // (otherwhise, active assets stay active until a new state is triggered)
+    if(!scene->fallbackDisabled())
+    {
+        if(scene->getStates().empty())
+            // this should be caught in the XML parseer (InsertDefaultFallbackState)
+            // enforcing presence of BG and FB states
+            qWarning() << "Scene " << QString::fromStdString(scene->objectName()) << " has fallback enabled but no states.";
+        else
+        {
+            RwaState *fallback = scene->getStates().front();
+            if(!fallback->getAssets().empty())
+                sendEnd2activeAssets(entity);
+            entity->setCurrentState(fallback);
+            entity->setTimeInCurrentState(0);
+        }
+    }
+
+    startBackgroundState(entity);
+    emit sendSelectedScene(scene);
+}
+
 void RwaRuntime::setEntityScene(RwaEntity *entity)
 {
+    // While the hero is still inside the current scene's area, stay. Without this,
+    // overlapping scene areas switch back and forth on every tick, each switch
+    // ending and restarting the background states.
+    // Mirrored in RwaGameLoop.swift setEntityScene().
+    if(entityIsWithinArea(entity, entity->getCurrentScene(), RWAAREAOFFSETTYPE_EXIT))
+        return;
+
     foreach(RwaScene *scene, entity->scenes)
     {
         if(scene->getLevel() == entity->getCurrentScene()->getLevel())
@@ -1194,16 +1414,8 @@ void RwaRuntime::setEntityScene(RwaEntity *entity)
             {
                 if(entityIsWithinArea(entity, scene, RWAAREAOFFSETTYPE_ENTER))
                 {
-                    if(backend->logSim)
-                        qDebug() << "Enter New Scene: " << QString::fromStdString(scene->objectName());
-
-                    sendEnd2backgroundAssets(entity);
-                    entity->getCurrentState()->setBlockUntilRadiusHasBeenLeft(false);
-                    entity->setCurrentScene(scene);
-                    entity->setTimeInCurrentScene(0);
-                    setEntityStartCoordinates(entity);
-                    emit sendSelectedScene(scene);
-                    return;
+                    setScene(entity, scene);
+                    return; // parity
                 }
             }
         }
@@ -1214,39 +1426,44 @@ void RwaRuntime::startBackgroundState(RwaEntity *entity)
 {
     RwaState *entityState;
     RwaAsset1 *asset;
-    char gain2pd[100];
     int patcherTag;
 
     entityState = entity->getCurrentScene()->getBackgroundState();
 
+    if(logSim)
+        qInfo() << "Starting Background State of " << QString::fromStdString((entity->getCurrentScene())->objectName());
+
     if(entityState == NULL)
         return;
-
-   // if(backend->getLogSim())
-       // qDebug() << "Enter Background State";
 
     if(entityState->getAssets().empty())
         return;
 
+    // contrary to RwaRuntime::processAssets, this loads all assets in one go (no scheduler-tick between loads)
     foreach(asset, entityState->getAssets())
     {
         if(!asset->mute)
         {
+             // An instance from an earlier visit may still be fading out (scene re-entered
+             // within the fade-out window). Its map slot must go to the new instance,
+             // otherwise the new patch starts but is never tracked: it can't be ended or
+             // released and loops forever. The fading patcher is parked for release on
+             // its "-playfinished".
+             std::map<string, RwaEntity::AssetMapItem>::iterator existing = entity->backgroundAssets.find(asset->uniqueId);
+             if(existing != entity->backgroundAssets.end())
+             {
+                 assetsPendingRelease.push_back(existing->second);
+                 entity->backgroundAssets.erase(existing);
+             }
+
              patcherTag = findFreePatcher(asset);
+             sendInitValues2pd(asset, patcherTag); // sends "-gain" itself
 
-             sprintf(gain2pd, "%d-", patcherTag);
-             strcat(gain2pd, "gain");
-             pdMutex->lock();
-             libpd_float(gain2pd, asset->gain);
-             pdMutex->unlock();
-
-             sendInitValues2pd(asset, patcherTag);
              entity->addBackgroundAsset(asset->uniqueId, asset, patcherTag);
-           //  if(backend->getLogSim())
-               // qDebug() << "Add Background Asset: " << QString::fromStdString(asset->fileName);
+             if(logSim)
+                 qDebug() << "Add Background Asset: " << QString::fromStdString(asset->fileName);
         }
     }
-
 }
 
 void RwaRuntime::setEntityStartCoordinates(RwaEntity *entity)
@@ -1258,13 +1475,6 @@ void RwaRuntime::setEntityStartCoordinates(RwaEntity *entity)
 
     if(entity->getCoordinates()[0] == 0)
         entity->setCoordinates(entity->getCurrentScene()->getCoordinates());
-
-     startBackgroundState(entity);
-     if(!entity->getCurrentScene()->getStates().empty() && !entity->getCurrentScene()->fallbackDisabled())
-     {
-         qDebug() << "Set coordinates and fallback";
-         entity->setCurrentState(entity->getCurrentScene()->getStates().front());
-     }
 }
 
 void RwaRuntime::setEntityState(RwaEntity *entity)
@@ -1274,113 +1484,118 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
     RwaState *background = nullptr;
     RwaScene *entityScene;
     QString newScene;
-
-    double distance;
     bool exitState = false;
     bool enterconditionsFulfilled = true;
     std::list<std::string> requiredStates;
 
-    entity->addTimeInCurrentState((float)schedulerRate/1000.);
-    entity->addTimeInCurrentScene((float)schedulerRate/1000.);
+    entity->addTimeInCurrentState(schedulerRate/1000.0f);
+    entity->addTimeInCurrentScene(schedulerRate/1000.0f);
 
-    //qDebug() << entity->getTimeInCurrentState();
+    /** **************************************** Without a scene, do nothing *********************************************** */
 
-    if(entity->getTimeInCurrentState() < entity->getCurrentState()->getMinimumStayTime())
+    if(!(entityScene = entity->getCurrentScene()))
         return;
 
-    if(entity->getTimeInCurrentScene() < entity->getCurrentScene()->getMinimumStayTime())
-        return;
+    /** ******************************** If minimum times are not reached, do nothing ************************************** */
+
+    if(entity->getCurrentState())
+    {
+        if(entity->getTimeInCurrentState() < entity->getCurrentState()->getMinimumStayTime())
+            return;
+
+        if(entity->getTimeInCurrentScene() < entity->getCurrentScene()->getMinimumStayTime())
+            return;
+
+        if(entity->getCurrentState()->getLeaveOnlyAfterAssetsFinish() && !entity->activeAssets.empty())
+            return;
+    }
 
     enterconditionsFulfilled = true;
     exitState = false;
-    setEntityScene(entity);
-    entityScene = entity->getCurrentScene();
     newScene = QString();
+    hint = nullptr;
 
-    if(entityScene)
+    /** *************************************** Check conditions for a new scene ******************************************* */
+
+    setEntityScene(entity);
+    // setEntityScene may have switched the scene; the checks below must run against the
+    // new one, not the scene cached above (the Swift engine re-reads it here as well).
+    entityScene = entity->getCurrentScene();
+
+    /** *************************************** Check conditions for a new state ******************************************* */
+
+    foreach(state, entityScene->getStates())
     {
-        //qDebug() << QString::fromStdString(entityScene->objectName());
-        hint = nullptr;
-        foreach(state, entityScene->getStates())
+        enterconditionsFulfilled = true;
+        if( (state->getType() == RWASTATETYPE_GPS) && (entity->getCurrentState() != state) && !state->getBlockUntilRadiusHasBeenLeft())
         {
-            if( (state->getType() == RWASTATETYPE_GPS) && (entity->getCurrentState() != state) && !state->getBlockUntilRadiusHasBeenLeft())
+            requiredStates = state->getRequiredStates();
+            if(entityIsWithinArea(entity, state, RWAAREAOFFSETTYPE_ENTER))
             {
-                requiredStates = state->getRequiredStates();
-                if(entityIsWithinArea(entity, state, RWAAREAOFFSETTYPE_ENTER))
+                if(!requiredStates.empty())
                 {
-                    if(!requiredStates.empty())
+                    foreach (std::string stateName, requiredStates)
                     {
-                        foreach (std::string stateName, requiredStates)
-                        {
-                            bool found = (std::find(entity->visitedStates.begin(), entity->visitedStates.end(), stateName) != entity->visitedStates.end());
-                            if(!found)
-                            {
-                                enterconditionsFulfilled = false;
-                                state->setBlockUntilRadiusHasBeenLeft(true);
-                                if(state->getHintState().compare(""))
-                                {
-                                    hint = entity->getCurrentScene()->getState(state->getHintState());
-                                    state->setBlockUntilRadiusHasBeenLeft(true);
-                                 }
-
-                                 break;
-                            }
-                        }
-                    }
-
-                    if(state->getBlockUntilRadiusHasBeenLeft())
-                        enterconditionsFulfilled = false;
-
-                    if(state->getEnterOnlyOnce())
-                    {
-                        bool found = (std::find(entity->visitedStates.begin(), entity->visitedStates.end(), state->objectName()) != entity->visitedStates.end());
-
-                        if(found)
-                            enterconditionsFulfilled = false;
-                    }
-
-                    if(enterconditionsFulfilled)
-                    {
-                        sendEnd2activeAssets(entity);
-                        state->setBlockUntilRadiusHasBeenLeft(true);
-                        entity->setCurrentState(state);
-
-                        bool found = (std::find(entity->visitedStates.begin(), entity->visitedStates.end(), state->objectName()) != entity->visitedStates.end());
-
+                        bool found = (std::find(entity->visitedStates.begin(), entity->visitedStates.end(), stateName) != entity->visitedStates.end());
                         if(!found)
                         {
-                            qDebug() << "Append to visited states" << QString::fromStdString(state->objectName());
-                            entity->visitedStates.push_back(state->objectName());
-                        }
+                            enterconditionsFulfilled = false;
+                            state->setBlockUntilRadiusHasBeenLeft(true);
+                            if(state->getHintState().compare(""))
+                            {
+                                hint = entity->getCurrentScene()->getState(state->getHintState());
+                                state->setBlockUntilRadiusHasBeenLeft(true);
+                            }
 
-                        unblockAssets(state);
-                        entity->setTimeInCurrentState(0);
-                        emit sendSelectedState(state);
-                        if(backend->logSim)
-                            qDebug() << "Enter new State: " << QString::fromStdString(state->objectName());
+                            break; // We can break here, no need to search for other required states
+                        }
                     }
                 }
-            }
 
-            if(state->getBlockUntilRadiusHasBeenLeft())
-            {
-               if(!entityIsWithinArea(entity, state, RWAAREAOFFSETTYPE_EXIT))
-                    state->setBlockUntilRadiusHasBeenLeft(false);
+                if(state->getEnterOnlyOnce())
+                {
+                    bool found = (std::find(entity->visitedStates.begin(), entity->visitedStates.end(), state->objectName()) != entity->visitedStates.end());
+                    if(found)
+                        enterconditionsFulfilled = false;
+                }
+
+                if(enterconditionsFulfilled)
+                {
+                    sendEnd2activeAssets(entity);
+                    state->setBlockUntilRadiusHasBeenLeft(true);
+                    entity->setCurrentState(state);
+
+                    bool found = (std::find(entity->visitedStates.begin(), entity->visitedStates.end(), state->objectName()) != entity->visitedStates.end());
+                    if(!found)
+                    {
+                        if(logSim)
+                            qInfo() << "Append to visited states" << QString::fromStdString(state->objectName());
+                        entity->visitedStates.push_back(state->objectName());
+                    }
+
+                    unblockAssets(state);
+                    entity->setTimeInCurrentState(0);
+                    emit sendSelectedState(state);
+
+                    if(logSim)
+                        qInfo() << "Enter new State: " << QString::fromStdString(state->objectName());
+
+                    break; // we can break here for now
+                }
             }
         }
     }
 
-    state = entity->getCurrentState();
-    background = entity->getCurrentScene()->getBackgroundState();
-
-    if(entity->getTimeInCurrentState() > state->getTimeOut() && state->getTimeOut() > 0)
+    foreach(state, entityScene->getStates())
     {
-        sendEnd2activeAssets(entity);
-        //if(backend->getLogSim())
-            //qDebug() << "Will exit State after timeout.";
-
-        exitState = true;
+        if(state->getBlockUntilRadiusHasBeenLeft())
+        {
+           if(!entityIsWithinArea(entity, state, RWAAREAOFFSETTYPE_EXIT))
+                state->setBlockUntilRadiusHasBeenLeft(false);
+        }
     }
+
+    background = entityScene->getBackgroundState();
 
     if(background)
     {
@@ -1389,8 +1604,8 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
             newScene = QString::fromStdString(background->getNextScene());
             if(newScene.compare(""))
             {
-                //if(backend->getLogSim())
-                    //qDebug() << "Enter new Scene after timeout.";
+                if(logSim)
+                    qInfo() << "Enter new Scene after timeout.";
 
                 sendEnd2activeAssets(entity);
                 exitState = true;
@@ -1398,46 +1613,73 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
         }
     }
 
-    if(state->getLeaveAfterAssetsFinish() && entity->getTimeInCurrentState() > 0)
+    if(entity->getTimeInCurrentScene() > entityScene->getTimeOut() && entityScene->getTimeOut() > 0)
     {
-        if(entity->activeAssets.empty() )
+        newScene = QString::fromStdString(entityScene->getNextScene());
+        if(newScene.compare(""))
         {
-           //qDebug() << "EXIT STATE AFTER ASSETS FINISH";
+            sendEnd2activeAssets(entity);
             exitState = true;
         }
     }
 
-    if(entity->getCurrentState()->getType() == RWASTATETYPE_GPS)
+    state = entity->getCurrentState();
+
+    if(state)
     {
-        distance = RwaUtilities::calculateDistance1( entity->getCoordinates(), state->getCoordinates());
-        if(!entityIsWithinArea(entity, state, RWAAREAOFFSETTYPE_EXIT))
+        if(entity->getTimeInCurrentState() > state->getTimeOut() && state->getTimeOut() > 0)
         {
-            if( (!state->getLeaveOnlyAfterAssetsFinish() && !entity->getCurrentScene()->fallbackDisabled())
-                 || state->stateWithinState)
+            sendEnd2activeAssets(entity);
+            if(logSim)
+                qInfo() << "Will exit State after timeout.";
+
+            exitState = true;
+        }
+
+        if(state->getLeaveAfterAssetsFinish() && entity->getTimeInCurrentState() > 0)
+        {
+            if(entity->activeAssets.empty() )
             {
-                //qDebug() << "EXIT STATE AFTER LEAVING STATE AREA";
-                sendEnd2activeAssets(entity);
+                if(logSim)
+                    qDebug() << "exit state after assets finish";
                 exitState = true;
             }
-            else
+        }
+
+        if(entity->getCurrentState()->getType() == RWASTATETYPE_GPS)
+        {
+            if(!entityIsWithinArea(entity, state, RWAAREAOFFSETTYPE_EXIT))
             {
-                if(entity->activeAssets.empty())
+                if( (!state->getLeaveOnlyAfterAssetsFinish() && !entity->getCurrentScene()->fallbackDisabled())
+                     || state->stateWithinState)
+                {
+                    if(logSim)
+                        qDebug() << "exit state after leaving state area";
+                    sendEnd2activeAssets(entity);
                     exitState = true;
+                }
+                else
+                {
+                    if(entity->activeAssets.empty())
+                        exitState = true;
+                }
             }
         }
-    }
-    if(hint)
-    {
-        exitState = true;
-        sendEnd2activeAssets(entity);
+
+        if(hint)
+        {
+            exitState = true;
+            sendEnd2activeAssets(entity);
+        }
     }
 
     if(exitState)
     {
-        qDebug() << "EXIT STATE";
+        if(logSim)
+            qInfo() << "Exit state";
         if(hint)
         {
-             //qDebug() << "auto hint state";
+             qDebug() << "auto hint state";
              entity->getCurrentState()->setBlockUntilRadiusHasBeenLeft(true);
              RwaState *nextState = hint;
              if(hint != entity->getCurrentState())
@@ -1446,46 +1688,36 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
                  entity->setCurrentState(nextState);
                  entity->setTimeInCurrentState(0);
                  emit sendSelectedState(nextState);
-                 //qDebug() << "RwaSimulator::setEntityState" << nextState->objectName().toLatin1();
+                 qDebug() << QString::fromStdString(nextState->objectName());
              }
-        }
-
-        else if(state->getNextScene().compare(""))
-        {
-            //qDebug() << "auto next scene";
-            RwaScene *nextScene = entity->getScene(state->getNextScene());
-
-            sendEnd2backgroundAssets(entity);
-            //currentScene = nextScene;
-            entity->setCurrentScene(nextScene);
-            entity->setTimeInCurrentScene(0);
-            setEntityStartCoordinates(entity);
-            emit sendSelectedScene(nextScene);
-            emit sendSelectedState(entity->getCurrentState());
         }
 
         else if(newScene.compare(""))
         {
-            //qDebug() << "auto next scene: " << newScene;
             RwaScene *nextScene = entity->getScene(newScene.toStdString());
+            setScene(entity, nextScene);
+        }
 
-            sendEnd2backgroundAssets(entity);
-            //currentScene = nextScene;
-            entity->setCurrentScene(nextScene);
-            entity->setTimeInCurrentScene(0);
-            setEntityStartCoordinates(entity);
-            emit sendSelectedScene(nextScene);
+        else if(state->getNextScene().compare(""))
+        {
+            RwaScene *nextScene = entity->getScene(state->getNextScene());
+            setScene(entity, nextScene);
         }
 
         else if(state->getNextState().compare("") )
         {
-            //qDebug() << "auto next state";
+            qDebug() << "auto next state";
             RwaState *nextState = entity->getCurrentScene()->getState(state->getNextState());
+            if(!nextState)
+            {
+                qWarning() << "Next state" << QString::fromStdString(state->getNextState()) << "not found in current scene.";
+                return;
+            }
             unblockAssets(nextState);
             entity->setCurrentState(nextState);
             entity->setTimeInCurrentState(0);
             emit sendSelectedState(nextState);
-            //qDebug() << "RwaSimulator::setEntityState" << nextState->objectName().toLatin1();
+            qDebug() << "RwaSimulator::setEntityState" << QString::fromStdString(nextState->objectName());
         }
         else
         {
@@ -1495,39 +1727,54 @@ void RwaRuntime::setEntityState(RwaEntity *entity)
                 entity->setCurrentState(nextState); // set to fallback state
                 entity->setTimeInCurrentState(0);
                 emit sendSelectedState(nextState);
-               // if(backend->getLogSim())
-                    qDebug() << "Enter Fallback State";
+                if(logSim)
+                    qInfo() << "Enter Fallback State";
             }
         }
     }
 }
 
+void RwaRuntime::resetPatcher(int intPatcherTag)
+{
+    char pdReceiver[100];
+    sprintf(pdReceiver,"%d-", intPatcherTag);
+    strcat(pdReceiver, "free");
+    pdMutex->lock();
+    libpd_bang(pdReceiver);
+    pdMutex->unlock();
+
+    sprintf(pdReceiver, "%d-fadeouttime", intPatcherTag);
+    pdMutex->lock();
+    libpd_float(pdReceiver, 0);
+    pdMutex->unlock();
+
+    sprintf(pdReceiver,"%d-", intPatcherTag);
+    strcat(pdReceiver, "end");
+    pdMutex->lock();
+    libpd_bang(pdReceiver);
+    pdMutex->unlock();
+}
+
 void RwaRuntime::endBackgroundState()
 {
     int intPatcherTag;
-    char end2pd[100];
     RwaEntity *entity;
     RwaEntity::AssetMapItem item;
     string key;
 
     foreach(entity, entities)
     {
-        std::map<string, RwaEntity::AssetMapItem>::iterator i = entity->activeAssets.begin();
-        while(i != entity->activeAssets.end())
+        std::map<string, RwaEntity::AssetMapItem>::iterator i = entity->backgroundAssets.begin();
+        while(i != entity->backgroundAssets.end())
         {
             key = i->first;
             item = i->second;
             intPatcherTag = item.getPatcherTag();
             i = entity->backgroundAssets.erase(i);
             releasePatcherFromItem(item);
-            sprintf(end2pd,"%d-", intPatcherTag);
-            strcat(end2pd, "free");
-            pdMutex->lock();
-            libpd_bang(end2pd);
-            pdMutex->unlock();
-
-            if(backend->logSim)
-                qDebug() << "Free Background Asset: " << intPatcherTag;
+            resetPatcher(intPatcherTag);
+            if(logSim)
+                qInfo() << "Free Background Asset: " << intPatcherTag;
         }
     }
 }
@@ -1535,13 +1782,9 @@ void RwaRuntime::endBackgroundState()
 void RwaRuntime::freeAllPatchers()
 {
     int intPatcherTag;
-    char end2pd[100];
     RwaEntity *entity = nullptr;
     RwaEntity::AssetMapItem item;
     string key;
-
-    if(backend->logSim)
-        qDebug() << "Free all Patchers";
 
     foreach(entity, entities)
     {
@@ -1554,32 +1797,84 @@ void RwaRuntime::freeAllPatchers()
             intPatcherTag = item.getPatcherTag();
             i = entity->activeAssets.erase(i);
             releasePatcherFromItem(item);
-            sprintf(end2pd,"%d-", intPatcherTag);
-            strcat(end2pd, "free");
-            pdMutex->lock();
-            libpd_bang(end2pd);
-            pdMutex->unlock();
+            resetPatcher(intPatcherTag);
         }
     }
+
+    foreach(item, assetsPendingRelease)
+    {
+        releasePatcherFromItem(item);
+        resetPatcher(item.getPatcherTag());
+    }
+    assetsPendingRelease.clear();
 
     endBackgroundState();
     if(entity)
         entity->reset();
 }
 
-void RwaRuntime::update(RwaEntity *entity)
+/**
+  Sends the release protocol ("<tag>-free", "<tag>-fadeouttime 0", "<tag>-end") to every
+  pooled patcher, busy or not, and clears the busy flags.
+
+  freeAllPatchers() resets only the patchers of *active* assets. A patcher whose asset
+  already ended but is still fading out has left activeAssets, so nothing re-arms its
+  [delay] on stop - its clock survives in Pd's clock queue (the pooled patchers are never
+  closed) and fires the remaining fade time into the *next* simulation, switching the
+  patch off and sending "<tag>-playfinished" for a tag a fresh asset may own by then.
+  Addressing the whole pool forces every pending fade to zero length; the simulator then
+  advances Pd's scheduler so all of them mature at stop (RwaSimulator::flushPdScheduler).
+
+  Only messages from the existing patcher protocol are used, so every patch that follows
+  it ends cleanly without patch-side changes. The dynamic patchers are not swept: they
+  are closed on stop, and closing a canvas frees its objects' pending clocks with them.
+*/
+void RwaRuntime::resetAllPatchers()
 {
-    //if(!devicesRegistered)
+    const struct { pdPatcher *pool; int count; } pools[] = {
+        { monoPatchers, RWARUNTIME_MAXNUMBEROFPATCHERS },
+        { monoPatchersOgg, RWARUNTIME_MAXNUMBEROFPATCHERS },
+        { stereoPatchers, RWARUNTIME_MAXNUMBEROFPATCHERS },
+        { stereoPatchersOgg, RWARUNTIME_MAXNUMBEROFPATCHERS },
+        { binauralMonoPatchers_fabian, RWARUNTIME_MAXNUMBEROFPATCHERS },
+        { binauralMonoPatchersOgg_fabian, RWARUNTIME_MAXNUMBEROFPATCHERS },
+        { binauralStereoPatchers_fabian, RWARUNTIME_MAXNUMBEROFPATCHERS },
+        { binauralStereoPatchersOgg_fabian, RWARUNTIME_MAXNUMBEROFPATCHERS },
+        { binaural5channelPatchers_fabian, RWARUNTIME_MAXNUMBEROF5CHANNELPATCHERS },
+        { binaural7channelPatchers_fabian, RWARUNTIME_MAXNUMBEROF7CHANNELPATCHERS },
+    };
+
+    for(const auto &p : pools)
     {
+        for(int i = 0; i < p.count; i++)
+        {
+            if(p.pool[i].patcherTag)
+                resetPatcher(libpd_getdollarzero(p.pool[i].patcherTag));
+            p.pool[i].isBusy = false;
+        }
+    }
+}
+
+void RwaRuntime::emptyPdMessageQueue()
+{
 #ifdef INIT_LIBPD_QUEUED
         pdMutex->lock();
         libpd_queued_receive_pd_messages();
         pdMutex->unlock();
 #endif
+}
+
+/**
+ * RwaSimulator::gameLoopTimer (T = 25ms) -> RwaSimulator::updateRwaGameState() -> RwaRuntime::update()
+ */
+void RwaRuntime::update(RwaEntity *entity)
+{
+    //if(!devicesRegistered)
+    {
+        emptyPdMessageQueue();
         sendData2activeAssets(entity);
         setEntityState(entity);
         processAssets(entity);
-
     }
     //sendData2Devices();
 }

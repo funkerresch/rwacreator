@@ -1,19 +1,22 @@
 #include "rwasceneview.h"
 
+#include <QDebug>
 
-RwaSceneView::RwaSceneView(QWidget *parent, RwaScene *scene, QString name) :
-    RwaView(parent, scene, name)
-
+RwaSceneView::RwaSceneView(QWidget *parent, RwaScene *scene, QString name)
+: RwaView(parent, scene, name)
 {
     setAcceptDrops(true);
     setAlignment(Qt::AlignTop);
+
     windowSplitter = new QSplitter(this);
+
     layout = new QBoxLayout(QBoxLayout::LeftToRight,this);
     layout->setContentsMargins(0,0,0,0);
 
     stateList = new RwaStateList(this, scene);
     stateAttributes = new RwaStateAttributeView(this, scene);
-    stateAttributes->scrollArea->setMaximumWidth(250);
+    stateAttributes->scrollArea->setFixedWidth(260);
+    stateAttributes->scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     currentScene = scene;
     currentState = nullptr;
@@ -36,13 +39,24 @@ RwaSceneView::RwaSceneView(QWidget *parent, RwaScene *scene, QString name) :
 
 void RwaSceneView::deleteState(const QString &stateName)
 {
-    if(currentScene)
+    if(backend->isSimulationRunning())
     {
-        currentScene->removeState(currentScene->getState(stateName.toStdString()));
-        emit sendCurrentScene(currentScene);
-        emit sendCurrentState(currentScene->lastTouchedState);
-        emit sendWriteUndo("Delete State");
+        // the entity's currentState would keep a pointer to the deleted state
+        qWarning() << "Cannot delete a state while the simulation is running.";
+        return;
     }
+
+    if(!currentScene)
+        return;
+
+    RwaState *state = currentScene->getState(stateName.toStdString());
+    if(!state)
+        return;
+
+    currentScene->removeState(state);
+    emit sendCurrentScene(currentScene);
+    emit sendCurrentState(currentScene->lastTouchedState);
+    emit sendWriteUndo("Delete State");
 }
 
 void RwaSceneView::setCurrentScene(RwaScene *scene)
@@ -55,4 +69,3 @@ void RwaSceneView::setCurrentState(RwaState *currentState)
     this->currentState = currentState;
     //stateList->update();
 }
-

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>@EXECUTABLE_NAME@</string>
+	<key>CFBundleName</key>
+	<string>@BUNDLE_NAME@</string>
+	<key>CFBundleDisplayName</key>
+	<string>@BUNDLE_DISPLAY_NAME@</string>
+	<key>CFBundleIconFile</key>
+	<string>@BUNDLE_ICON_FILE@</string>
+	<key>CFBundleIdentifier</key>
+	<string>@BUNDLE_IDENTIFIER@</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleSignature</key>
+	<string>RWAC</string>
+	<key>CFBundleShortVersionString</key>
+	<string>@PROJECT_VERSION@</string>
+	<key>CFBundleVersion</key>
+	<string>@PROJECT_VERSION@</string>
+	<key>GitCommitHash</key>
+	<string>@GIT_COMMIT_HASH@</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>@CMAKE_OSX_DEPLOYMENT_TARGET@</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2026 FHNW</string>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>CSResourcesFileMapped</key>
+	<true/>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>RWA Creator uses Bluetooth to connect to head tracking devices for spatial audio.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>RWA Creator uses Bluetooth to connect to head tracking devices for spatial audio.</string>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>RWA Creator needs access to your Documents folder to save and load projects.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>RWA Creator receives OSC messages from tracking devices on your local network.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>RWA Creator needs access to the microphone for audio recording features.</string>
+	<!-- .rwa document type. UTExportedTypeDeclarations defines the type,
+	CFBundleDocumentTypes claims it for this app. Conforming to public.xml
+	(not public.data) keeps Quick Look text preview and Spotlight content
+	indexing working on .rwa files. -->
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>com.fhnw.rwa.document</string>
+			<key>UTTypeDescription</key>
+			<string>RWA Project</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.xml</string>
+			</array>
+			<key>UTTypeIconFile</key>
+			<string>@BUNDLE_DOCUMENT_ICON_FILE@</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>rwa</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>application/x-rwa+xml</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>RWA Project</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.fhnw.rwa.document</string>
+			</array>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>CFBundleTypeIconFile</key>
+			<string>@BUNDLE_DOCUMENT_ICON_FILE@</string>
+		</dict>
+	</array>
+</dict>
+</plist>

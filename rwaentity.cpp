@@ -99,6 +99,7 @@ void RwaEntity::addBackgroundAsset(string assetName, RwaAsset1 *item, int32_t pa
     this->backgroundAssets.insert(std::make_pair(assetName, newMapItem));
 }
 
+// when called by RwaRuntime::processAssets, argument assetName is set to asset->uniqueId
 bool RwaEntity::isActiveAsset(string assetName)
 {
     if(this->activeAssets.find(assetName) != this->activeAssets.end())
@@ -152,6 +153,7 @@ RwaScene *RwaEntity::getCurrentScene()
 {
     return currentScene;
 }
+
 RwaState *RwaEntity::getCurrentState()
 {
     return currentState;
@@ -159,12 +161,13 @@ RwaState *RwaEntity::getCurrentState()
 
 void RwaEntity::setCurrentScene(RwaScene *currentScene)
 {
+    if(this->currentScene == currentScene)
+            return;
     this->currentScene = currentScene;
     this->currentState = nullptr;
-
 }
 void RwaEntity::setCurrentState(RwaState *currentState)
-{    
+{
     this->currentState = currentState;
 }
 
@@ -205,7 +208,3 @@ double RwaEntity::getFloatAttribute(string attributeName)
     }
     return 0;
 }
-
-
-
-

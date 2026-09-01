@@ -1,3 +1,14 @@
+/*
+*
+* This file is part of RwaCreator
+* an open-source cross-platform Middleware for creating interactive Soundwalks
+*
+* Copyright (C) 2015 - 2022 Thomas Resch
+*
+* License: MIT
+*
+*/
+
 #include "rwaarea.h"
 #include <QDebug>
 

@@ -1,3 +1,17 @@
+/*
+ * This file is part of the Rwa Creator.
+ * An open-source cross-platform Middleware for creating interactive Soundwalks
+ *
+ * Copyright (C) 2015 - 2022 Thomas Resch
+ *
+ * License: MIT
+ *
+ * rwaassetlist.h
+ * by Thomas Resch
+ * Editor for asset drag and drop.
+ *
+ */
+
 #ifndef RWAASSETLIST_H
 #define RWAASSETLIST_H
 
@@ -13,6 +27,8 @@
 #include "rwalistview.h"
 #include <QFileInfo>
 #include <QFile>
+#include <QDesktopServices>
+#include <QUrl>
 
 class RwaAssetList : public RwaListView
 {
@@ -29,6 +45,7 @@ public slots:
 protected:
         void keyPressEvent(QKeyEvent *event) override;
         void mousePressEvent(QMouseEvent *event) override;
+        void mouseDoubleClickEvent(QMouseEvent *event) override;
         void mouseReleaseEvent(QMouseEvent *event) override;
         void dragEnterEvent(QDragEnterEvent *event) override;
         void dropEvent(QDropEvent *event) override;
@@ -38,7 +55,9 @@ protected:
 
     private:
         void setCurrentAssetFromCurrentItem();
+        void openAssetExternally(RwaAsset1 *asset);
         void findLastTouchedAsset(RwaAsset1 *asset);
+        void setAssetBadges(QListWidgetItem *item, RwaAsset1 *asset);
 signals:
         void deleteAsset(const QString &path);
         void newAsset(const QString &path);

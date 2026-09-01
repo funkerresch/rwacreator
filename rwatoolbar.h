@@ -105,6 +105,7 @@ private:
     QToolButton *scanSerialPortsButton = nullptr;
     QToolButton *calibrateHeadtrackerButton = nullptr;
     QToolButton *simulateHeadtrackerStepButton = nullptr;
+    QToolButton *activateClientSyncButton = nullptr;
     QToolButton *heroFollowsSceneAndStateButton = nullptr;
     QToolButton *trashAssetsButton = nullptr;
     QToolButton *startSimulatorButton = nullptr;
@@ -153,6 +154,7 @@ signals:
     void sendStartStopSimulator(bool startStopSimulator);
     void sendCalibrateHeadtracker();
     void sendSimulateHeadtrackerStep();
+    void sendActivateClientSync(bool onOff);
     void sendScanSerialPorts();
     void sendWriteUndo();
     void sendWriteUndo(QString undoAction);
@@ -164,6 +166,17 @@ public slots:
     void setCurrentScene(qint32 sceneNumber);
     void receiveMapCoordinates(double lon, double lat);
     void receiveTrashAssets(bool onOff);
+
+/**
+ * @brief Mirrors the simulation state in the start button.
+ * @param running Whether the simulation is running now.
+ * The simulation can be started/stopped from the Simulation menu and by
+ * its key commands, not only by this button - and only toolbars with
+ * RWATOOLBAR_SIMULATORTOOLS (the Map View's, of which there can be
+ * several) have the button at all. It only updates the button, it does
+ * not start or stop anything.
+ */
+    void receiveSimulationRunningChanged(bool running);
 
 private slots:
 
@@ -195,6 +208,7 @@ private slots:
     void moveScene2NewLocation();
     void showFindPlacesDialog();
     void receiveSendHeadtrackerStep(bool onOff);
+    void receiveActivateClientSync(bool onOff);
     void receiveHeroFollowsSceneAndState(bool onOff);
 };
 

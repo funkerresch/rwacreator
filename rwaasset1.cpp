@@ -1,6 +1,19 @@
+/*
+*
+* This file is part of RwaCreator
+* an open-source cross-platform Middleware for creating interactive Soundwalks
+*
+* Copyright (C) 2015 - 2022 Thomas Resch
+*
+* License: MIT
+*
+*/
+
 #include "rwaasset1.h"
 #include <qdebug.h>
 #include <quuid.h>
+#include <tag.h>
+#include <fileref.h>
 
 RwaAsset1::RwaAsset1(const std::string &data, std::vector<double> gps, qint32 type, const string uid)
     : RwaLocation1()
@@ -11,7 +24,7 @@ RwaAsset1::RwaAsset1(const std::string &data, std::vector<double> gps, qint32 ty
     this->startPosition = gps;
     this->fullPath = data;
     this->type = type;
-    this->fileName = RwaUtilities::getFileName(data);
+    this->fileName = RwaUtilities::getFileName1(data);
     this->gpsLocation = gps;
     this->uniqueId = uid;
 
@@ -23,15 +36,19 @@ RwaAsset1::RwaAsset1(const std::string &data, std::vector<double> gps, qint32 ty
         this->reflectioncoordinates[i].resize(2);
         this->reflectioncoordinates[i][0] = 0.0;
         this->reflectioncoordinates[i][1] = 0.0;
+        this->customchannelcoordinates[i].resize(2);
+        this->customchannelcoordinates[i][0] = 0.0;
+        this->customchannelcoordinates[i][1] = 0.0;
         this->lastChannelBearing[i] = 0;
         this->channelBearing[i] = 0;
         this->channelDistance[i] = 0;
         this->channelGain[i] = 1.;
         this->channelRotate[i] = false;
         this->channelRotateFreq[i] = 0;
-        this->individuellChannelPosition[i] = false;
+        this->hasCustomChannelPosition[i] = false;
         this->reflectionCoordinateIsSet[i] = false;
     }
+
     reflectionCount = 0;
     currentReflection = 0;
     setObjectName(this->fileName);
@@ -89,6 +106,7 @@ void RwaAsset1::copyAttributes(RwaAsset1 *dest)
     dest->dampingTrim = this->dampingTrim;
     dest->dampingMin = this->dampingMin;
     dest->dampingMax = this->dampingMax;
+    dest->smoothdist = this->smoothdist;
     dest->fadeOutAfter = this->fadeOutAfter;
     dest->channelRadius = this->channelRadius;
     dest->playOnlyOnce = this->playOnlyOnce;
@@ -123,13 +141,15 @@ void RwaAsset1::copyAttributes(RwaAsset1 *dest)
         dest->channelcoordinates[i][1] = this->channelcoordinates[i][1];
         dest->reflectioncoordinates[i][0] = this->reflectioncoordinates[i][0];
         dest->reflectioncoordinates[i][1] = this->reflectioncoordinates[i][1];
+        dest->customchannelcoordinates[i][0] = this->customchannelcoordinates[i][0];
+        dest->customchannelcoordinates[i][1] = this->customchannelcoordinates[i][1];
         dest->lastChannelBearing[i] = this->lastChannelBearing[i];
         dest->channelBearing[i] = this->channelBearing[i];
         dest->channelDistance[i] = this->channelDistance[i];
         dest->channelGain[i] = this->channelGain[i];
         dest->channelRotate[i] = this->channelRotate[i];
         dest->channelRotateFreq[i] = this->channelRotateFreq[i];
-        dest->individuellChannelPosition[i] = this->individuellChannelPosition[i];
+        dest->hasCustomChannelPosition[i] = this->hasCustomChannelPosition[i];
     }
 
     string uid = std::string(QUuid::createUuid().toString().toLatin1());
@@ -161,109 +181,117 @@ void RwaAsset1::setReflectionCount(const int32_t &value)
     reflectionCount = value;
 }
 
+int32_t RwaAsset1::channelCountForPlaybackType(int32_t playbackType)
+{
+    switch(playbackType)
+    {
+        case RWAPLAYBACKTYPE_MONO:
+        case RWAPLAYBACKTYPE_STEREO:
+        case RWAPLAYBACKTYPE_BINAURALMONO:
+        case RWAPLAYBACKTYPE_BINAURALMONO_FABIAN:
+        case RWAPLAYBACKTYPE_CUSTOM1:
+        case RWAPLAYBACKTYPE_CUSTOM2:
+        case RWAPLAYBACKTYPE_CUSTOM3:
+            return 1;
+
+        case RWAPLAYBACKTYPE_BINAURALSTEREO:
+        case RWAPLAYBACKTYPE_BINAURALSTEREO_FABIAN:
+            return 2;
+
+        case RWAPLAYBACKTYPE_BINAURAL5CHANNEL:
+        case RWAPLAYBACKTYPE_BINAURAL5CHANNEL_FABIAN:
+            return 5;
+
+        case RWAPLAYBACKTYPE_BINAURAL7CHANNEL_FABIAN:
+            return 7;
+
+        // AUTO/NATIVE dispatch on the file's channel count at patcher selection,
+        // but the runtime has never sent spatial data for them
+        default: // AUTO, NATIVE, BINAURALSPACE, RWA_UNDETERMINED
+            return 0;
+    }
+}
+
+int32_t RwaAsset1::channelOffsetForPlaybackType(int32_t playbackType, int32_t channel)
+{
+    static const int32_t stereoOffsets[2] = {-60, 60};
+    static const int32_t fiveChannelOffsets[5] = {-60, 0, 60, -120, 120};
+    static const int32_t sevenChannelOffsets[7] = {-40, 0, 40, -80, 80, -120, 120};
+
+    int32_t count = channelCountForPlaybackType(playbackType);
+    if(channel < 0 || channel >= count)
+        return 0;
+
+    switch(count)
+    {
+        case 2: return stereoOffsets[channel];
+        case 5: return fiveChannelOffsets[channel];
+        case 7: return sevenChannelOffsets[channel];
+        default: return 0;
+    }
+}
+
+int32_t RwaAsset1::playbackChannelCount() const
+{
+    // A patch spatialising on its own from raw head data gets exactly one set
+    if(type == RWAASSETTYPE_PD && !headtrackerRelative2Source)
+        return 1;
+
+    int32_t count = channelCountForPlaybackType(playbackType);
+
+    if(type == RWAASSETTYPE_PD && count < 1)
+        count = 1;
+
+    return count;
+}
+
+bool RwaAsset1::playbackTypeHasChannelPositions(int32_t playbackType)
+{
+    switch(playbackType)
+    {
+        case RWAPLAYBACKTYPE_BINAURALMONO:
+        case RWAPLAYBACKTYPE_BINAURALMONO_FABIAN:
+        case RWAPLAYBACKTYPE_BINAURALSTEREO:
+        case RWAPLAYBACKTYPE_BINAURALSTEREO_FABIAN:
+        case RWAPLAYBACKTYPE_BINAURAL5CHANNEL:
+        case RWAPLAYBACKTYPE_BINAURAL5CHANNEL_FABIAN:
+        case RWAPLAYBACKTYPE_BINAURAL7CHANNEL_FABIAN:
+            return true;
+
+        default:
+            return false;
+    }
+}
+
 void RwaAsset1::calculateChannelPositions()
 {
+    if(!playbackTypeHasChannelPositions(getPlaybackType()))
+        return;
+
     std::vector<double> tmp(2, 0.0);
     int offset = 360-rotateOffset;
+    int32_t count = channelCountForPlaybackType(getPlaybackType());
 
-    if(this->getPlaybackType() == RWAPLAYBACKTYPE_BINAURALMONO ||
-       this->getPlaybackType() == RWAPLAYBACKTYPE_BINAURALMONO_FABIAN)
+    for(int32_t i = 0; i < count; i++)
     {
-        if(!individuellChannelPosition[0])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (0+offset)%360);
-            setChannelCoordinate(0, tmp);
-        }
-    }
+        if(hasCustomChannelPosition[i])
+            continue;
 
-    if(this->getPlaybackType() == RWAPLAYBACKTYPE_BINAURALSTEREO ||
-       this->getPlaybackType() == RWAPLAYBACKTYPE_BINAURALSTEREO_FABIAN)
-    {
-        if(!individuellChannelPosition[0])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (-60+offset)%360);
-            setChannelCoordinate(0, tmp);
-        }
-        if(!individuellChannelPosition[1])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (60+offset)%360);
-            setChannelCoordinate(1, tmp);
-        }
-    }
-
-    if(this->getPlaybackType() == RWAPLAYBACKTYPE_BINAURAL5CHANNEL ||
-       this->getPlaybackType() == RWAPLAYBACKTYPE_BINAURAL5CHANNEL_FABIAN)
-    {
-        if(!individuellChannelPosition[0])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (-60 + offset)%360);
-            setChannelCoordinate(0, tmp);
-        }
-        if(!individuellChannelPosition[1])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (0 + offset)%360);
-            setChannelCoordinate(1, tmp);
-        }
-        if(!individuellChannelPosition[2])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (60 + offset)%360);
-            setChannelCoordinate(2, tmp);
-        }
-        if(!individuellChannelPosition[3])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (-120 + offset)%360);
-            setChannelCoordinate(3, tmp);
-        }
-        if(!individuellChannelPosition[4])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (120 + offset)%360);
-            setChannelCoordinate(4, tmp);
-        }
-    }
-
-    if(this->getPlaybackType() == RWAPLAYBACKTYPE_BINAURAL7CHANNEL_FABIAN)
-    {
-        if(!individuellChannelPosition[0])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (-40 + offset)%360);
-            setChannelCoordinate(0, tmp);
-        }
-        if(!individuellChannelPosition[1])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (0 + offset)%360);
-            setChannelCoordinate(1, tmp);
-        }
-        if(!individuellChannelPosition[2])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (40 + offset)%360);
-            setChannelCoordinate(2, tmp);
-        }
-        if(!individuellChannelPosition[3])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (-80 + offset)%360);
-            setChannelCoordinate(3, tmp);
-        }
-        if(!individuellChannelPosition[4])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (80 + offset)%360);
-            setChannelCoordinate(4, tmp);
-        }
-        if(!individuellChannelPosition[5])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (-120 + offset)%360);
-            setChannelCoordinate(5, tmp);
-        }
-        if(!individuellChannelPosition[6])
-        {
-            tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (120 + offset)%360);
-            setChannelCoordinate(6, tmp);
-        }
+        int32_t angle = channelOffsetForPlaybackType(getPlaybackType(), i);
+        tmp = RwaUtilities::calculateDestination1(getCoordinates(), static_cast<double>(getChannelRadius()), (angle+offset)%360);
+        setChannelCoordinate(i, tmp);
     }
 }
 
 void RwaAsset1::setChannelCoordinate(int32_t channelNumber, std::vector<double> coordinate)
 {
     channelcoordinates[channelNumber] = coordinate;
+}
+
+void RwaAsset1::setCustomChannelCoordinate(int32_t channelNumber, std::vector<double> coordinate)
+{
+    customchannelcoordinates[channelNumber] = coordinate;
+    hasCustomChannelPosition[channelNumber] = true;
 }
 
 void RwaAsset1::setReflectionCoordinate(int32_t channelNumber, std::vector<double> coordinate)
@@ -275,7 +303,7 @@ void RwaAsset1::setReflectionCoordinate(int32_t channelNumber, std::vector<doubl
 void RwaAsset1::setIndividuellChannelPosition(int32_t channel, std::vector<double> position)
 {
     channelcoordinates[channel]= position;
-    individuellChannelPosition[channel] = true;
+    hasCustomChannelPosition[channel] = true;
 }
 
 void RwaAsset1::setIndividualChannelRotateFrequency(int32_t channel, float frequency)
@@ -289,6 +317,14 @@ void RwaAsset1::setIndividualChannelRotateFrequency(int32_t channel, float frequ
 
     channelRotateFreq[channel] = frequency;
     channelRotate[channel] = true;
+}
+
+void RwaAsset1::resetIndividualChannelPositions()
+{
+    for(int i = 0; i<64; i++)
+        hasCustomChannelPosition[i] = false;
+
+    calculateChannelPositions();
 }
 
 void RwaAsset1::setChannelRotateFrequency(int channel, float frequency)
@@ -353,6 +389,8 @@ float RwaAsset1::getMinDistance() const
 void RwaAsset1::setMinDistance(float value)
 {
     minDistance = value;
+    if(minDistance < 0)
+        minDistance = -1;
 }
 
 float RwaAsset1::getDampingMax() const
@@ -426,9 +464,6 @@ float RwaAsset1::getFixedDistance() const
 
 void RwaAsset1::setFixedDistance(float value)
 {
-    if(value <= 0)
-        return;
-
     fixedDistance = value;
 }
 
@@ -439,11 +474,6 @@ float RwaAsset1::getFixedAzimuth() const
 
 void RwaAsset1::setFixedAzimuth(float value)
 {
-    if(value < 0)
-        return;
-    if(value >= 360)
-        return;
-
     fixedAzimuth = value;
 }
 
@@ -472,6 +502,36 @@ bool RwaAsset1::getHasCoordinates() const
     return hasCoordinates;
 }
 
+bool RwaAsset1::getBlockedForever() const
+{
+    return blockedForever;
+}
+
+void RwaAsset1::setBlockedForever(bool newBlockedForever)
+{
+    blockedForever = newBlockedForever;
+}
+
+float RwaAsset1::getSmoothDist() const
+{
+    return smoothdist;
+}
+
+void RwaAsset1::setSmoothDist(float newSmoothdist)
+{
+    smoothdist = newSmoothdist;
+}
+
+float RwaAsset1::getElevation() const
+{
+    return elevation;
+}
+
+void RwaAsset1::setElevation(float newElevation)
+{
+    elevation = newElevation;
+}
+
 int32_t RwaAsset1::getType() const
 {
     return type;
@@ -495,12 +555,12 @@ void RwaAsset1::setAlwaysPlayFromBeginning(bool value)
     alwaysPlayFromBeginning = value;
 }
 
-bool RwaAsset1::individuellChannelPositionsAllowed() const
+bool RwaAsset1::customChannelPositionsEnabled() const
 {
     return allowIndividuellChannelPositions;
 }
 
-void RwaAsset1::setAllowIndividuellChannelPositions(bool value)
+void RwaAsset1::enableCustomChannelPositions(bool value)
 {
     allowIndividuellChannelPositions = value;
 }
@@ -647,8 +707,6 @@ void RwaAsset1::setMoveFromStartPosition(bool value)
     moveFromStartPosition = value;
 }
 
-
-
 float RwaAsset1::getWaitTimeBeforeMovement() const
 {
     return waitTimeBeforeMovement;
@@ -709,8 +767,6 @@ void RwaAsset1::setAllowTouches(bool value)
     allowTouches = value;
 }
 
-
-
 int64_t RwaAsset1::getNumberOfChannels() const
 {
     return numberOfChannels;
@@ -719,6 +775,16 @@ int64_t RwaAsset1::getNumberOfChannels() const
 void RwaAsset1::setNumberOfChannels(const int64_t &value)
 {
     numberOfChannels = value;
+}
+
+int32_t RwaAsset1::getOriginalSampleRate() const
+{
+    return originalSampleRate;
+}
+
+void RwaAsset1::setOriginalSampleRate(int32_t value)
+{
+    originalSampleRate = value;
 }
 
 void RwaAsset1::setChannelRadius(float value)
@@ -746,6 +812,36 @@ void RwaAsset1::setDuration(const int64_t &value)
 {
     duration = value;
     setFadeOutAfter(duration-getCrossfadeTime());
+}
+
+/**
+  Re-reads duration, channel count and sample rate from the audio file.
+  @return true if one of the three values actually changed.
+*/
+
+bool RwaAsset1::refreshFileProperties()
+{
+    if(type == RWAASSETTYPE_PD)
+        return false;
+
+    TagLib::FileRef f(fullPath.c_str());
+
+    if(f.isNull() || !f.audioProperties())
+        return false;
+
+    int32_t newDuration = f.audioProperties()->lengthInMilliseconds();
+    int32_t newChannels = f.audioProperties()->channels();
+    int32_t newSampleRate = f.audioProperties()->sampleRate();
+
+    bool changed = (newDuration != duration)
+                || (newChannels != numberOfChannels)
+                || (newSampleRate != originalSampleRate);
+
+    setNumberOfChannels(newChannels);
+    setOriginalSampleRate(newSampleRate);
+    setDuration(newDuration); // recalculates fadeOutAfter
+
+    return changed;
 }
 
 
@@ -910,5 +1006,3 @@ void RwaAssetItem::setOrientation2pd(bool value)
 {
     orientation2pd = value;
 }*/
-
-

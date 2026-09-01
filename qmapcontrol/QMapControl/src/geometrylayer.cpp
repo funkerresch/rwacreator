@@ -24,11 +24,14 @@
 */
 
 #include "geometrylayer.h"
+#include "layer.h"
 namespace qmapcontrol
 {
     GeometryLayer::GeometryLayer(QString layername, MapAdapter* mapadapter, bool takeevents)
-        : Layer(layername, mapadapter, Layer::GeometryLayer, takeevents)
+        :Layer(layername, mapadapter, Layer::GeometryLayer, takeevents)
     {
+         //
+
     }
 
 

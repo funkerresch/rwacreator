@@ -59,5 +59,3 @@ void RwaSearchBox::doSearch()
     completer->preventSuggest();
     QString url = QString(GSEARCH_URL).arg(text());
 }
-
-

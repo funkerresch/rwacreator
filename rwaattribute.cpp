@@ -15,6 +15,3 @@ RwaAttribute::RwaAttribute(std::string attributeName, std::string stringValue)
     this->floatValue = RWAATTRIBUTE_INVALIDFLOAT;
     this->type = RWAATTRIBUTETYPE_STRING;
 }
-
-
-

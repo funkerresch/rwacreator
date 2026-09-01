@@ -1,0 +1,14 @@
+{
+  "schema": "rwa-scenario/1",
+  "description": "Hero starts in Scene 0, walks to Scene 1 at t=5s, Pd reports old assets finished at t=7s, walks back to Scene 0 at t=10s. Checks bg-asset end on scene change and playhead resume (alwaysplayfrombeginning=0).",
+  "game": "scenechange/twoscene.rwa",
+  "startScene": "Scene 0",
+  "durationMs": 15000,
+  "timeline": [
+    { "t": 0,     "pos": { "lon": 7.58600000, "lat": 47.57700000 } },
+    { "t": 5000,  "pos": { "lon": 7.59000000, "lat": 47.57700000 } },
+    { "t": 7000,  "playFinished": { "asset": "bg0.wav" } },
+    { "t": 7100,  "playFinished": { "asset": "fb0.wav" } },
+    { "t": 10000, "pos": { "lon": 7.58600000, "lat": 47.57700000 } }
+  ]
+}

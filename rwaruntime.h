@@ -1,3 +1,16 @@
+/*
+ * This file is part of the Rwa Creator.
+ * An open-source cross-platform Middleware for creating interactive Soundwalks
+ *
+ * Copyright (C) 2015 - 2022 Thomas Resch
+ *
+ * License: MIT
+ *
+ * rwaruntime.h
+ * by Thomas Resch
+ *
+ */
+
 #ifndef RWARUNTIME_H
 #define RWARUNTIME_H
 
@@ -5,6 +18,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <mutex>
+#include <functional>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -12,17 +26,22 @@
 #include "z_libpd.h"
 #include "m_pd.h"
 #include "util/z_queued.h"
+#include "util/z_print_util.h"
 #include "rwa_binauralsimple~.h"
+#include "vas_reverb~.h"
 #include "rwapdextra~.h"
 
 #ifdef QT_VERSION
 #include <QDebug>
+#include <QRandomGenerator>
 class RwaBackend;
+#else
+#include <random>
 #endif
 
-#define RWARUNTIME_MAXNUMBEROFPATCHERS 20
-#define RWARUNTIME_MAXNUMBEROF7CHANNELPATCHERS 2
-#define RWARUNTIME_MAXNUMBEROF5CHANNELPATCHERS 2
+#define RWARUNTIME_MAXNUMBEROFPATCHERS 40
+#define RWARUNTIME_MAXNUMBEROF7CHANNELPATCHERS 4
+#define RWARUNTIME_MAXNUMBEROF5CHANNELPATCHERS 4
 
 #define RWARUNTIME_INVALIDPATCHERINDEX -1
 
@@ -60,6 +79,19 @@ RwaRuntime(QObject *parent, const char *pdpath, const char *assetPath, float sam
     std::mutex *pdMutex = nullptr;
     float sampleRate = 44.1f;
     float schedulerRate = 0;
+    float lastP = 0;
+
+    // Runtime config formerly read live from the RwaBackend singleton; kept as
+    // statics so the engine compiles and runs without the Qt GUI backend
+    // (headless trace harness). The GUI mirrors its toggles into these.
+    static bool logSim;
+    static bool logPd;
+    static float pdSampleRate; // sample rate of the pd patches (48 kHz), distinct from the device rate passed to the ctor
+
+    // Source of the "<tag>-seed" init value (see sendInitValues2pd).
+    // Defaults to the platform RNG; the headless trace harness installs a
+    // constant so traces stay deterministic.
+    static std::function<uint32_t()> seedSource;
 
     static bool debug;
     static std::list<RwaEntity *> entities;
@@ -67,17 +99,21 @@ RwaRuntime(QObject *parent, const char *pdpath, const char *assetPath, float sam
     bool step = false;
 
     static pdPatcher binauralStereoPatchers_fabian[RWARUNTIME_MAXNUMBEROFPATCHERS];
+    static pdPatcher binauralStereoPatchersOgg_fabian[RWARUNTIME_MAXNUMBEROFPATCHERS];
     static pdPatcher binauralMonoPatchers_fabian[RWARUNTIME_MAXNUMBEROFPATCHERS];
+    static pdPatcher binauralMonoPatchersOgg_fabian[RWARUNTIME_MAXNUMBEROFPATCHERS];
     static pdPatcher binaural5channelPatchers_fabian[RWARUNTIME_MAXNUMBEROF5CHANNELPATCHERS];
     static pdPatcher binaural7channelPatchers_fabian[RWARUNTIME_MAXNUMBEROF7CHANNELPATCHERS];
     static pdPatcher stereoPatchers[RWARUNTIME_MAXNUMBEROFPATCHERS];
+    static pdPatcher stereoPatchersOgg[RWARUNTIME_MAXNUMBEROFPATCHERS];
     static pdPatcher monoPatchers[RWARUNTIME_MAXNUMBEROFPATCHERS];
+    static pdPatcher monoPatchersOgg[RWARUNTIME_MAXNUMBEROFPATCHERS];
 
     static std::list<pdPatcher *> dynamicPatchers1;
 
-    static float assetChannelCount;
-    static float assetDuration;
-    static float assetSampleRate;
+    // Patchers of superseded background-asset instances, still fading out after "-end";
+    // released when their "<tag>-playfinished" arrives (see startBackgroundState / bangpd).
+    static std::list<RwaEntity::AssetMapItem> assetsPendingRelease;
 
     static void printpd(const char *s);
     static void bangpdHelp(int32_t patcherTag, std::map<string, RwaEntity::AssetMapItem> &assetItemMap);
@@ -85,25 +121,36 @@ RwaRuntime(QObject *parent, const char *pdpath, const char *assetPath, float sam
     static void floatpd(const char *source, float value);
     static void releasePatcherFromItem(RwaEntity::AssetMapItem item);
 
+    static int32_t getPatcherIndex(int32_t patcherTag, pdPatcher *patcherArray, qint32 size);
     static int32_t getBinauralMonoFabianPatcherIndex(int32_t patcherTag);
     static int32_t getBinauralStereoFabianPatcherIndex(int32_t patcherTag);
     static int32_t getBinaural5channelFabianPatcherIndex(int32_t patcherTag);
     static int32_t getBinaural7channelFabianPatcherIndex(int32_t patcherTag);
+    static int32_t getBinauralMonoFabianOggPatcherIndex(int32_t patcherTag);
+    static int32_t getBinauralStereoFabianOggPatcherIndex(int32_t patcherTag);
 
+    static int32_t getStereoPatcherOggIndex(int32_t patcherTag);
     static int32_t getStereoPatcherIndex(int32_t patcherTag);
     static int32_t getMonoPatcherIndex(int32_t patcherTag);
+    static int32_t getMonoPatcherOggIndex(int32_t patcherTag);
     static int32_t getDynamicPatcherIndex(int32_t patcherTag);
 
     void initDynamicPdPatchers(RwaEntity *entitiy);
     void freeDynamicPdPatchers1();
     void *findFreeDynamicPatcher(RwaAsset1 *asset);
     void *findFreeBinauralMonoFabianPatcher();
+    void *findFreeBinauralMonoFabianOggPatcher();
     void *findFreeBinauralStereoFabianPatcher();
+    void *findFreeBinauralStereoFabianOggPatcher();
     void *findFreeBinaural5channelFabianPatcher();
     void *findFreeBinaural7channelFabianPatcher();
     void *findFreeStereoPatcher();
+    void *findFreeStereoOggPatcher();
     void *findFreeMonoPatcher();
+    void *findFreeMonoOggPatcher();
+    void resetPatcher(int intPatcherTag);
     void freeAllPatchers();
+    void resetAllPatchers();
     void endBackgroundState();
 
     void sendEnd2activeAssets(RwaEntity *entity);
@@ -114,11 +161,11 @@ RwaRuntime(QObject *parent, const char *pdpath, const char *assetPath, float sam
     static pdPatcher *findDynamicPatcher(int32_t patcherTag);
 
     void sendInitValues2pd(RwaAsset1 *asset, int patcherTag);
+    static float effectiveGain(RwaAsset1 *asset); // asset gain x owning state gain x owning scene gain
     void update(RwaEntity *entity);
     void sendData2activeAssets(RwaEntity *entity);
     void sendData2Asset(RwaEntity *entity, RwaEntity::AssetMapItem item);
     void calculateChannelBearingAndDistance(RwaEntity *entity, RwaAsset1 *asset, int channel);
-    int getOffsetForChannel(int channel, int playbackType);
     void sendDistance(int channel, int patcherTag, float distance);
     void sendBearing(int channel, int patcherTag, float bearing);
     void sendElevation(int channel, int patcherTag, float elevation);
@@ -128,14 +175,16 @@ RwaRuntime(QObject *parent, const char *pdpath, const char *assetPath, float sam
     void sendEnd2backgroundAssets(RwaEntity *entity);
     void setEntityStartCoordinates(RwaEntity *entity);
     void startBackgroundState(RwaEntity *entity);
-
     void createAndBindPlayFinishedReceiver(pdPatcher *patcher);
-    void openFile4MetaData(const char *fileName);
+    void setScene(RwaEntity *entity, RwaScene *scene);
+
+    void emptyPdMessageQueue();
 
 signals:
     void sendRedrawAssets();
     void sendSelectedScene(RwaScene *scene);
     void sendSelectedState(RwaState *state);
+
 };
 
 #endif // RWARUNTIME_H

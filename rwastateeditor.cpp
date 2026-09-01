@@ -69,6 +69,3 @@ void RwaStateEditor::adaptSize(qint32 width, qint32 height)
     //editor->resize(QSize(width-10, height));
 
 }
-
-
-

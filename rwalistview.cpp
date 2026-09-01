@@ -26,6 +26,7 @@ RwaListView::RwaListView(QWidget *parent, RwaScene *scene) :
     connect(backend, SIGNAL(sendLastTouchedAsset(RwaAsset1 *)),
               this, SLOT(setCurrentAsset(RwaAsset1*)));
 
+    setItemDelegate(new RwaListBadgeDelegate(this)); // must be installed before the closeEditor connect below
     connect(itemDelegate(), SIGNAL(closeEditor(QWidget*, QAbstractItemDelegate::EndEditHint)), this, SLOT(ListWidgetEditEnd(QWidget*, QAbstractItemDelegate::EndEditHint)));
     this->setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::EditKeyPressed);
 
@@ -52,6 +53,16 @@ qint32 RwaListView::getSelectedIndex()
         return -1;
     else
         return this->selectedIndexes().first().row();
+}
+
+void RwaListView::mousePressEvent(QMouseEvent *event)
+{
+    // a click on empty space must not clear the selection,
+    // the list would otherwise contradict the form next to it.
+    if(!indexAt(event->position().toPoint()).isValid())
+        return;
+
+    QListWidget::mousePressEvent(event);
 }
 
 void RwaListView::mouseMoveEvent(QMouseEvent *event)

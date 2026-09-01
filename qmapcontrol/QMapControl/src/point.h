@@ -31,7 +31,6 @@
 #include <QLineEdit>
 #include <QLabel>
 #include "geometry.h"
-#include "rwautilities.h"
 #include "rwalocation1.h"
 
 namespace qmapcontrol

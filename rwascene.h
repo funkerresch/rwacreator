@@ -1,3 +1,16 @@
+/*
+ * This file is part of the Rwa Creator.
+ * An open-source cross-platform Middleware for creating interactive Soundwalks
+ *
+ * Copyright (C) 2015 - 2022 Thomas Resch
+ *
+ * License: MIT
+ *
+ * rwascene.h
+ * by Thomas Resch
+ *
+ */
+
 #ifndef AFXSCENE_H
 #define AFXSCENE_H
 
@@ -37,6 +50,7 @@ public:
     RwaState *lastTouchedState;
     int32_t level;
     bool disableFallback = false;
+    float gain = 1; // linear; multiplied into every asset of this scene by the runtime
 
     void moveMyChildren(double dx, double dy);
     void clear();
@@ -68,6 +82,9 @@ public:
 
     int32_t getLevel() const;
     void setLevel(int value);
+
+    float getGain() const;
+    void setGain(float value);
 
     bool fallbackDisabled() const;
     void setDisableFallback(bool value);

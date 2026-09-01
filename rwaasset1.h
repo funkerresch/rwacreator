@@ -1,19 +1,38 @@
+/*
+ * This file is part of the Rwa Creator.
+ * An open-source cross-platform Middleware for creating interactive Soundwalks
+ *
+ * Copyright (C) 2015 - 2022 Thomas Resch
+ *
+ * License: MIT
+ *
+ * rwaasset.h
+ * by Thomas Resch
+ * Class represents an rwa asset which combines
+ * attributes and values with either a soundfile, a Pure Data patch,
+ * or a so called "rwaitem", which is some kind of collectable
+ *
+ */
+
 #ifndef RWAASSETITEM_H
 #define RWAASSETITEM_H
 
 #include "rwautilities.h"
 #include "rwaarea.h"
-//#include "rwalocation1.h"
 #include <string.h>
 #include <stdint.h>
 
 #define RWA_UNDETERMINED 0
+
+#define RWA_SR_44100 0
+#define RWA_SR_48000 1
 
 #define RWAASSETTYPE_WAV 1
 #define RWAASSETTYPE_AIF 2
 #define RWAASSETTYPE_PD 3
 #define RWAASSETTYPE_ITEM 4
 #define RWAASSETTYPE_ENTITY 5
+#define RWAASSETTYPE_OGG 6
 
 #define RWAPOSITIONTYPE_ASSET 1
 #define RWAPOSITIONTYPE_ASSETCHANNEL 2
@@ -80,6 +99,7 @@ public:
     ~RwaAsset1();
 
     vector<double> channelcoordinates[64]; // limited to 64 channels, maximum for soundfiles
+    vector<double> customchannelcoordinates[64]; // limited to 64 channels, maximum for soundfiles
     vector<double> reflectioncoordinates[64]; //
     int32_t currentReflection;
     float channelDistance[64];
@@ -87,7 +107,7 @@ public:
     float lastChannelBearing[64];
     float channelRotateFreq[64];
     float channelGain[64];
-    bool individuellChannelPosition[64];    
+    bool hasCustomChannelPosition[64];
     bool reflectionCoordinateIsSet[64];
     bool channelRotate[64];
 
@@ -98,12 +118,33 @@ public:
     void copyAttributes(RwaAsset1 *dest);
     void calculateChannelPositions();
 
+    // Number of spatial data channels (azimuthN/distanceN/elevationN) a playback
+    // mode implies; 0 for modes without per-channel spatialisation data.
+    static int32_t channelCountForPlaybackType(int32_t playbackType);
+
+    // Angular offset (degrees, clockwise from the asset's forward direction) of
+    // a channel's default position around the asset.
+    static int32_t channelOffsetForPlaybackType(int32_t playbackType, int32_t channel);
+
+    // Whether the mode places its channels around the asset (the binaural
+    // families); mono/stereo/custom modes have one data channel but no
+    // positioned satellites (no map handles, radius ignored where applicable).
+    static bool playbackTypeHasChannelPositions(int32_t playbackType);
+
+    // The number of spatial data channels the runtime actually streams to this
+    // asset: channelCountForPlaybackType, except Pd-patch assets never get less
+    // than 1, and only 1 (raw head data) when "headtracker relative to source"
+    // is off.
+    int32_t playbackChannelCount() const;
+
     void setChannelCoordinate(int32_t channelNumber, std::vector<double> coordinate);
+    void setCustomChannelCoordinate(int32_t channelNumber, std::vector<double> coordinate);
     void setReflectionCoordinate(int32_t channelNumber, std::vector<double> coordinate);
     void setIndividuellChannelPosition(int32_t channel, std::vector<double> position);
     void setChannelGain(int32_t channel, float gain);
     void setChannelRotateFrequency(int channel, float frequency);
     void setIndividualChannelRotateFrequency(int32_t channel, float frequency);
+    void resetIndividualChannelPositions();
 
     string getFileName() const;
     void setFileName(const string &value);
@@ -180,8 +221,13 @@ public:
     int64_t getNumberOfChannels() const;
     void setNumberOfChannels(const int64_t &value);
 
+    int32_t getOriginalSampleRate() const;
+    void setOriginalSampleRate(int32_t value);
+
     int64_t getDuration() const;
     void setDuration(const int64_t &value);
+
+    bool refreshFileProperties();
 
     int64_t getFadeOutAfter() const;
     void setFadeOutAfter(const int64_t &value);
@@ -222,8 +268,8 @@ public:
     bool getLockPosition() const;
     void setLockPosition(bool value);
 
-    bool individuellChannelPositionsAllowed() const;
-    void setAllowIndividuellChannelPositions(bool value);
+    bool customChannelPositionsEnabled() const;
+    void enableCustomChannelPositions(bool value);
 
     bool getAlwaysPlayFromBeginning() const;
     void setAlwaysPlayFromBeginning(bool value);
@@ -272,6 +318,12 @@ public:
     int32_t getReflectionCount() const;
     void setReflectionCount(const int32_t &value);
 
+    float getElevation() const;
+    void setElevation(float newElevation);
+
+    float getSmoothDist() const;
+    void setSmoothDist(float newSmoothdist);
+
     bool getHasCoordinates() const;
 private:
     friend class RwaRuntime;
@@ -288,6 +340,7 @@ private:
     float dampingTrim = 2;
     float dampingMin = 0;
     float dampingMax = 1;
+    float smoothdist = 10;
     float playheadPosition = 0;
     float playheadPositionWithoutOffset = 0;
     float followEntityThreshhold = 4;  // at what distance to entiy start following
@@ -308,8 +361,52 @@ private:
     float movementSpeed = 20;
     float waitTimeBeforeMovement = 0;
 
+    /**
+     * @brief Defines the asset type
+     *
+     * Valid options defined by `RWAASSETTYPE_*`:
+     * - 1 WAV
+     * - 2 AIF
+     * - 3 PD
+     * - 4 ITEM
+     * - 5 ENTITY
+     * - 6 OGG
+     */
     int32_t type;
-    int32_t playbackType = -1; // binaural, stereo, mono, etc..
+
+    /**
+     * @brief Defines the audio output playback mode, i.e. PD patcher used for playback.
+     *
+     * Valid options defined by `RWAPLAYBACKTYPE_*`:
+     * - -1 Default / Unset
+     * - 0 (no define) Undetermined (label in rwaassetattributeview.cpp)
+     * - 1 MONO
+     * - 2 STEREO
+     * - 3 NATIVE: Auto
+     * - 4 BINAURAL / BINAURALMONO: Legacy
+     * - 5 BINAURALSTEREO: Legacy
+     * - 6 BINAURALAUTO: Legacy
+     * - 7 BINAURAL5CHANNEL: Legacy
+     *
+     * FABIAN HRTF (binaural) Types:
+     * - 8 BINAURAL_FABIAN / BINAURALMONO_FABIAN
+     * - 9 BINAURALSTEREO_FABIAN
+     * - 10 BINAURALAUTO_FABIAN
+     * - 11 BINAURAL5CHANNEL_FABIAN
+     * - 12 BINAURAL7CHANNEL_FABIAN
+     * - 13 BINAURALSPACE
+     *
+     * Custom Types:
+     * - 14-16 CUSTOM1..3: Custom IR-Set 1..3 (not implemented)
+     */
+    int32_t playbackType = -1;
+    /**
+     * @brief Damping Function for distance attenuation
+     *
+     * - 0 None
+     * - 1 Exponential (default)
+     * - 2 Linear
+     */
     int32_t dampingFunction = 1;
     int32_t fadeOutTime = 50;
     int32_t fadeInTime = 50;
@@ -317,6 +414,7 @@ private:
     int32_t duration = 0;
     int64_t fadeOutAfter = 0;
     int32_t numberOfChannels = 0;
+    int32_t originalSampleRate = 0; // read from the audio file, 0 = not read yet; not serialised to the .rwa
     int32_t rotateOffset = 0;
     int32_t timeOut = 0;
     int32_t reflectionCount = 0;
@@ -324,9 +422,10 @@ private:
     bool mute = false;
     bool isExclusive = false; // no other asset at the same time
     bool isActive = false;    // currently active
-    bool isAlive = true;     // can be activated (in principle)
+    bool isAlive = true;      // can be activated (in principle)
     bool loop = false;        // start again automatically while within state radius
     bool blocked = false;     // blocked, can't be activated; for example: blocked by another client..
+    bool blockedForever = false;
     bool headtrackerRelative2Source = true;
     bool lockPosition = false;
     bool rawSensors2pd = false;
@@ -345,6 +444,9 @@ private:
 
 public:
     bool allowIndividuellChannelPositions = false;
+
+    bool getBlockedForever() const;
+    void setBlockedForever(bool newBlockedForever);
 };
 
 #endif // RWAASSETITEM_H

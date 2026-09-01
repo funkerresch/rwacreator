@@ -88,6 +88,7 @@ namespace qmapcontrol
         mylineedit->setText(QString::fromStdString(data->objectName()));
         mylineedit->setVisible(false);
         mylineedit->setStyleSheet(rwaSmallLineEditStyle);
+        mylineedit->setDisabled(true);
         //connect(mylineedit, SIGNAL(returnPressed()), this, SLOT(looseLineEditFocus()));
     }
 
@@ -361,7 +362,7 @@ namespace qmapcontrol
         {
             if (this->latitude()<=c1.y() && this->latitude()>=c2.y())
             {
-                emit(geometryClicked(this, QPoint(0,0)));
+                emit geometryClicked(this, QPoint(0,0));
                 return true;
             }
         }
@@ -378,8 +379,8 @@ namespace qmapcontrol
         //qDebug() << point.x();
 
 
-        emit(updateRequest(QRectF(X, Y, size.width(), size.height())));
-        emit(positionChanged(this));
+        emit updateRequest(QRectF(X, Y, size.width(), size.height()));
+        emit positionChanged(this);
     }
 
     void QmapPoint::move(double dx, double dy)
@@ -392,8 +393,8 @@ namespace qmapcontrol
         //qDebug() << point.x();
 
 
-        emit(updateRequest(QRectF(X, Y, size.width(), size.height())));
-        emit(positionChanged(this));
+        emit updateRequest(QRectF(X, Y, size.width(), size.height()));
+        emit positionChanged(this);
     }
 
     QList<QmapPoint*> QmapPoint::points()

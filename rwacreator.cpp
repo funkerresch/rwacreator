@@ -8,7 +8,6 @@
  */
 
 #include "rwacreator.h"
-
 #include <QAction>
 #include <QMenu>
 #include <QMenuBar>
@@ -18,6 +17,7 @@
 #include <QDataStream>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QXmlStreamReader>
 #include <QSignalMapper>
 #include <QApplication>
 #include <QMouseEvent>
@@ -25,14 +25,29 @@
 #include <QComboBox>
 #include <QLabel>
 #include <QPushButton>
+#include <QDialog>
+#include <QVBoxLayout>
+#include <QTimer>
+#include <QBuffer>
+#include <QCryptographicHash>
 #include <qdebug.h>
+#include <unistd.h>
+#include "rwainputdialog.h"
 
 Q_DECLARE_METATYPE(QDockWidget::DockWidgetFeatures)
 
+// Set via target_compile_definitions in CMakeLists.txt
+#ifndef RWA_VERSION
+#define RWA_VERSION "unknown"
+#endif
+#ifndef RWA_GIT_COMMIT_HASH
+#define RWA_GIT_COMMIT_HASH "unknown"
+#endif
+
 RwaLogWindow *RwaCreator::logWindow;
 
-RwaCreator::RwaCreator(QWidget *parent, Qt::WindowFlags flags)
-    : QMainWindow(parent, flags)
+RwaCreator::RwaCreator(QWidget *parent)
+    : QMainWindow(parent)
 {
     setObjectName("RWA Creator");
     setDockNestingEnabled(true);
@@ -51,12 +66,16 @@ RwaCreator::RwaCreator(QWidget *parent, Qt::WindowFlags flags)
     QObject::connect(backend, SIGNAL(sendWriteUndo(QString)), this, SLOT(writeUndo(QString)));
     QObject::connect(backend, SIGNAL(readUndoFile(QString )), this, SLOT(readUndoFile(QString )));
     QObject::connect(QApplication::instance(), SIGNAL(aboutToQuit()),this, SLOT(cleanUpBeforeQuit()));
+    QObject::connect(backend->simulator, SIGNAL(sendAudioDevicesChanged()), this, SLOT(receiveAudioDevicesChanged()));
+    this->installEventFilter(this);
+    QApplication::instance()->installEventFilter(this); // for QEvent::Quit, see eventFilter()
 
-    setCentralWidget(backend);   
-    createInitFolder();      
+    setCentralWidget(backend);
+    createInitFolder();
     loadDefaultViews();
-    setupMenuBar();
     loadLayoutAndSettings();
+    QTimer::singleShot(0, this, &RwaCreator::restoreFloatingViews);
+    setupMenuBar(); // the key commands live on the menu actions, see initFileMenu()
 }
 
 /** *************************** logMessages redirects qDebug() to rwalogview ***************************************** */
@@ -67,111 +86,90 @@ void RwaCreator::logMessages(QtMsgType type, const QMessageLogContext &context, 
         logWindow->outputMessage( type, context, msg );
 }
 
-/** ************* Create RWA directory in home director and filelist of RWA games as .txt file *********************** */
+/** ********* Create RWA directory in ~/Library/Applications Support and filelist of RWA games as .txt file ********** */
 
 void RwaCreator::createInitFolder()
 {
-    QString path = QString("%1%2").arg(QDir::homePath()).arg("/RWACreator/");
+    QString path = backend->applicationSupportPath;
     if(!QDir(path).exists())
         QDir().mkdir(path);
 
-    QString filename = path +"createfilelist.sh";
+    QString filename = path + "/" +"createfilelist.sh";
     {
         QFile file(filename);
         if (file.open(QIODevice::ReadWrite))
         {
             QTextStream stream(&file);
-            stream << "#!/bin/sh" << endl;
-            stream << "cd $PWD/Games/" << endl;
-            stream << "ls *.zip > allfiles.txt" << endl;
+            stream << "#!/bin/sh" << "\n";
+            stream << "cd Games/" << "\n";
+            stream << "ls *.zip > allfiles.txt" << "\n";
         }
         file.setPermissions(QFileDevice::ReadUser | QFileDevice::WriteUser | QFileDevice::ExeUser | QFileDevice::ReadOther);
         file.close();
-   }
+    }
 
-    path = QString("%1%2").arg(QDir::homePath()).arg("/RWACreator/Games");
+    path = QString(backend->completeSharingServerPath);
     if(!QDir(path).exists())
         QDir().mkdir(path);
-}
-
-/** ******************************* Open and write rwainit.txt for global app settings ********************************** */
-
-void RwaCreator::openInit()
-{
-    int lineNumber = 0;
-    QString filename = QString("%1%2%3").arg(QDir::homePath()).arg("/RWACreator/").arg("rwainit.txt");
-    QFile file(filename);
-
-    if(!file.open(QIODevice::ReadOnly))
-    {
-        clear();
-        return;
-    }
-
-    QTextStream in(&file);
-
-    while(!in.atEnd())
-    {
-        QString line = in.readLine();
-
-        if(lineNumber == 0)
-        {
-            if(!open(line))
-                clear();
-        }
-
-        if(lineNumber == 1)
-            headtracker->setName(line);
-
-        lineNumber++;
-    }
-
-    file.close();
- }
-
-void RwaCreator::writeInit()
-{
-    QString filename = QString("%1%2%3").arg(QDir::homePath()).arg("/RWACreator/").arg("rwainit.txt");
-    QFile file(filename);
-    if (file.open(QIODevice::WriteOnly | QIODevice::Text))
-    {
-        QTextStream stream(&file);
-        stream << backend->completeFilePath << endl;
-        stream << headtracker->getName() << endl;
-        if(backend->showStateRadii)
-            stream << "1" << endl;
-        else
-            stream << "0" << endl;
-        if(backend->showAssets)
-            stream << "1" << endl;
-        else
-            stream << "0";
-        file.close();
-    }
-    else
-        qDebug() << "Error writing init";
 }
 
 /** ******************************** Save and load main window layout and settings ********************************** */
 
 void RwaCreator::saveLayoutAndSettings()
 {
-    QSettings settings("Intrinsic Audio", "Rwa Creator");
+    QSettings settings;
     settings.setValue("geometry", saveGeometry());
     settings.setValue("windowState", saveState());
     settings.setValue("lastgame", backend->completeFilePath);
+    settings.setValue("xcodeclientprojectpath", backend->completeTransferToPlayerExportPath);
+    settings.setValue("downloadpath", backend->completeSharingServerPath);
+    settings.setValue("downloadpathwithescape", backend->completeSharingServerPathWithEscape);
     settings.setValue("headtrackerid", headtracker->getName());
+    settings.setValue("samplerate", backend->sampleRate);
     settings.sync(); // forces to write the settings to storage
 }
 
 void RwaCreator::loadLayoutAndSettings()
 {
-    QSettings settings("Intrinsic Audio", "Rwa Creator");
+    QSettings settings;
     restoreGeometry(settings.value("geometry").toByteArray());
     restoreState(settings.value("windowState").toByteArray());
-    headtracker->setName(settings.value("headtrackerid").toString());
-    if(!open(settings.value("lastgame").toString()))
-        clear();
+
+    if(settings.contains("headtrackerid"))
+        headtracker->setName(settings.value("headtrackerid").toString());
+    else
+        headtracker->setName("rwaht00");
+
+    if(settings.contains("samplerate"))
+        backend->setSampleRate(settings.value("samplerate").toInt());
+    else
+        backend->setSampleRate(48000);
+
+    // Absent or empty means: follow the system default. A stored device which is not connected
+    // right now stays remembered and is taken as soon as it shows up in a rescan.
+    backend->simulator->ap->setOutputDeviceByName(settings.value("audiooutputdevice").toString());
+    backend->simulator->ap->setInputDeviceByName(settings.value("audioinputdevice").toString());
+
+    if(settings.contains("xcodeclientprojectpath"))
+        backend->completeTransferToPlayerExportPath = (settings.value("xcodeclientprojectpath").toString());
+    else
+        backend->completeTransferToPlayerExportPath = QString("%1%2").arg(QDir::homePath()).arg("/Desktop");
+
+    if(settings.contains("downloadpath"))
+        backend->completeSharingServerPath = (settings.value("downloadpath").toString());
+    else
+        backend->completeSharingServerPath = QString("%1%2").arg(QDir::homePath()).arg("/Library/Application Support/RWACreator/Games");
+
+    if(settings.contains("downloadpathwithescape"))
+        backend->completeSharingServerPathWithEscape = (settings.value("downloadpathwithescape").toString());
+    else
+        backend->completeSharingServerPathWithEscape = QString("%1%2").arg(QDir::homePath()).arg("'/Library/Application Support/RWACreator/Games\'");
+
+    if(!open(settings.value("lastgame").toString(), false))
+    {
+        qWarning("Last game does not exist.");
+        newProject();
+    }
 }
 
 /** ********************************************* Add default views ************************************************** */
@@ -189,10 +187,8 @@ void RwaCreator::loadDefaultViews()
 
 void RwaCreator::addMapView() // qt bug: stylesheet is applied only if widget is docked:(
 {
-    RwaDockWidget *dw = new RwaDockWidget(this);
     mapView = new RwaMapView(this, backend->getFirstScene(), "MapView");
-    //dw->setStyleSheet("QDockWidget { background-color:lightgrey; font-size: 20px; color: black}");
-    //dw->setStyleSheet("QDockWidget { font: bold }");
+    RwaDockWidget *dw = new RwaDockWidget(this, "Map View");
     dw->setObjectName(tr("Map View"));
     dw->setWindowTitle(tr("Map View"));
     dw->setGeometry(0,0,1000,300);
@@ -200,14 +196,20 @@ void RwaCreator::addMapView() // qt bug: stylesheet is applied only if widget is
     dw->installEventFilter(this);
     dw->setWindowFlags(Qt::WindowStaysOnTopHint );
     addDockWidget(Qt::TopDockWidgetArea, dw);
-
     rwaDockWidgets.append(dw);
+
+    if(RwaScene *scene = backend->getLastTouchedScene())
+    {
+        backend->receiveLastTouchedScene(scene);
+        if(scene->lastTouchedState)
+            backend->receiveLastTouchedState(scene->lastTouchedState);
+    }
 }
 
 void RwaCreator::addLogView()
 {
     logWindow = new RwaLogWindow(this);
-    RwaDockWidget *dw = new RwaDockWidget(this);
+    RwaDockWidget *dw = new RwaDockWidget(this, "Log View");
     dw->setObjectName(tr("Log View"));
     dw->setWindowTitle(tr("Log View"));
     dw->setGeometry(0,0,600,300);
@@ -219,7 +221,7 @@ void RwaCreator::addLogView()
 
 void RwaCreator::addGameView()
 {
-    RwaDockWidget *dw = new RwaDockWidget(this);
+    RwaDockWidget *dw = new RwaDockWidget(this, "Game View");
     dw->setObjectName(tr("Game View"));
     dw->setWindowTitle(tr("Game View"));
     dw->setGeometry(0,0,600,300);
@@ -231,7 +233,7 @@ void RwaCreator::addGameView()
 
 void RwaCreator::addSceneView()
 {
-    RwaDockWidget *dw = new RwaDockWidget(this);
+    RwaDockWidget *dw = new RwaDockWidget(this, "Scene View");
     dw->setObjectName(tr("Scene View"));
     dw->setWindowTitle(tr("Scene View"));
     dw->setGeometry(0,0,600,300);
@@ -243,7 +245,7 @@ void RwaCreator::addSceneView()
 
 void RwaCreator::addStateView()
 {
-    RwaDockWidget *dw = new RwaDockWidget(this);
+    RwaDockWidget *dw = new RwaDockWidget(this, "State View");
     dw->setObjectName(tr("State View"));
     dw->setWindowTitle(tr("State View"));
     dw->setGeometry(0,0,600,300);
@@ -255,7 +257,7 @@ void RwaCreator::addStateView()
 
 void RwaCreator::addHistoryView()
 {
-    RwaDockWidget *dw = new RwaDockWidget(this);
+    RwaDockWidget *dw = new RwaDockWidget(this, "History View");
     dw->setObjectName(tr("History View"));
     dw->setWindowTitle(tr("History View"));
     dw->setGeometry(0,0,600,300);
@@ -268,45 +270,98 @@ void RwaCreator::addHistoryView()
 
 void RwaCreator::closeEvent(QCloseEvent *event)
 {
-    (void) event;
-    qDebug();
+    // Ignoring the event keeps the window open, and Qt (6.x) also cancels an
+    // application quit (Cmd+Q, Quit menu, Dock) whose window close was refused.
+    // On a quit the question has usually been asked already, see eventFilter().
+    if(!closeConfirmed && isDocumentModified() && !maybeSave(tr("closing")))
+        event->ignore();
+    else
+        event->accept();
+
+    closeConfirmed = false;
 }
 
 void RwaCreator::cleanUpBeforeQuit()
 {
     qDebug() << "Clean up and quit!";
-    backend->simulator->stopRwaSimulation();
-    maybeSave();
+    // synchronous stop without the fade (the single-shot timer of "stop" would
+    // never fire once the event loop stops.)
+    backend->simulator->stopRwaSimulationNow();
     saveLayoutAndSettings();
     emptyTmpDirectories();
     backend->clearScenes();
 }
 
-bool RwaCreator::maybeSave()
+/** ********************************* Modified check and save-before-close dialogue *********************************** */
+
+QByteArray RwaCreator::documentFingerprint()
 {
+    QBuffer buffer;
+    buffer.open(QIODevice::WriteOnly);
+    RwaExport writer(nullptr, QString(), QString(), RWAEXPORT_CONTENTONLY);
+    writer.writeFile(&buffer);
+    return QCryptographicHash::hash(buffer.data(), QCryptographicHash::Sha256);
+}
+
+void RwaCreator::markDocumentSaved()
+{
+    savedDocumentFingerprint = documentFingerprint();
+}
+
+bool RwaCreator::isDocumentModified()
+{
+    if(savedDocumentFingerprint.isEmpty())   // no game loaded yet (startup)
+        return false;
+    return documentFingerprint() != savedDocumentFingerprint;
+}
+
+bool RwaCreator::maybeSave(const QString &before)
+{
+    QString name = backend->projectName.isEmpty() ? tr("Untitled") : backend->projectName;
     const QMessageBox::StandardButton ret
-        = QMessageBox::warning(this, tr("Application"),
-                               tr("The document has been modified.\n"
-                                  "Do you want to save your changes?"),
-                               QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+        = QMessageBox::warning(this, tr("RWA Creator"),
+                               tr("The project \"%1\" has unsaved changes.\n"
+                                  "Do you want to save them before %2?").arg(name, before),
+                               QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel,
+                               QMessageBox::Save);
     switch (ret) {
     case QMessageBox::Save:
         save();
+        // save() may not have written anything: the user can cancel the file dialogue
+        // of a never-saved project, or the write can fail. Then closing would lose the changes.
+        return !isDocumentModified();
+    case QMessageBox::Discard:
         return true;
-    case QMessageBox::Cancel:
-        return false;
     default:
-        break;
+        return false;
     }
-    return true;
 }
 
-/** ***************************** Event filter calls resize events to the graphic views ********************************** */
+/** ***************************** Event filter calls resize events to the graphic views ******************************** */
 
 bool RwaCreator::eventFilter(QObject *obj, QEvent *event)
 {
     QDockWidget *myWidget;
     RwaGraphicsView *myView;
+
+    if(obj == QApplication::instance())
+    {
+        // Application quit (Cmd+Q, Quit menu, Dock, logout). Qt handles it by closing every top-level
+        // window in turn and gives up on the first refusal, so if the main window were left to ask
+        // in its closeEvent(), floating views closed before it would stay hidden after a Cancel.
+        // Ask here, before any window is touched. If the main window is already closed (window
+        // close button, which then quits), it has asked and been answered.
+        if(event->type() == QEvent::Quit && isVisible() && isDocumentModified())
+        {
+            if(!maybeSave(tr("quitting")))
+            {
+                event->ignore();
+                return true;
+            }
+            closeConfirmed = true;   // saved or discarded, closeEvent() must not ask again
+        }
+        return false;
+    }
 
     if (event->type() == QEvent::Resize)
     {
@@ -320,8 +375,12 @@ bool RwaCreator::eventFilter(QObject *obj, QEvent *event)
         }
     }
 
+    QMainWindow::changeEvent(event);
+
     return QWidget::eventFilter(obj, event);
 }
+
+/** *********************************** Select Input/Output Device and Sample Rate ************************************** */
 
 void RwaCreator::selectOutputDevice(qint32 index)
 {
@@ -329,6 +388,7 @@ void RwaCreator::selectOutputDevice(qint32 index)
         backend->simulator->stopRwaSimulation();
 
     backend->simulator->ap->setOutputDevice(index);
+    saveAudioDeviceSettings();
 }
 
 void RwaCreator::selectInputDevice(qint32 index)
@@ -337,14 +397,105 @@ void RwaCreator::selectInputDevice(qint32 index)
         backend->simulator->stopRwaSimulation();
 
     backend->simulator->ap->setInputDevice(index);
+    saveAudioDeviceSettings();
 }
+
+/**
+  Devices are stored by name, not by index: PortAudio hands out the indices in the order it happens
+  to enumerate the hardware, so they mean nothing in the next session. An empty value is the
+  "follow the system default" state.
+*/
+void RwaCreator::saveAudioDeviceSettings()
+{
+    QSettings settings;
+    settings.setValue("audiooutputdevice", backend->simulator->ap->getExplicitOutputDeviceName());
+    settings.setValue("audioinputdevice", backend->simulator->ap->getExplicitInputDeviceName());
+    settings.sync(); // forces to write the settings to storage
+}
+
+void RwaCreator::selectSampleRate(qint32 index)
+{
+    QSettings settings;
+
+    if(index == 0)
+        backend->setSampleRate(44100);
+    if(index == 1)
+        backend->setSampleRate(48000);
+
+    qInfo() << backend->sampleRate;
+
+    settings.setValue("samplerate", backend->sampleRate);
+    settings.sync(); // forces to write the settings to storage
+}
+
+void RwaCreator::audioPrefsSRHelper(int i, qint32 &sr_int, QString &sr)
+{
+    if(i == RWA_SR_44100)
+    {
+        sr = QString("44100");
+        sr_int = 44100;
+    }
+
+    if(i == RWA_SR_48000)
+    {
+        sr = QString("48000");
+        sr_int = 48000;
+    }
+}
+
+/** ******************************************* Init Audio Preferences Menu ********************************************* */
 
 void RwaCreator::initAudioPreferencesMenu(QMenu *audioDeviceMenu)
 {
-    QActionGroup *selectAudioOutputDeviceGroup = new QActionGroup(audioDeviceMenu);
-    QActionGroup *selectAudioInputDeviceGroup = new QActionGroup(audioDeviceMenu);
-    QSignalMapper* outputDeviceSignalMapper = new QSignalMapper(audioDeviceMenu);
-    QSignalMapper* inputDeviceSignalMapper = new QSignalMapper(audioDeviceMenu);
+    if(!audioDeviceMenu)
+        return;
+
+    audioPreferencesMenu = audioDeviceMenu;
+
+    // The menu is rebuilt on every rescan. QMenu::clear() drops the actions but not the action
+    // groups, so those are recreated here too, otherwise every rescan would leak a set of them.
+    audioDeviceMenu->clear();
+    delete selectSampleRateGroup;
+    delete selectAudioOutputDeviceGroup;
+    delete selectAudioInputDeviceGroup;
+
+    selectSampleRateGroup = new QActionGroup(audioDeviceMenu);
+    selectAudioOutputDeviceGroup = new QActionGroup(audioDeviceMenu);
+    selectAudioInputDeviceGroup = new QActionGroup(audioDeviceMenu);
+    selectSampleRateGroup->setExclusive(true);
+    selectAudioOutputDeviceGroup->setExclusive(true);
+    selectAudioInputDeviceGroup->setExclusive(true);
+
+    QAction *rescanDevicesAction = new QAction(audioDeviceMenu);
+    rescanDevicesAction->setText(tr("Rescan Audio Devices"));
+    connect(rescanDevicesAction, SIGNAL(triggered()), this, SLOT(rescanAudioDevices()));
+    audioDeviceMenu->addAction(rescanDevicesAction);
+    audioDeviceMenu->addSeparator();
+
+    QAction *sampleRateLabel = new QAction(audioDeviceMenu);
+    sampleRateLabel->setCheckable(false);
+    sampleRateLabel->setText(QString("Target Sample Rate"));
+    sampleRateLabel->setEnabled(false);
+    audioDeviceMenu->addAction(sampleRateLabel );
+    audioDeviceMenu->addSeparator();
+
+    QString sr;
+    qint32 sr_int;
+
+    for(int i = 0; i < 2; i++)
+    {
+        audioPrefsSRHelper(i, sr_int, sr);
+        selectSampleRateAction = new QAction(audioDeviceMenu);
+        selectSampleRateAction->setCheckable(true);
+        selectSampleRateAction->setText(sr);
+        connect(selectSampleRateAction, &QAction::triggered, this, [this, i]{ selectSampleRate(i); });
+        audioDeviceMenu->addAction(selectSampleRateAction );
+        selectSampleRateGroup->addAction(selectSampleRateAction);
+        if(backend->sampleRate == sr_int)
+            selectSampleRateAction->setChecked(true);
+    }
+
+    audioDeviceMenu->addSeparator();
 
     QAction *outputDeviceLabel = new QAction(audioDeviceMenu);
     outputDeviceLabel->setCheckable(false);
@@ -352,6 +503,17 @@ void RwaCreator::initAudioPreferencesMenu(QMenu *audioDeviceMenu)
     outputDeviceLabel->setEnabled(false);
     audioDeviceMenu->addAction(outputDeviceLabel );
     audioDeviceMenu->addSeparator();
+
+    // System default option: Without this entry a single click on a device would opt the user
+    // out of following the system default for the rest of the session.
+    QAction *systemDefaultOutputAction = new QAction(audioDeviceMenu);
+    systemDefaultOutputAction->setCheckable(true);
+    systemDefaultOutputAction->setText(defaultDeviceMenuText(Pa_GetDefaultOutputDevice()));
+    connect(systemDefaultOutputAction, &QAction::triggered, this, [this]{ selectSystemDefaultOutputDevice(); });
+    audioDeviceMenu->addAction(systemDefaultOutputAction);
+    selectAudioOutputDeviceGroup->addAction(systemDefaultOutputAction);
+    if(!backend->simulator->ap->hasExplicitOutputDevice())
+        systemDefaultOutputAction->setChecked(true);
 
     const PaDeviceInfo* di;
     for(int i = 0;i < Pa_GetDeviceCount();i++)
@@ -362,16 +524,14 @@ void RwaCreator::initAudioPreferencesMenu(QMenu *audioDeviceMenu)
             selectAudioDeviceAction->setCheckable(true);
             di = Pa_GetDeviceInfo(i);
             selectAudioDeviceAction->setText(QString(di->name));
-            connect (selectAudioDeviceAction, SIGNAL(triggered()), outputDeviceSignalMapper, SLOT(map())) ;
-            outputDeviceSignalMapper->setMapping (selectAudioDeviceAction, i) ;
+            connect(selectAudioDeviceAction, &QAction::triggered, this, [this, i]{ selectOutputDevice(i); });
             audioDeviceMenu->addAction(selectAudioDeviceAction );
             selectAudioOutputDeviceGroup->addAction(selectAudioDeviceAction);
-            if(backend->simulator->ap->getOutputDevice() == i)
+            if(backend->simulator->ap->hasExplicitOutputDevice()
+               && backend->simulator->ap->getOutputDevice() == i)
                 selectAudioDeviceAction->setChecked(true);
         }
     }
-    selectAudioOutputDeviceGroup->setExclusive(true);
-    connect (outputDeviceSignalMapper, SIGNAL(mapped(int)), this, SLOT(selectOutputDevice(qint32))) ;
 
     audioDeviceMenu->addSeparator();
     QAction *inputDeviceLabel = new QAction(audioDeviceMenu);
@@ -381,6 +541,15 @@ void RwaCreator::initAudioPreferencesMenu(QMenu *audioDeviceMenu)
     audioDeviceMenu->addAction(inputDeviceLabel );
     audioDeviceMenu->addSeparator();
 
+    QAction *systemDefaultInputAction = new QAction(audioDeviceMenu);
+    systemDefaultInputAction->setCheckable(true);
+    systemDefaultInputAction->setText(defaultDeviceMenuText(Pa_GetDefaultInputDevice()));
+    connect(systemDefaultInputAction, &QAction::triggered, this, [this]{ selectSystemDefaultInputDevice(); });
+    audioDeviceMenu->addAction(systemDefaultInputAction);
+    selectAudioInputDeviceGroup->addAction(systemDefaultInputAction);
+    if(!backend->simulator->ap->hasExplicitInputDevice())
+        systemDefaultInputAction->setChecked(true);
+
     for(int i = 0;i < Pa_GetDeviceCount();i++)
     {
         if(backend->simulator->ap->isInputDevice(i))
@@ -389,22 +558,100 @@ void RwaCreator::initAudioPreferencesMenu(QMenu *audioDeviceMenu)
             selectAudioDeviceAction->setCheckable(true);
             di = Pa_GetDeviceInfo(i);
             selectAudioDeviceAction->setText(QString(di->name));
-            connect (selectAudioDeviceAction, SIGNAL(triggered()), inputDeviceSignalMapper, SLOT(map())) ;
-            inputDeviceSignalMapper->setMapping (selectAudioDeviceAction, i) ;
+            connect(selectAudioDeviceAction, &QAction::triggered, this, [this, i]{ selectInputDevice(i); });
             audioDeviceMenu->addAction(selectAudioDeviceAction );
             selectAudioInputDeviceGroup->addAction(selectAudioDeviceAction);
-            if(backend->simulator->ap->getInputDevice() == i)
+            if(backend->simulator->ap->hasExplicitInputDevice()
+               && backend->simulator->ap->getInputDevice() == i)
                 selectAudioDeviceAction->setChecked(true);
         }
     }
-    selectAudioInputDeviceGroup->setExclusive(true);
-    connect (inputDeviceSignalMapper, SIGNAL(mapped(int)), this, SLOT(selectInputDevice(qint32))) ;
 }
+
+/** Menu text of the "follow the system default" entry, naming the device it currently resolves to. */
+QString RwaCreator::defaultDeviceMenuText(int defaultDeviceIndex)
+{
+    const PaDeviceInfo* di = defaultDeviceIndex >= 0 ? Pa_GetDeviceInfo(defaultDeviceIndex) : nullptr;
+    if(!di)
+        return tr("Follow System Default");
+
+    return tr("Follow System Default (%1)").arg(QString(di->name));
+}
+
+/** ****************************************** Rescan the audio devices ************************************************ */
+
+/**
+  PortAudio only sees the devices that existed when it was initialized, so a headset connected
+  while the app is running neither shows up in the menu nor produces sound - the stored device
+  index has gone stale. Re-enumerating requires a PortAudio restart, therefore the simulation has
+  to be stopped first.
+*/
+void RwaCreator::rescanAudioDevices()
+{
+    backend->simulator->rescanAudioDevices();
+}
+
+void RwaCreator::selectSystemDefaultOutputDevice()
+{
+    if(backend->simulator->isSimulationRunning())
+        backend->simulator->stopRwaSimulation();
+
+    backend->simulator->ap->useSystemDefaultOutputDevice();
+    saveAudioDeviceSettings();
+    qInfo() << "Output device follows the system default:"
+            << backend->simulator->ap->getDeviceName(backend->simulator->ap->getOutputDevice());
+}
+
+void RwaCreator::selectSystemDefaultInputDevice()
+{
+    if(backend->simulator->isSimulationRunning())
+        backend->simulator->stopRwaSimulation();
+
+    backend->simulator->ap->useSystemDefaultInputDevice();
+    saveAudioDeviceSettings();
+    qInfo() << "Input device follows the system default:"
+            << backend->simulator->ap->getDeviceName(backend->simulator->ap->getInputDevice());
+}
+
+/** Rebuilds the audio preferences menu after the device list has changed. */
+void RwaCreator::receiveAudioDevicesChanged()
+{
+    // Rebuilding deletes the menu actions, among them the "Rescan Audio Devices" action whose
+    // triggered() signal usually gets us here. Deleting it while that signal is still being
+    // delivered would pull the ground from under QMenu, so the rebuild is deferred by one event
+    // loop cycle.
+    QTimer::singleShot(0, this, [this]{ initAudioPreferencesMenu(audioPreferencesMenu); });
+}
+
+/** ******************************** Set visiblity of closed RWA Views to true again ********************************** */
+
+void RwaCreator::gatherViews()
+{
+    foreach(RwaDockWidget *widget, rwaDockWidgets)
+    {
+        if(!widget->isVisible())
+            widget->setVisible(true);
+    }
+}
+
+/**
+ * Restore floating (detached) views hidden by Qt after restoreState() on startup
+ */
+void RwaCreator::restoreFloatingViews()
+{
+    foreach(RwaDockWidget *widget, rwaDockWidgets)
+    {
+        if(widget->isFloating() && !widget->isVisible())
+            widget->setVisible(true);
+    }
+}
+
+/** ********************************************** Init RWA View Menu ************************************************* */
 
 void RwaCreator::initViewMenu1(QMenu *fileMenu)
 {
-    QAction *action = fileMenu->addAction(tr("Default Views"));
-    connect(action, SIGNAL(triggered()), this, SLOT(loadDefaultViews()));
+    QAction *action = fileMenu->addAction(tr("Gather Views"));
+    connect(action, SIGNAL(triggered()), this, SLOT(gatherViews()));
 
     action = fileMenu->addAction(tr("Map View"));
     connect(action, SIGNAL(triggered()), this, SLOT(addMapView()));
@@ -423,38 +670,144 @@ void RwaCreator::initViewMenu1(QMenu *fileMenu)
 
     action = fileMenu->addAction(tr("Log Window"));
     connect(action, SIGNAL(triggered()), this, SLOT(addLogView()));
+
+    action = fileMenu->addAction(tr("Clear Log Window"));
+    action->setShortcut(QKeySequence(tr("Ctrl+Shift+L", "Clear Log Window")));
+    connect(action, SIGNAL(triggered()), this, SLOT(clearLogWindow()));
 }
+
+/** ********************************************* Init Simulation Menu ************************************************ */
+
+void RwaCreator::initSimulationMenu(QMenu *simulationMenu)
+{
+    runSimulationAction = simulationMenu->addAction(tr("Run Simulation"));
+    runSimulationAction->setShortcut(QKeySequence(tr("Ctrl+R", "Run Simulation")));
+    connect(runSimulationAction, SIGNAL(triggered()), this, SLOT(runSimulation()));
+
+    stopSimulationAction = simulationMenu->addAction(tr("Stop Simulation"));
+    stopSimulationAction->setShortcut(QKeySequence(tr("Ctrl+K", "Stop Simulation")));
+    connect(stopSimulationAction, SIGNAL(triggered()), this, SLOT(stopSimulation()));
+
+    // The simulator announces every start and stop, whoever caused it - the toolbar
+    // button, this menu or an audio device rescan stopping the simulation.
+    connect(backend->simulator, SIGNAL(sendSimulationRunningChanged(bool)),
+            this, SLOT(updateSimulationMenu(bool)));
+    updateSimulationMenu(backend->isSimulationRunning());
+}
+
+/** ************************************************ Init RWA File Menu *********************************************** */
 
 void RwaCreator::initFileMenu(QMenu *fileMenu)
 {
-    QAction *action = fileMenu->addAction(tr("Clear"));
-    connect(action, SIGNAL(triggered()), this, SLOT(clear()));
+    // AboutRole moves the action into the application menu ("RWA Creator") on macOS
+    QAction *action = fileMenu->addAction(tr("About RWA Creator"));
+    action->setMenuRole(QAction::AboutRole);
+    connect(action, SIGNAL(triggered()), this, SLOT(about()));
+
+    action = fileMenu->addAction(tr("File Path Preferences"));
+    connect(action, SIGNAL(triggered()), this, SLOT(enterFilePathPreferences()));
+
+    action = fileMenu->addAction(tr("Remove unused files from disk"));
+    connect(action, SIGNAL(triggered()), this, SLOT(deleteUnusedAssetFiles()));
+
+    action = fileMenu->addAction(tr("New"));
+    action->setShortcut(QKeySequence::New);
+    connect(action, SIGNAL(triggered()), this, SLOT(newProject()));
 
     action = fileMenu->addAction(tr("Open"));
+    action->setShortcut(QKeySequence::Open);
     connect(action, SIGNAL(triggered()), this, SLOT(open()));
 
     action = fileMenu->addAction(tr("Save"));
+    action->setShortcut(QKeySequence::Save);
     connect(action, SIGNAL(triggered()), this, SLOT(save()));
 
-    action = fileMenu->addAction(tr("Save as"));
+    action = fileMenu->addAction(tr("Save Version as..."));
+    action->setShortcut(QKeySequence::SaveAs);
     connect(action, SIGNAL(triggered()), this, SLOT(saveAs()));
 
-    action = fileMenu->addAction(tr("Export Project"));
+    action = fileMenu->addAction(tr("Copy Project to..."));
+    action->setShortcut(QKeySequence(tr("Ctrl+Alt+S", "Copy Project to")));
     connect(action, SIGNAL(triggered()), this, SLOT(exportProject()));
 
-    action = fileMenu->addAction(tr("Export for Client"));
-    connect(action, SIGNAL(triggered()), this, SLOT(saveForMobileClient()));
+    action = fileMenu->addAction(tr("Export Project for transfer to RWA Player..."));
+    action->setShortcut(QKeySequence(tr("Ctrl+E", "Export Project for transfer to RWA Player")));
+    connect(action, SIGNAL(triggered()), this, SLOT(exportForTransferToPlayer()));
 
-    action = fileMenu->addAction(tr("Export again for Client"));
-    connect(action, SIGNAL(triggered()), this, SLOT(saveAgainForMobileClient()));
+    action = fileMenu->addAction(tr("Send Project to Sharing Server..."));
+    action->setShortcut(QKeySequence(tr("Ctrl+Shift+E", "Send Project to Sharing Server")));
+    connect(action, SIGNAL(triggered()), this, SLOT(exportZip()));
 }
+
+/** ******************************************** File path preferences pop-up ****************************************** */
+
+void RwaCreator::enterFilePathPreferences()
+{
+    QStringList labels;
+    QStringList values;
+    labels << "Sharing Server Path" << "Project Export Path";
+    values << backend->completeSharingServerPath << backend->completeTransferToPlayerExportPath;
+    QStringList list = RwaInputDialog::getStrings(this, labels, values, tr("File Path Preferences"));
+    if (!list.isEmpty()) {
+        backend->completeSharingServerPath = list[0];
+        backend->completeSharingServerPathWithEscape = "'"+backend->completeSharingServerPath+"'";
+        backend->completeTransferToPlayerExportPath = list[1];
+    }
+}
+
+/** ************************************************ About pop-up ***************************************************** */
+
+void RwaCreator::about()
+{
+    QString text = tr(
+        "<h3 align='center'>RWA Creator</h3>"
+        "<p align='center'>Version %1 (%2)</p>"
+        "<p align='center'>An open-source middleware for creating interactive soundwalks.</p>"
+        "<p align='center'>Author: Thomas Resch (and contributors)</p>"
+        "<p align='center'><a href=\"https://github.com/rnd-hsm-klassik/rwa-creator\">GitHub repository</a><br>"
+        "<a href=\"https://www.fhnw.ch/de/musik/forschung-dienstleistungen/forschung/projekte/real-world-audio-2\">"
+        "Real World Audio</a><br/>Forschung Institut Klassik<br/>Hochschule für Musik Basel FHNW</p>")
+        .arg(QStringLiteral(RWA_VERSION), QStringLiteral(RWA_GIT_COMMIT_HASH));
+
+    QDialog aboutDialog(this);
+    aboutDialog.setWindowTitle(tr("About RWA Creator"));
+
+    QVBoxLayout *layout = new QVBoxLayout(&aboutDialog);
+    layout->setContentsMargins(60, 24, 60, 24);
+    layout->setSpacing(2);
+
+    // Qt can't decode the .icns app icon, use a png version
+    QPixmap appIcon(backend->completeBundlePath + "images/rwa-creator.png");
+    if(!appIcon.isNull())
+    {
+        qreal dpr = aboutDialog.devicePixelRatio();
+        QPixmap scaledIcon = appIcon.scaled(QSize(96, 96) * dpr, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        scaledIcon.setDevicePixelRatio(dpr);
+        QLabel *iconLabel = new QLabel(&aboutDialog);
+        iconLabel->setPixmap(scaledIcon);
+        iconLabel->setAlignment(Qt::AlignHCenter);
+        layout->addWidget(iconLabel);
+    }
+
+    QLabel *textLabel = new QLabel(text, &aboutDialog);
+    textLabel->setTextFormat(Qt::RichText);
+    textLabel->setAlignment(Qt::AlignHCenter);
+    textLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
+    textLabel->setOpenExternalLinks(true);
+    layout->addWidget(textLabel);
+
+    aboutDialog.exec();
+}
+
+/** ******************************************** Head tracker name pop-up ********************************************* */
 
 void RwaCreator::enterHtName()
 {
     bool ok;
-    QString text = QInputDialog::getText(this, tr("QInputDialog::getText()"),
+    QString text = QInputDialog::getText(this, tr("Set Headtracker Name"),
                                              tr("Tracker name:"), QLineEdit::Normal,
                                              headtracker->getName(), &ok);
+
     if (ok && !text.isEmpty())
     {
         headtracker->setName(text);
@@ -463,6 +816,8 @@ void RwaCreator::enterHtName()
         enterHtName->setText(menuString);
     }
 }
+
+/** ******************************************** Init head tracker menu *********************************************** */
 
 void RwaCreator::initHeadtrackerMenu(QMenu *headtrackerMenu)
 {
@@ -481,9 +836,11 @@ void RwaCreator::initHeadtrackerMenu(QMenu *headtrackerMenu)
     connect(btactionDisconnect, SIGNAL(triggered()), headtracker, SLOT(disconnectHeadtracker()));
 }
 
+/** *********************************************** Setup menu bar *************************************************** */
+
 void RwaCreator::setupMenuBar()
 {
-    QMenu *selectAudioDevice = menuBar()->addMenu(tr("&Select Audio Device"));
+    QMenu *selectAudioDevice = menuBar()->addMenu(tr("&Audio Preferences"));
     initAudioPreferencesMenu(selectAudioDevice);
 
     QMenu *viewMenu = menuBar()->addMenu(tr("&View"));
@@ -492,56 +849,55 @@ void RwaCreator::setupMenuBar()
     QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
     initFileMenu(fileMenu);
 
+    QMenu *simulationMenu = menuBar()->addMenu(tr("&Simulation"));
+    initSimulationMenu(simulationMenu);
+
     headtrackerMenu = menuBar()->addMenu(tr("&Headtracker"));
     initHeadtrackerMenu(headtrackerMenu);
 }
 
-void RwaCreator::write(QString writeMessage, qint32 flags, QString oldAssetPath)
+/** ************************************ Writing and export functionality ******************************************** */
+
+bool RwaCreator::write1(QString writeMessage, qint32 flags, QString newCompleteFilePath)
 {
-    QString completeFilePath;
-    QString completeProjectPath;
+    backend->refreshAssetFileProperties();
 
-    completeFilePath = backend->completeFilePath;
-    completeProjectPath = backend->completeProjectPath;
-
-    if (completeFilePath.isEmpty())
-        return;
-
-    QFile file(completeFilePath);
+    QString path = RwaUtilities::getPath(newCompleteFilePath);
+    QFile file(newCompleteFilePath);
     if(file.exists())
         file.remove();
 
     if (!file.open(QFile::WriteOnly | QFile::Text)) {
-        QMessageBox::warning(this, tr("QXmlStream Bookmarks"),
+        QMessageBox::warning(this, tr("RWA Creator"),
                              tr("Cannot write file %1:\n%2.")
-                             .arg(completeFilePath)
+                             .arg(newCompleteFilePath)
                              .arg(file.errorString()));
-        return;
+        return false;
     }
 
-    RwaExport writer(backend, oldAssetPath, flags);
-    if (writer.writeFile(&file))
-    {
-        if(!writeMessage.isEmpty())
-            statusBar()->showMessage(writeMessage, 2000);
-    }
+    RwaExport writer(this, backend->completeProjectPath, path, flags);
+    if (!writer.writeFile(&file))
+        return false;
+
+    if(!writeMessage.isEmpty())
+        statusBar()->showMessage(writeMessage, 2000);
+    return true;
 }
 
-void RwaCreator::prepareWrite(QString fullpath, int flags)
+void RwaCreator::prepareWrite1(QString fullpath, int flags)  // fullpath is /RWACreator/Games/test/test.rwa
 {
-    QString fileName = RwaUtilities::getFileName(fullpath);
-    QString path = RwaUtilities::getPath(fullpath);
-    QStringList fullName = fileName.split(".rwa");
+    QString fileName = RwaUtilities::getFileName(fullpath);  // test.rwa
+    QString path = RwaUtilities::getPath(fullpath);          // RWACreator/Games/test
+    QStringList fullName = fileName.split(".rwa");           // test
     QString folderName = fullName.first();
     QString completeFilePath = QString("%1/%2/%3").arg(path).arg(folderName).arg(fileName);
     QString completeProjectPath = QString("%1/%2").arg(path).arg(folderName);
-
     QDir dir(path);
     dir.mkdir(folderName);
     QString completeAssetPath = QString("%1/%2/assets").arg(path).arg(folderName);
     dir.mkdir(completeAssetPath);
 
-    if(flags & RWAEXPORT_SAVEAS)
+    if(flags & RWAEXPORT_CREATEFOLDERS)
     {
         QString completeUndoPath = QString("%1/%2/undo").arg(path).arg(folderName);
         QString completeTmpPath = QString("%1/%2/tmp").arg(path).arg(folderName);
@@ -551,80 +907,163 @@ void RwaCreator::prepareWrite(QString fullpath, int flags)
         backend->projectName = pieces.first();
         backend->completeTmpPath = completeTmpPath;
         backend->completeUndoPath = completeUndoPath;
+        backend->completeAssetPath = completeAssetPath;
     }
-
-    backend->completeAssetPath = completeAssetPath;
-    backend->completeFilePath = completeFilePath;
-    backend->completeProjectPath = completeProjectPath;
 }
 
-void RwaCreator::saveAgainForMobileClient()
+void RwaCreator::exportForTransferToPlayer()
 {
-    if(backend->completeClientExportPath.isEmpty())
+    qint32 flags = 0;
+    flags |= RWAEXPORT_COPYASSETS
+          | RWAEXPORT_EXPORTFORMOBILECLIENT;
+
+    QString directory = backend->completeTransferToPlayerExportPath;
+    if(!QDir(directory).exists())
+        QDir().mkdir(directory);
+
+    QString fileName = RwaUtilities::getFileName(backend->completeFilePath);            // for example test.rwa
+    QString baseName = RwaUtilities::getFileBaseName(backend->completeFilePath);        // test                                          // /RWACreator/Games/test/test.rwa
+    QString fullDirectory = directory +"/"+baseName;
+    QString fullpath = fullDirectory +"/"+fileName;  // /RWACreator/Games/test
+
+    QDir dir = QDir(fullDirectory);
+    if(dir.exists())
+        dir.removeRecursively();
+
+    prepareWrite1(fullDirectory, flags);
+    write1("Export zip for RWA Sharing Server", flags, fullpath);
+
+    setWindowTitle(backend->projectName + " Successfully exported for transfer to RWA Player");
+    QTimer::singleShot(2000, [this]{setWindowTitle(backend->projectName);});
+}
+
+void RwaCreator::exportZip()
+{
+    qint32 flags = 0;
+    flags |= RWAEXPORT_COPYASSETS
+          | RWAEXPORT_EXPORTFORMOBILECLIENT
+          | RWAEXPORT_ZIP;
+
+    QString directory = backend->completeSharingServerPath;
+    if(!QDir(directory).exists())
+        QDir().mkdir(directory);
+
+    QString fileName = RwaUtilities::getFileName(backend->completeFilePath);            // for example test.rwa
+    QString baseName = RwaUtilities::getFileBaseName(backend->completeFilePath);        // test                                          // /RWACreator/Games/test/test.rwa
+    QString fullDirectory = directory +"/"+baseName;
+    QString fullpath = fullDirectory +"/"+fileName;  // /RWACreator/Games/test
+
+    QDir dir = QDir(fullDirectory);
+    if(dir.exists()) // removing old version
+        dir.removeRecursively();
+
+    prepareWrite1(fullDirectory, flags);
+    write1("Export zip for RWA Server", flags, fullpath);
+
+    QFile zipFile(fullDirectory+".zip");
+    if(zipFile.exists())
+        zipFile.remove();
+
+    QString zipGame = QString("cd %1 && zip -r -X %2.zip %3").arg(backend->completeSharingServerPathWithEscape).arg(baseName).arg(baseName);
+    FILE* pipe = popen(zipGame.toStdString().c_str(), "w");
+    if (!pipe)
     {
-        saveForMobileClient();
-        return;
+       qCritical() << "Could not zip";
+       return;
     }
 
-    qint32 flags = 0;
-    flags |= RWAEXPORT_COPYASSETS
-           | RWAEXPORT_EXPORTFORMOBILECLIENT;
+    while(pclose(pipe) != -1)
+        ;
 
-    QString oldFilePath = backend->completeFilePath;
-    QString oldProjectPath = backend->completeProjectPath;
-    QString oldAssetPath = backend->completeAssetPath;
-    QString fullpath = backend->completeClientExportPath;
-    prepareWrite(fullpath, flags);
-    write("Exported for mobile Client", flags, oldAssetPath);
-    backend->completeClientExportPath = fullpath;
-    backend->completeAssetPath = oldAssetPath;
-    backend->completeFilePath = oldFilePath;
-    backend->completeProjectPath = oldProjectPath;
+    dir.removeRecursively(); // removing new version
+    QString initFolder = backend->applicationSupportPathWithEscape;
+    QString createList = QString("cd %1 && ./createfilelist.sh").arg(initFolder);
+    pipe = popen(createList.toStdString().c_str(), "w");
+    while(pclose(pipe) != -1)
+        ;
+
+    setWindowTitle(backend->projectName + " Successfully sent ZIP to Sharing Server");
+    QTimer::singleShot(2000, [this]{setWindowTitle(backend->projectName);});
 }
 
-void RwaCreator::saveForMobileClient()
+/** ************************************* File dialogue start directory *********************************** */
+
+QString RwaCreator::lastUsedDirectory() const
 {
-    qint32 flags = 0;
-    flags |= RWAEXPORT_COPYASSETS
-           | RWAEXPORT_EXPORTFORMOBILECLIENT;
+    QSettings settings;
+    QString directory = settings.value("lastuseddirectory").toString();
 
-    QString oldFilePath = backend->completeFilePath;
-    QString oldProjectPath = backend->completeProjectPath;
-    QString oldAssetPath = backend->completeAssetPath;
+    if(!directory.isEmpty() && QDir(directory).exists())
+        return directory;
 
-    QString fullpath = QFileDialog::getSaveFileName(this, tr("Save Rwa File"),
-                                         QDir::currentPath(),
-                                         tr("RWA Files (*.rwa *.xml)"));
+    if(!backend->completeProjectPath.isEmpty() && QDir(backend->completeProjectPath).exists())
+        return backend->completeProjectPath;
 
+    return QDir::homePath();
+}
+
+void RwaCreator::rememberLastUsedDirectory(const QString &fullpath)
+{
     if(fullpath.isEmpty())
         return;
 
-    qDebug();
-    prepareWrite(fullpath, flags);
-    write("Exported for mobile Client", flags, oldAssetPath);
-    backend->completeClientExportPath = fullpath;
-    backend->completeAssetPath = oldAssetPath;
-    backend->completeFilePath = oldFilePath;
-    backend->completeProjectPath = oldProjectPath;
+    QString directory = QFileInfo(fullpath).absolutePath();
+    if(directory.isEmpty())
+        return;
+
+    QSettings settings;
+    settings.setValue("lastuseddirectory", directory);
 }
 
 void RwaCreator::exportProject()
 {
+    exportProjectAs(tr("Copy entire RWA Project Folder"));
+}
+
+/**
+  Writing a complete project folder is the same operation for "Copy Project to...",
+  for a new game and for the first save of a game which has never been written to disk.
+  Only the title of the file dialogue differs, so that it names what the user asked for.
+*/
+bool RwaCreator::exportProjectAs(const QString &dialogTitle)
+{
     qint32 flags = 0;
     flags |= RWAEXPORT_COPYASSETS
-           | RWAEXPORT_SAVEAS;
+          | RWAEXPORT_SAVEAS
+          | RWAEXPORT_CREATEFOLDERS;
 
-    QString fullpath = QFileDialog::getSaveFileName(this, tr("Save Rwa File"),
-                                         QDir::homePath(),
+    QString fullpath = QFileDialog::getSaveFileName(this, dialogTitle,
+                                         lastUsedDirectory(),
                                          tr("RWA Files (*.rwa *.xml)"));
-    if(fullpath.isEmpty())
-        return;
 
-    QString oldAssetPath = backend->completeAssetPath;
-    prepareWrite(fullpath, flags);
-    write("File saved", flags, oldAssetPath);
+    if(fullpath.isEmpty())
+        return false;
+
+    // The folder the user picked, not the project subfolder created below.
+    rememberLastUsedDirectory(fullpath);
+
+    QString fileName = RwaUtilities::getFileName(fullpath);            // for example test.rwa
+    QString directory = RwaUtilities::getFileBaseName(fileName);        // test
+    QString incompletePath = RwaUtilities::getPath(fullpath);
+    QString fullDirectory = incompletePath +"/"+directory;
+    fullpath = fullDirectory +"/"+fileName;  // /RWACreator/Games/test
+
+    if(!QDir(fullDirectory).exists())
+        QDir().mkdir(fullDirectory);
+
+    prepareWrite1(fullDirectory, flags);
+    bool written = write1("Saved full project to new folder", flags, fullpath);
+    QString path = RwaUtilities::getPath(fullpath);
+    backend->completeProjectPath = fullDirectory;
+    backend->completeFilePath = fullpath;
+    backend->projectName = directory;
     setWindowTitle(backend->projectName);
+    undoCounter = 0;
+    emit sendReadNewGame();
     writeUndo("Init Game");
+    if(written)
+        markDocumentSaved();
+    return written;
 }
 
 void RwaCreator::saveAs()
@@ -632,15 +1071,19 @@ void RwaCreator::saveAs()
     qint32 flags = 0;
     flags |= RWAEXPORT_SAVEAS;
 
-    QString fullpath = QFileDialog::getSaveFileName(this, tr("Save Rwa File"),
-                                         backend->completeProjectPath,
+    QString fullpath = QFileDialog::getSaveFileName(this, tr("Save Version of RWA Project File"),
+                                         backend->completeProjectPath.isEmpty() ? lastUsedDirectory()
+                                                                                : backend->completeProjectPath,
                                          tr("RWA Files (*.rwa *.xml)"));
 
     if(fullpath.isEmpty())
         return;
 
+    rememberLastUsedDirectory(fullpath);
+
     backend->completeFilePath = fullpath;
-    write("File saved", flags, fullpath);
+    if(write1("File saved", flags, fullpath))
+        markDocumentSaved();
     QString projectName = RwaUtilities::getFileName(fullpath);
     QStringList pieces = projectName.split( "." );
     projectName = pieces.first();
@@ -650,13 +1093,29 @@ void RwaCreator::saveAs()
 
 void RwaCreator::save()
 {
+    bool saved;
     if(backend->completeFilePath.isEmpty())
-        exportProject();
+        saved = exportProjectAs(tr("Save RWA Project"));   // marks the document saved itself
     else
-      write("File saved", 0, "");
+        saved = write1("File saved", 0, backend->completeFilePath);
+
+    if(!saved)   // file dialogue cancelled or write failed (write1 already warned)
+        return;
+
+    markDocumentSaved();
+    setWindowTitle(backend->projectName + " Successfully saved");
+    QTimer::singleShot(2000, [this]{setWindowTitle(backend->projectName);});
 }
 
-qint32 RwaCreator::open(QString fileName)
+void RwaCreator::checkUndoFolder()
+{
+
+
+}
+
+/** ************************************************ Open Rwa game **************************************************** */
+
+qint32 RwaCreator::open(QString fileName, bool throwDialogue)
 {
     QString fullpath;
     QString projectName;
@@ -665,18 +1124,36 @@ qint32 RwaCreator::open(QString fileName)
     if(!fileName.isEmpty())
         fullpath = fileName;
     else
-        fullpath = QFileDialog::getOpenFileName(this, tr("Open Bookmark File"), QDir::currentPath(),tr("RWA Files (*.rwa *.xml)"));
+    {
+        if(throwDialogue)
+        {
+            fullpath = QFileDialog::getOpenFileName(this, tr("Open RWA File"), lastUsedDirectory(),tr("RWA Files (*.rwa *.xml)"));
+            rememberLastUsedDirectory(fullpath);
+        }
+    }
 
-    if (fullpath.isEmpty())
-        clear();
+    if (fullpath.isEmpty() || fullpath.isNull())
+        return 0;
+
+    // Project, undo, tmp and asset paths are all derived from this; a relative
+    // path (command line, "open with") would silently make them CWD-relative.
+    fullpath = QFileInfo(fullpath).absoluteFilePath();
+
+    // Before touching the file: a "Save" here may rewrite the very file about to be opened.
+    if(isDocumentModified() && !maybeSave(tr("opening another project")))
+        return 0;
 
     QFile file(fullpath);
 
     if (!file.open(QFile::ReadOnly | QFile::Text))
     {
         statusBar()->showMessage(tr("Could not open file"), 2000);
+        qCritical() << "Could not open File";
         return 0;
     }
+
+    // here we could check the undo folder. If it has not been emptied, the application probably crashed,
+    // and we can restore the last saved state from undo
 
     emptyTmpDirectories();
     backend->clearScenes();
@@ -697,84 +1174,214 @@ qint32 RwaCreator::open(QString fileName)
     backend->completeTmpPath = (completeTmpPath);
     setWindowTitle(backend->projectName);
 
-    RwaImport reader(&backend->getScenes(), backend->completeProjectPath);
+    // Empty folders don't survive git, zip or a hand copy, and undo/ was only
+    // ever created by "New"/"Save as": without it every undo step was silently
+    // dropped and the History View fell back to listing the working directory.
+    for (const QString &folder : {completeUndoPath, completeTmpPath, completeAssetPath})
+    {
+        QDir dir(folder);
+        if (!dir.exists() && !dir.mkpath("."))
+            qWarning() << "Could not create project folder" << folder;
+    }
+
+    RwaImport reader(this, &backend->getScenes(), backend->completeProjectPath);
 
     if (!reader.read(&file))
          statusBar()->showMessage(tr("Could not read XML, parser error!"), 2000);
     else
     {
         statusBar()->showMessage(tr("File loaded"), 2000);
+        backend->validateRequiredStates();
         undoCounter = 0;
         emit sendReadNewGame();
         writeUndo("Init Game");
+        markDocumentSaved();
     }
 
     return 1;
 }
 
+void RwaCreator::openProject(const QString &path)
+{
+    if (!QFile::exists(path))
+    {
+        QMessageBox::warning(this, tr("RWA Creator"),
+            tr("Could not open project:\n%1\nThe file does not exist.").arg(path));
+        return;
+    }
+
+    if(open(path, false))
+        rememberLastUsedDirectory(path);   // opened from Finder or the command line
+
+    raise();
+    activateWindow();
+}
+
 void RwaCreator::emptyTmpDirectories()
 {
+    if (backend->completeUndoPath.isEmpty() || backend->completeTmpPath.isEmpty())
+        return;
+    backend->moveSessionTrash2SystemTrash(); // the undo history ends here, hand the trashed asset files to the OS
     RwaUtilities::emtpyDirectory(backend->completeUndoPath);
     RwaUtilities::emtpyDirectory(backend->completeTmpPath);
 }
 
-void RwaCreator::clear()
+void RwaCreator::newProject()
 {
-    qDebug();
+    if(isDocumentModified() && !maybeSave(tr("creating a new project")))
+        return;
+
     undoCounter = 0;
-    emptyTmpDirectories();      
+    emptyTmpDirectories();
     backend->reset();
+    markDocumentSaved(); // a pristine new project is nothing to be asked about, even if the dialogue below is cancelled
     setWindowTitle("Not saved");
-    exportProject();
+    if(!exportProjectAs(tr("New RWA Project")))
+        writeUndo("Init Game"); // dialogue cancelled: the unsaved project lives in the scratch folder, its history starts here
 }
+
+/** ******************************************* Simulation and log view ************************************************ */
+
+void RwaCreator::runSimulation()
+{
+    if(backend->isSimulationRunning())
+        backend->startStopSimulator(false);
+
+    backend->startStopSimulator(true);
+}
+
+void RwaCreator::stopSimulation()
+{
+    if(!backend->isSimulationRunning())
+        return;
+
+    backend->startStopSimulator(false);
+}
+
+void RwaCreator::updateSimulationMenu(bool running)
+{
+    if(!runSimulationAction || !stopSimulationAction)
+        return;
+
+    runSimulationAction->setText(running ? tr("Restart Simulation") : tr("Run Simulation"));
+    stopSimulationAction->setEnabled(running);
+}
+
+void RwaCreator::clearLogWindow()
+{
+    if(logWindow)
+        logWindow->clearLog();
+}
+
+/** *********************************************** Undo functionality *********************************************** */
 
 void RwaCreator::writeUndo(QString undoAction)
 {
     if(backend->completeUndoPath.isEmpty())
     {
-        qDebug();
+        qWarning() << "Undo: no undo folder set, step not recorded:" << undoAction;
         return;
     }
 
-    QString fullUndoFilepath;
-    fullUndoFilepath = QString("%1/%3_%2.rwa").arg(backend->completeUndoPath).arg(undoAction).arg(undoCounter++);
+    QDir undoDir(backend->completeUndoPath);
+    if(!undoDir.exists() && !undoDir.mkpath("."))
+    {
+        qWarning() << "Undo: cannot create undo folder" << backend->completeUndoPath << "- step not recorded:" << undoAction;
+        return;
+    }
+
+    // Zero-padded counter: the History View is a name-sorted directory listing,
+    // so "10_" must sort after "9_".
+    QString fullUndoFilepath = undoDir.filePath(QString("%1_%2.rwa")
+                                                .arg(undoCounter++, 4, 10, QChar('0'))
+                                                .arg(QString(undoAction).replace('/', '-')));
 
     QFile file(fullUndoFilepath);
     if(file.exists())
         file.remove();
 
     if (!file.open(QFile::WriteOnly | QFile::Text))
-         return;
+    {
+        qWarning() << "Undo: cannot write" << fullUndoFilepath << file.errorString();
+        return;
+    }
 
-    RwaExport writer(backend, backend->completeUndoPath,0);
+    RwaExport writer(this, QString(), QString(), 0);
     writer.writeFile(&file);
+}
+
+/**
+ * Cheap check over a .rwa file to load: well-formed XML with an <rwa version="1.0"> root.
+ * Checking files before RwaImport::read() fails lets readUndoFile() keep the
+ * current project when the file is unusable.
+ */
+static bool isReadableRwaFile(QIODevice *device, QString *error)
+{
+    QXmlStreamReader xml(device);
+    if (!xml.readNextStartElement()
+        || xml.name().toString() != "rwa"
+        || xml.attributes().value("version").toString() != "1.0")
+    {
+        *error = QObject::tr("The file is not an RWA version 1.0 file.");
+        return false;
+    }
+    while (!xml.atEnd())
+        xml.readNext();
+    if (xml.hasError())
+    {
+        *error = QObject::tr("%1\nLine %2, column %3")
+                    .arg(xml.errorString()).arg(xml.lineNumber()).arg(xml.columnNumber());
+        return false;
+    }
+    return true;
 }
 
 void RwaCreator::readUndoFile(QString name)
 {
-    backend->clearScenes();
+    // Only ever load from the undo folder itself, and never clear the current
+    // project before the snapshot has proven readable.
+    QDir undoDir(backend->completeUndoPath);
+    if (backend->completeUndoPath.isEmpty() || !undoDir.isAbsolute()
+        || name.isEmpty() || name.contains('/') || !name.endsWith(".rwa"))
+    {
+        qWarning() << "Undo: refusing to load" << name << "from" << backend->completeUndoPath;
+        return;
+    }
 
-    QFile file(backend->completeUndoPath +"/"+name);
+    QFile file(undoDir.filePath(name));
     if (!file.open(QFile::ReadOnly | QFile::Text))
     {
-        QMessageBox::warning(this, tr("QXmlStream Bookmarks"),
-                             tr("Cannot read file %1:\n%2.")
+        QMessageBox::warning(this, tr("RWA Creator"),
+                             tr("Cannot read undo file %1:\n%2.")
                              .arg(name)
                              .arg(file.errorString()));
         return;
     }
 
-    RwaImport reader(&backend->getScenes(), backend->completeProjectPath);
+    QString error;
+    if (!isReadableRwaFile(&file, &error))
+    {
+        QMessageBox::warning(this, tr("RWA Creator"),
+                             tr("Undo file %1 is not usable, keeping the current project:\n\n%2")
+                             .arg(name)
+                             .arg(error));
+        return;
+    }
+    file.seek(0);
+
+    backend->clearScenes();
+    RwaImport reader(this, &backend->getScenes(), backend->completeProjectPath);
     if (!reader.read(&file))
     {
-        QMessageBox::warning(this, tr("QXmlStream Bookmarks"),
-                             tr("Parse error in file %1:\n\n%2")
+        QMessageBox::warning(this, tr("RWA Creator"),
+                             tr("Parse error in undo file %1:\n\n%2")
                              .arg(name)
                              .arg(reader.errorString()));
     }
 
     else
     {
+        backend->restoreAssetFilesFromSessionTrash(); // files trashed by asset deletes this session
         statusBar()->showMessage(tr("File loaded"), 2000);
     }
 }
@@ -784,4 +1391,33 @@ void RwaCreator::showEvent(QShowEvent *event)
     QMainWindow::showEvent(event);
 }
 
+void RwaCreator::deleteUnusedAssetFiles()
+{
+    bool isInUse = false;
+    QDir dir(backend->completeAssetPath);
+    for (const QFileInfo &file : dir.entryInfoList(QDir::Files))
+    {
+        isInUse = false;
+        foreach(RwaScene *scene, backend->getScenes())
+        {
+            foreach(RwaState *state, scene->getStates())
+            {
+                foreach(RwaAsset1 *asset, state->getAssets())
+                {
+                    if(asset->getFileName() == file.fileName().toStdString())
+                    {
+                        isInUse = true;
+                        break;
+                    }
+                }
+            }
+        }
 
+        if(!isInUse)
+        {
+            QString completeFilePath(file.absoluteFilePath());
+            QFile::remove(completeFilePath);
+            qInfo() << "Removed "<< completeFilePath << " from Disk.";
+        }
+    }
+}

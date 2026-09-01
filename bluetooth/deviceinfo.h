@@ -1,10 +1,9 @@
 /***************************************************************************
 **
-** Copyright (C) 2013 BlackBerry Limited. All rights reserved.
 ** Copyright (C) 2017 The Qt Company Ltd.
 ** Contact: https://www.qt.io/licensing/
 **
-** This file is part of the QtBluetooth module of the Qt Toolkit.
+** This file is part of the examples of the QtBluetooth module of the Qt Toolkit.
 **
 ** $QT_BEGIN_LICENSE:BSD$
 ** Commercial License Usage
@@ -52,29 +51,29 @@
 #ifndef DEVICEINFO_H
 #define DEVICEINFO_H
 
+#include <QString>
 #include <QObject>
-#include <qbluetoothdeviceinfo.h>
-#include <qbluetoothaddress.h>
-#include <QList>
-#include "deviceinfo.h"
+#include <QBluetoothDeviceInfo>
 
 class DeviceInfo: public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(QString deviceName READ getName NOTIFY deviceChanged)
+    Q_PROPERTY(QString deviceAddress READ getAddress NOTIFY deviceChanged)
 
 public:
-    DeviceInfo();
-    DeviceInfo(const QBluetoothDeviceInfo &d);
-    QString getAddress() const;
-    QString getName() const;
-    QBluetoothDeviceInfo getDevice();
-    void setDevice(const QBluetoothDeviceInfo &dev);
+    DeviceInfo(const QBluetoothDeviceInfo &device);
 
-Q_SIGNALS:
+    void setDevice(const QBluetoothDeviceInfo &device);
+    QString getName() const;
+    QString getAddress() const;
+    QBluetoothDeviceInfo getDevice() const;
+
+signals:
     void deviceChanged();
 
 private:
-    QBluetoothDeviceInfo device;
+    QBluetoothDeviceInfo m_device;
 };
 
 #endif // DEVICEINFO_H

@@ -16,7 +16,7 @@ class RwaStateView : public RwaGraphicsView
 {
     Q_OBJECT
 public:
-    explicit RwaStateView(QWidget* parent = nullptr, RwaScene *scene = nullptr, QString name = "");    
+    explicit RwaStateView(QWidget* parent = nullptr, RwaScene *scene = nullptr, QString name = "");
 private:
 
     QmapPoint *currentPoint;
@@ -34,6 +34,7 @@ public slots:
     void setCurrentState(RwaState *currentState) override;
     void setCurrentAsset(RwaAsset1 *asset) override;
     void setCurrentScene(RwaScene *scene) override;
+    void setCurrentStateWithoutRepositioning(RwaState *state);
 
     void receiveMouseMoveEvent(const QMouseEvent*, const QPointF) override;
     void receiveMouseReleaseEvent() override;
@@ -52,7 +53,6 @@ public slots:
     int getNumberOfSelectedAssets();
     void redrawStateRadii();
     void receiveUpdateCurrentStateRadius();
-
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;

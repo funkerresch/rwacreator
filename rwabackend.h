@@ -1,23 +1,20 @@
 /*
-*
-* This file is part of RwaCreator
-* an open-source cross-platform Middleware for creating interactive Soundwalks
-*
-* Copyright (C) 2015 - 2022 Thomas Resch
-*
-* License: MIT
-*
-* The RwaBackend class contains the data model in the form of a linked list of rwaScenes.
-* It is realised a singleton so all views/editors can easily access it.
-* Almost all GUI updates are realised by sending the lastTouched.*.() signals from the
-* corresponding view to the backend which then emits the sendLastTouched.*. signal
-* to synchronize all other views/editors. The only exception are the list views where states, scenes
-* and assets can be deleted vie keyboard using the basic QListWidget event.
-* Otherwise the setCurrent.*.() functions should only be called using Qt's SIGNALS/SLOTS.
-*
-*/
-
-
+ * This file is part of the Rwa Creator.
+ * An open-source cross-platform Middleware for creating interactive Soundwalks
+ *
+ * Copyright (C) 2015 - 2022 Thomas Resch
+ *
+ * License: MIT
+ *
+ * The RwaBackend class contains the data model in the form of a linked list of rwaScenes.
+ * It is realised a singleton so all views/editors can easily access it.
+ * Almost all GUI updates are realised by sending the lastTouched.*.() signals from the
+ * corresponding view to the backend which then emits the sendLastTouched.*. signal
+ * to synchronize all other views/editors. The only exception are the list views where states, scenes
+ * and assets can be deleted vie keyboard using the basic QListWidget event.
+ * Otherwise the setCurrent.*.() functions should only be called using Qt's SIGNALS/SLOTS.
+ *
+ */
 
 #ifndef AFXSCENEBACKEND_H
 #define AFXSCENEBACKEND_H
@@ -28,12 +25,38 @@
 #include "rwascene.h"
 #include "rwaentity.h"
 #include "rwasimulator.h"
-#include "bluetooth/device.h"
+#include "httplib.h"
 
 #define RWATOOL_ARROW 1
 #define RWATOOL_PEN 2
 #define RWATOOL_RUBBER 3
 #define RWATOOL_MARKEE 4
+
+/** ************************************** Game Server ********************************************** */
+
+class RwaGamesServer : public QObject {
+    Q_OBJECT
+public:
+    RwaGamesServer(httplib::Server *svr, int port, std::string mountPoint);
+
+public slots:
+    void process();
+
+signals:
+    /** Emitted from the httplib worker thread for every request a player makes -
+     *  once when it arrives and once when it has been answered (finished = true).
+     *  The receiver lives in the main thread, so the connection is queued and the
+     *  log view is never touched from the server thread. */
+    void clientRequest(QString clientAddress, QString method, QString path,
+                       bool finished, int status, qint64 bytes);
+
+private:
+    httplib::Server *svr; // Reference is passed from backend in order to call stop() from main thread
+    int port;
+    std::string mountPoint;
+};
+
+/** ************************************** Rwa Backend ********************************************** */
 
 class RwaBackend : public QTextEdit
 {
@@ -45,7 +68,10 @@ public:
     ~RwaBackend();
     static RwaBackend *instance;
     static RwaBackend *getInstance();
+
+    httplib::Server svr;
     void StartHttpServer(qint32 port);
+    void StartHttpServer1(qint32 port);
 
     RwaSimulator *simulator;
     QString projectName;
@@ -56,14 +82,17 @@ public:
     QString completeTmpPath;
     QString completeAssetPath;
     QString completeClientExportPath;
-    QString completeClientProjectExportPath;
-    QString completeClientFileExportPath;
-    QString completeClientAssetExportPath;
+    QString completeSharingServerPath;
+    QString completeSharingServerPathWithEscape;
+    QString completeTransferToPlayerExportPath;
+    QString applicationSupportPath;
+    QString applicationSupportPathWithEscape;
     QStringList assetStringList;
     QStringList stateStringList;
     QStringList currentlySelectedAssets;
     QStringList currentlySelectedStates;
     qint32 httpProcessId;
+    qint32 sampleRate;
 
     bool trashAsset = false;
     bool showStateRadii = false;
@@ -87,9 +116,17 @@ private:
     RwaEntity *lastTouchedEntity = nullptr;
     RwaAsset1 *lastTouchedAssetItem = nullptr;
     RwaHeadtrackerConnect *headtracker = nullptr;
+    QThread *serverThread = nullptr;
 
     void updateLastTouchedSceneStateAndAsset();
+
+    void StopHttpServer1();
 public slots:
+
+    /** ****************************** Sharing server ******************************************************* */
+
+    void receiveClientRequest(QString clientAddress, QString method, QString path,
+                              bool finished, int status, qint64 bytes);
 
     /** *********************************Undo read and write********************************************** */
 
@@ -112,6 +149,7 @@ public slots:
 
     RwaScene *getLastTouchedScene();
     QList<RwaScene *> &getScenes();
+    void validateRequiredStates();
     RwaScene *getFirstScene();
     RwaScene *getSceneAt(qint32 sceneNumber);
     qint32 getNumberOfScenes();
@@ -131,6 +169,15 @@ public slots:
     void clearScene(RwaScene *scene);
     void clearScenes();
     void reset();
+
+    /**
+     * Where the map widget may cache tiles: the project's tilecache folder, or
+     * the per-user cache location while no project folder is set. Never a
+     * relative path, so tiles cannot end up in the working directory.
+     */
+    QString tileCachePath() const;
+    /** Scratch project folder (undo, tmp, assets, tilecache) used while a new project is not saved yet. */
+    QString unsavedProjectPath() const;
 
     /** ************************************* Location functionality ********************************** */
 
@@ -156,6 +203,7 @@ public slots:
     /** ************************* Editor Global Rendering/Functionality ***************************** */
 
     void receiveTrashAssets(bool onOff);
+    void receiveActivateClientSync(bool onOff);
     void receiveShowStateRadii(bool onOff);
     void receiveShowAssets(bool onOff);
     void receiveHeroFollowsSceneAndState(bool onOff);
@@ -226,22 +274,37 @@ public slots:
     void receiveMoveHero2CurrentScene();
     void receiveMoveCurrentScene();
     void receiveReadNewGame();
-public:
+    void receiveCurrentSceneWithouRepositioning(RwaScene *scene);
+    void receiveCurrentStateWithouRepositioning(RwaState *state);
 
+public:
     static void generateUuidsForClipboardState(RwaState *state);
     static void adjust2UniqueStateName(RwaScene *targetScene, RwaState *newState);
     static bool adjust2UniqueStateNameRecursively(RwaScene *targetScene, RwaState *newState);
     static int getStateNameCounter(std::list<RwaState *> &states);
     static int getNumberFromQString(const QString &xString);
 
-    /** ************************************************** Signals ************************************************** */
-
     bool fileUsedByAnotherAsset(RwaAsset1 *asset2Delete);
+    qint32 refreshAssetFileProperties();
+    void copyAssetFile2Project(RwaAsset1 *asset);
     bool adjust2UniqueSceneNameRecursively(RwaScene *newScene);
     void adjust2UniqueSceneName(RwaScene *newScene);
+
+    QString sessionTrashPath() const;
+    bool moveAsset2SessionTrash(const QString &fullPath);
+    void restoreAssetFilesFromSessionTrash();
+    void moveSessionTrash2SystemTrash();
+
+    /** ************************************************** Signals ************************************************** */
+
+    qint32 getSampleRate() const;
+    void setSampleRate(qint32 newSampleRate);
+
 signals:
     void readUndoFile(QString name);
     void sendWriteUndo(QString undoAction);
+    void sendCurrentSceneWithoutRepositioning(RwaScene * scene);
+    void sendCurrentStateWithoutRepositioning(RwaState * state);
     void sendLastTouchedState(RwaState *state);
     void sendLastTouchedScene(RwaScene *scene);
     void sendLastTouchedAsset(RwaAsset1 *asset);
@@ -255,8 +318,8 @@ signals:
     void sendClearAll();
     void sendNewAsset(RwaState *state, RwaAsset1 *item);
     void sendMoveCurrentScene();
-    void sendMoveCurrentState1(double dx, double dy);
-    void sendMoveCurrentAsset1(double dx, double dy);
+    void sendMovePixmapsOfCurrentState1(double dx, double dy);
+    void sendMovePixmapsOfCurrentAsset1(double dx, double dy);
     void sendMoveCurrentAssetChannel(double dx, double dy, int channel);
     void sendMoveCurrentAssetReflection(double dx, double dy, int channel);
     void sendCurrentStateRadiusEdited();
@@ -265,9 +328,12 @@ signals:
     void updateAssets();  // update simulator if assets are updated while simulation runs..
     void newGameLoaded();
     void undoGameLoaded();
+    /** completeProjectPath and the paths derived from it were reset (new, unsaved project). */
+    void projectPathsChanged();
     void sendRedrawAssets();
     void sendEntityPosition(vector<double> position);
     void sendStatePosition(QPointF position);
+    void stopServer(int i);
 };
 
 #endif

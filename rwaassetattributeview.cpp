@@ -3,11 +3,26 @@
 RwaAssetAttributeView::RwaAssetAttributeView(QWidget *parent, RwaScene *scene) :
     RwaAttributeView(parent, scene)
 {
-    setAlignment(Qt::AlignTop);
+    //setAlignment(Qt::AlignTop);
     QStringList playbackTypes;
-    playbackTypes << "Undetermined" << "Mono" << "Stereo" << "Auto" << "Binaural-Mono (Legacy)" << "Binaural-Stereo (Legacy)" \
-                  << "Binaural-5Channel (Legacy)" << "Binaural-7Channel (Legacy)"<< "Binaural-Mono" << "Binaural-Stereo" << "Binaural-Auto" \
-                  << "Binaural-5Channel" << "Binaural-7Channel"  << "Binaural-Space" << "Custom IR-Set 1" << "Custom IR-Set 2" << "Custom IR-Set 3";
+    playbackTypes <<
+        "Undetermined" <<                // 0
+        "Mono" <<                        // 1
+        "Stereo" <<                      // 2
+        "Auto" <<                        // 3
+        "Binaural-Mono (Legacy)" <<      // 4  X
+        "Binaural-Stereo (Legacy)"  <<   // 5  X
+        "Binaural-5Channel (Legacy)" <<  // 6  X
+        "Binaural-7Channel (Legacy)"<<   // 7  X
+        "Binaural-Mono" <<               // 8
+        "Binaural-Stereo" <<             // 9
+        "Binaural-Auto" <<               // 10
+        "Binaural-5Channel" <<           // 11
+        "Binaural-7Channel"  <<          // 12
+        "Binaural-Space" <<              // 13
+        "Custom IR-Set 1" <<             // 14
+        "Custom IR-Set 2" <<             // 15
+        "Custom IR-Set 3";               // 16
 
     QComboBox *playbackTypesCombo = addComboBoxAndLabel(attributeGridLayout, "Playback Mode", playbackTypes);
     qobject_cast<QListView *>(playbackTypesCombo->view())->setRowHidden(4, true);
@@ -27,40 +42,40 @@ RwaAssetAttributeView::RwaAssetAttributeView(QWidget *parent, RwaScene *scene) :
     dampingFunction << "None" << "Exponential" << "Linear";
     addComboBoxAndLabel(attributeGridLayout, "Damping", dampingFunction);
 
-    QLineEdit *editingFinishedLineEdit;
-
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Damping Factor");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Damping Trim");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Damping Min");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Damping Max");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Fade-In Time");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Fade-Out Time");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Crossfade Time");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Offset Time");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Gain");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Channel Radius");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Rotate Offset");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Rotate Frequency");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Moving Speed");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Fixed Orientation");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Fixed Elevation");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Fixed Distance");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "Min Distance");
-    editingFinishedLineEdit = addLineEditAndLabel(attributeGridLayout, "libPd Receiver");
+    addLineEditAndLabel(attributeGridLayout, "Damping Factor");
+    addLineEditAndLabel(attributeGridLayout, "Damping Trim");
+    addLineEditAndLabel(attributeGridLayout, "Damping Min");
+    addLineEditAndLabel(attributeGridLayout, "Damping Max");
+    addLineEditAndLabel(attributeGridLayout, "Smooth Distance");
+    addLineEditAndLabel(attributeGridLayout, "Fade-In Time");
+    addLineEditAndLabel(attributeGridLayout, "Fade-Out Time");
+    addLineEditAndLabel(attributeGridLayout, "Crossfade Time");
+    addLineEditAndLabel(attributeGridLayout, "Offset Time");
+    addLineEditAndLabel(attributeGridLayout, "Gain (dB)");
+    addLineEditAndLabel(attributeGridLayout, "Altitude");
+    addLineEditAndLabel(attributeGridLayout, "Channel Radius");
+    addLineEditAndLabel(attributeGridLayout, "Rotate Offset");
+    addLineEditAndLabel(attributeGridLayout, "Rotate Frequency");
+    addLineEditAndLabel(attributeGridLayout, "Moving Speed");
+    addLineEditAndLabel(attributeGridLayout, "Fixed Orientation");
+    addLineEditAndLabel(attributeGridLayout, "Fixed Elevation");
+    addLineEditAndLabel(attributeGridLayout, "Fixed Distance");
+    addLineEditAndLabel(attributeGridLayout, "Min Distance");
+    addLineEditAndLabel(attributeGridLayout, "libPd Receiver");
 
     addAttrCheckbox(attributeGridLayout, "Exclusive", RWAASSETATTRIBUTE_ISEXCLUSIVE);
-    addAttrCheckbox(attributeGridLayout,"Loop", RWAASSETATTRIBUTE_LOOP);
-    addAttrCheckbox(attributeGridLayout, "Stop Loop at End-Position", RWAASSETATTRIBUTE_LOOPUNTILENDPOSITION);
-    addAttrCheckbox(attributeGridLayout, "Raw Sensors 2 Pd", RWAASSETATTRIBUTE_RAWSENSORS2PD);
-    addAttrCheckbox(attributeGridLayout, "GPS 2 Pd", RWAASSETATTRIBUTE_GPS2PD);
+    addAttrCheckbox(attributeGridLayout, "Loop", RWAASSETATTRIBUTE_LOOP);
+    addAttrCheckbox(attributeGridLayout, "Raw Sensors to Pd", RWAASSETATTRIBUTE_RAWSENSORS2PD);
+    addAttrCheckbox(attributeGridLayout, "GPS to Pd", RWAASSETATTRIBUTE_GPS2PD);
     addAttrCheckbox(attributeGridLayout, "Play only once", RWAASSETATTRIBUTE_PLAYONCE);
-    addAttrCheckbox(attributeGridLayout, "Rotate", RWAASSETATTRIBUTE_AUTOROTATE);
-    addAttrCheckbox(attributeGridLayout, "Move", RWAASSETATTRIBUTE_AUTOMOVE);
+    addAttrCheckbox(attributeGridLayout, "Rotating asset", RWAASSETATTRIBUTE_AUTOROTATE);
+    addAttrCheckbox(attributeGridLayout, "Moving asset", RWAASSETATTRIBUTE_AUTOMOVE);
+    addAttrCheckbox(attributeGridLayout, "Stop loop at end-position", RWAASSETATTRIBUTE_LOOPUNTILENDPOSITION);
     addAttrCheckbox(attributeGridLayout, "Mute/Disable", RWAASSETATTRIBUTE_MUTE);
-    addAttrCheckbox(attributeGridLayout, "Headtracker relative 2 source", RWAASSETATTRIBUTE_HEADTRACKERRELATIVE2SOURCE);
-    addAttrCheckbox(attributeGridLayout, "Lock Position", RWAASSETATTRIBUTE_LOCKPOSITION);
-    addAttrCheckbox(attributeGridLayout, "Allow Channel-Positioning", RWAASSETATTRIBUTE_ALLOWINDIVIDUELLCHANNELPOSITIONS);
-    addAttrCheckbox(attributeGridLayout, "Always play from beginning", RWAASSETATTRIBUTE_ALWAYSPLAYFROMBEGINNING);
+    addAttrCheckbox(attributeGridLayout, "Headtracker relative to source", RWAASSETATTRIBUTE_HEADTRACKERRELATIVE2SOURCE);
+    addAttrCheckbox(attributeGridLayout, "Lock asset position", RWAASSETATTRIBUTE_LOCKPOSITION);
+    addAttrCheckbox(attributeGridLayout, "Enable custom channel-positions", RWAASSETATTRIBUTE_ALLOWINDIVIDUELLCHANNELPOSITIONS);
+    addAttrCheckbox(attributeGridLayout, "Always play from start", RWAASSETATTRIBUTE_ALWAYSPLAYFROMBEGINNING);
 
     connect(this, SIGNAL(sendCurrentState(RwaState*)),
               backend, SLOT(receiveLastTouchedState(RwaState*)));
@@ -71,9 +86,11 @@ RwaAssetAttributeView::RwaAssetAttributeView(QWidget *parent, RwaScene *scene) :
     connect(backend, SIGNAL(sendSelectedAssets(QStringList)),
               this, SLOT(receiveSelectedAssets(QStringList)));
 
-    this->setMinimumHeight((assetAttrCounter)*18);
-    this->setMinimumWidth(20);
-    this->setMaximumWidth(260);
+    connect(this, SIGNAL(sendCurrentStateWithoutRepositioning(RwaState*)),
+              backend, SLOT(receiveCurrentStateWithouRepositioning(RwaState*)));
+
+    this->setMinimumHeight(calculate_window_height());
+    this->setFixedWidth(240);
 }
 
 void RwaAssetAttributeView::receiveSelectedAssets(QStringList assets)
@@ -101,6 +118,33 @@ void RwaAssetAttributeView::setCurrentState(RwaState *state)
 
     if(state->lastTouchedAsset)
         setCurrentAsset(state->lastTouchedAsset);
+    else
+        clearForm();
+}
+
+void RwaAssetAttributeView::clearForm()
+{
+    currentAsset = nullptr;
+    lastAsset = nullptr;
+    selectedAssets.clear();
+
+    updatingForm = true;
+
+    foreach(QLineEdit *lineEdit, findChildren<QLineEdit *>())
+        lineEdit->clear();
+
+    foreach(QComboBox *comboBox, findChildren<QComboBox *>())
+        comboBox->setCurrentIndex(-1);
+
+    foreach(QCheckBox *checkBox, findChildren<QCheckBox *>())
+        checkBox->setChecked(false);
+
+    reflectionCount->hide();
+    reflectionCountLabel->hide();
+    scrollArea->update();
+
+    setEnabled(false); // may focus-out a line edit and fire editingFinished, hence inside the updatingForm window
+    updatingForm = false;
 }
 
 void RwaAssetAttributeView::setCurrentAsset(RwaAsset1 *asset)
@@ -110,6 +154,9 @@ void RwaAssetAttributeView::setCurrentAsset(RwaAsset1 *asset)
 
     lastAsset = currentAsset;
     currentAsset = asset;
+
+    setEnabled(true); // undo a clearForm()
+    updatingForm = true;
 
     QCheckBox *attrCheckBox = nullptr;
     QComboBox *attrComboBox = nullptr;
@@ -121,6 +168,13 @@ void RwaAssetAttributeView::setCurrentAsset(RwaAsset1 *asset)
     if(attrComboBox)
     {
         attrComboBox->setCurrentIndex(asset->getPlaybackType());
+
+        // Auto modes dispatch on the audio file's channel count, which a Pd
+        // patch doesn't have: hide them for patch assets.
+        bool isPatch = (asset->getType() == RWAASSETTYPE_PD);
+        qobject_cast<QListView *>(attrComboBox->view())->setRowHidden(RWAPLAYBACKTYPE_NATIVE, isPatch);
+        qobject_cast<QListView *>(attrComboBox->view())->setRowHidden(RWAPLAYBACKTYPE_BINAURALAUTO_FABIAN, isPatch);
+
         if(asset->getPlaybackType() == RWAPLAYBACKTYPE_BINAURALSPACE)
         {
             reflectionCount->show();
@@ -161,6 +215,10 @@ void RwaAssetAttributeView::setCurrentAsset(RwaAsset1 *asset)
     if(attrLineEdit)
         attrLineEdit->setText(QString().setNum(asset->getDampingMax()));
 
+    attrLineEdit = this->findChild<QLineEdit *>("Smooth Distance");
+    if(attrLineEdit)
+        attrLineEdit->setText(QString().setNum(asset->getSmoothDist()));
+
     attrLineEdit = this->findChild<QLineEdit *>("Fade-In Time");
     if(attrLineEdit)
         attrLineEdit->setText(QString().setNum(asset->getFadeInTime()));
@@ -177,9 +235,13 @@ void RwaAssetAttributeView::setCurrentAsset(RwaAsset1 *asset)
     if(attrLineEdit)
         attrLineEdit->setText(QString().setNum(asset->getOffset()));
 
-    attrLineEdit = this->findChild<QLineEdit *>("Gain");
+    attrLineEdit = this->findChild<QLineEdit *>("Gain (dB)");
     if(attrLineEdit)
-        attrLineEdit->setText(QString().setNum(asset->getGain()));
+        attrLineEdit->setText(gainToDbText(asset->getGain()));
+
+    attrLineEdit = this->findChild<QLineEdit *>("Altitude");
+    if(attrLineEdit)
+        attrLineEdit->setText(QString().setNum(asset->getElevation()));
 
     attrLineEdit = this->findChild<QLineEdit *>("Channel Radius");
     if(attrLineEdit)
@@ -227,15 +289,15 @@ void RwaAssetAttributeView::setCurrentAsset(RwaAsset1 *asset)
     if(attrCheckBox)
         attrCheckBox->setChecked(asset->getLoop());
 
-    attrCheckBox = this->findChild<QCheckBox *>("Stop Loop at End-Position");
+    attrCheckBox = this->findChild<QCheckBox *>("Stop loop at end-position");
     if(attrCheckBox)
         attrCheckBox->setChecked(asset->getLoopUntilEndPosition());
 
-    attrCheckBox = this->findChild<QCheckBox *>("Raw Sensors 2 Pd");
+    attrCheckBox = this->findChild<QCheckBox *>("Raw Sensors to Pd");
     if(attrCheckBox)
         attrCheckBox->setChecked(asset->getRawSensors2pd());
 
-    attrCheckBox = this->findChild<QCheckBox *>("GPS 2 Pd");
+    attrCheckBox = this->findChild<QCheckBox *>("GPS to Pd");
     if(attrCheckBox)
         attrCheckBox->setChecked(asset->getGps2pd());
 
@@ -243,11 +305,11 @@ void RwaAssetAttributeView::setCurrentAsset(RwaAsset1 *asset)
     if(attrCheckBox)
         attrCheckBox->setChecked(asset->getPlayOnlyOnce());
 
-    attrCheckBox = this->findChild<QCheckBox *>("Rotate");
+    attrCheckBox = this->findChild<QCheckBox *>("Rotating asset");
     if(attrCheckBox)
         attrCheckBox->setChecked(asset->getAutoRotate());
 
-    attrCheckBox = this->findChild<QCheckBox *>("Move");
+    attrCheckBox = this->findChild<QCheckBox *>("Moving asset");
     if(attrCheckBox)
         attrCheckBox->setChecked(asset->getMoveFromStartPosition());
 
@@ -255,25 +317,30 @@ void RwaAssetAttributeView::setCurrentAsset(RwaAsset1 *asset)
     if(attrCheckBox)
         attrCheckBox->setChecked(asset->getMute());
 
-    attrCheckBox = this->findChild<QCheckBox *>("Headtracker relative 2 source");
+    attrCheckBox = this->findChild<QCheckBox *>("Headtracker relative to source");
     if(attrCheckBox)
         attrCheckBox->setChecked(asset->getHeadtrackerRelative2Source());
 
-    attrCheckBox = this->findChild<QCheckBox *>("Lock Position");
+    attrCheckBox = this->findChild<QCheckBox *>("Lock asset position");
     if(attrCheckBox)
         attrCheckBox->setChecked(asset->getLockPosition());
 
-    attrCheckBox = this->findChild<QCheckBox *>("Allow Channel-Positioning");
+    attrCheckBox = this->findChild<QCheckBox *>("Enable custom channel-positions");
     if(attrCheckBox)
-        attrCheckBox->setChecked(asset->individuellChannelPositionsAllowed());
+        attrCheckBox->setChecked(asset->customChannelPositionsEnabled());
 
-    attrCheckBox = this->findChild<QCheckBox *>("Always play from beginning");
+    attrCheckBox = this->findChild<QCheckBox *>("Always play from start");
     if(attrCheckBox)
         attrCheckBox->setChecked(asset->getAlwaysPlayFromBeginning());
+
+    updatingForm = false;
 }
 
 void RwaAssetAttributeView::receiveEditingFinished()
 {
+    if(updatingForm)
+        return;
+
     if(QObject::sender() != this->backend)
     {
         if(senderValue != lastSenderValue)
@@ -291,13 +358,15 @@ void RwaAssetAttributeView::receiveEditingFinished()
 
         lastSenderValue = senderValue;
         lastSenderName = senderName;
-        emit sendCurrentState(currentState);
+        emit sendCurrentStateWithoutRepositioning(currentState);
         setFocus();
     }
 }
 
 void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
 {
+    if(updatingForm)
+        return;
     if(!currentState)
         return;
     if(selectedAssets.empty())
@@ -355,6 +424,8 @@ void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
                  if(asset)
                     asset->setLoop(value);
             }
+            if(QObject::sender() != this->backend)
+                emit sendCurrentState(currentState);
             break;
         }
 
@@ -377,6 +448,8 @@ void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
                  if(asset)
                     asset->setAutoRotate(value);
             }
+            if(QObject::sender() != this->backend)
+                emit sendCurrentState(currentState);
             break;
         }
 
@@ -387,11 +460,12 @@ void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
                  asset = currentState->getAsset(assetName.toStdString());
                  if(asset)
                  {
-                    asset->setMoveFromStartPosition(value);
-                    if(QObject::sender() != this->backend)
-                    {
-                        emit sendCurrentState(currentState);
-                    }
+                     asset->setMoveFromStartPosition(value);
+                     if(QObject::sender() != this->backend)
+                     {
+                         emit sendCurrentState(currentState);
+                     }
+
                  }
             }
             break;
@@ -414,7 +488,13 @@ void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
             {
                  asset = currentState->getAsset(assetName.toStdString());
                  if(asset)
+                 {
                     asset->setMute(value);
+                    if(QObject::sender() != this->backend)
+                    {
+                        emit sendCurrentState(currentState);
+                    }
+                 }
              }
             break;
         }
@@ -447,7 +527,9 @@ void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
             {
                  asset = currentState->getAsset(assetName.toStdString());
                  if(asset)
-                    asset->setAllowIndividuellChannelPositions(value);
+                 {
+                     asset->enableCustomChannelPositions(value);
+                 }
             }
             break;
         }
@@ -470,8 +552,9 @@ void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id, bool value)
 
 void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id)
 {
-
     bool value = assetAttributeGroup->button(id)->isChecked();
+    if(updatingForm)
+        return;
     if(!currentState)
         return;
     if(selectedAssets.empty())
@@ -560,10 +643,14 @@ void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id)
                  asset = currentState->getAsset(assetName.toStdString());
                  if(asset)
                  {
-                    asset->setMoveFromStartPosition(value);
-                    if(QObject::sender() != this->backend)
+                    if(value)
                     {
-                        emit sendCurrentState(currentState);
+                        asset->resetIndividualChannelPositions(); // This is not a good solution, custom channel positions will be saved in the future.
+                        asset->setMoveFromStartPosition(value);
+                        if(QObject::sender() != this->backend)
+                        {
+                            emit sendCurrentState(currentState);
+                        }
                     }
                  }
             }
@@ -620,7 +707,7 @@ void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id)
             {
                  asset = currentState->getAsset(assetName.toStdString());
                  if(asset)
-                    asset->setAllowIndividuellChannelPositions(value);
+                    asset->enableCustomChannelPositions(value);
             }
             break;
         }
@@ -648,6 +735,8 @@ void RwaAssetAttributeView::receiveCheckBoxAttributeValue(int id)
 
 void RwaAssetAttributeView::receiveLineEditAttributeValue(const QString &text)
 {
+    if(updatingForm)
+        return;
     if(!currentState)
         return;
     if(selectedAssets.empty())
@@ -698,6 +787,16 @@ void RwaAssetAttributeView::receiveLineEditAttributeValue(const QString &text)
        }
     }
 
+    if(!QObject::sender()->objectName().compare("Smooth Distance"))
+    {
+       foreach(QString assetName, selectedAssets)
+       {
+            asset = currentState->getAsset(assetName.toStdString());
+            if(asset)
+                asset->setSmoothDist(text.toFloat());
+       }
+    }
+
     if(!QObject::sender()->objectName().compare("Fade-In Time"))
     {
        foreach(QString assetName, selectedAssets)
@@ -738,15 +837,30 @@ void RwaAssetAttributeView::receiveLineEditAttributeValue(const QString &text)
        }
     }
 
-    if(!QObject::sender()->objectName().compare("Gain"))
+    if(!QObject::sender()->objectName().compare("Gain (dB)"))
+    {
+       float gain;
+       if(dbTextToGain(text, gain))
+       {
+           foreach(QString assetName, selectedAssets)
+           {
+                asset = currentState->getAsset(assetName.toStdString());
+                if(asset)
+                    asset->setGain(gain);
+           }
+       }
+    }
+
+    if(!QObject::sender()->objectName().compare("Altitude"))
     {
        foreach(QString assetName, selectedAssets)
        {
             asset = currentState->getAsset(assetName.toStdString());
             if(asset)
-                asset->setGain(text.toFloat());
+                asset->setElevation(text.toFloat());
        }
     }
+
     if(!QObject::sender()->objectName().compare("Channel Radius"))
     {
        foreach(QString assetName, selectedAssets)
@@ -840,6 +954,8 @@ void RwaAssetAttributeView::receiveComboBoxAttributeValue(int index)
     QComboBox *box = static_cast<QComboBox *>(QObject::sender());
     QString value = box->itemText(index);
 
+    if(updatingForm)
+        return;
     if(!currentState)
         return;
     if(selectedAssets.empty())
@@ -996,6 +1112,9 @@ void RwaAssetAttributeView::receiveComboBoxAttributeValue(int index)
                     asset->setPlaybackType(RWAPLAYBACKTYPE_CUSTOM3);
            }
         }
+
+        if(QObject::sender() != this->backend)
+            emit sendCurrentState(currentState);
     }
 
     if(!QObject::sender()->objectName().compare("Reflection Count"))

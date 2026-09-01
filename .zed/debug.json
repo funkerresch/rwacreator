@@ -1,0 +1,12 @@
+[
+  {
+    "label": "Debug rwacreator (launch)",
+    "adapter": "CodeLLDB",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/build/cmake-debug/RWA Creator.app/Contents/MacOS/rwacreator",
+    "cwd": "$ZED_WORKTREE_ROOT/build/cmake-debug",
+    "args": [],
+    "env": {},
+    "build": "Compile debug build"
+  }
+]

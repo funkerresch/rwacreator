@@ -40,16 +40,40 @@
 ****************************************************************************/
 
 #include "rwacreator.h"
-#include <QApplication>
+#include "rwaapplication.h"
 #include <qdebug.h>
 #include "rwabackend.h"
 
 int main(int argc, char **argv)
 {
-    QApplication app(argc, argv);
+    RwaApplication app(argc, argv);
+
+    // Set application metadata - this determines QSettings file name
+    // QSettings and native dialogs (using the bundle identifier) create separate preference files
+    // those file names should NOT overlap
+    // qt settings:     com.fhnw.rwacreator.plist
+    // native settings: com.fhnw.rwa.creator.plist
+    QCoreApplication::setOrganizationName("FHNW");
+    QCoreApplication::setOrganizationDomain("fhnw");
+    QCoreApplication::setApplicationName("rwacreator");
+
     RwaBackend::getInstance();
     RwaCreator mainWin;
     qInstallMessageHandler(mainWin.logMessages);
+
+    QObject::connect(&app, &RwaApplication::openDocumentRequested,
+                     &mainWin, &RwaCreator::openProject);
+
     mainWin.show();
+
+#ifndef Q_OS_MACOS
+    // Windows/Linux deliver a document path in argv; macOS sends a
+    // QFileOpenEvent instead (see RwaApplication) and never uses argv.
+    const QStringList args = app.arguments();
+    if (args.size() > 1)
+        mainWin.openProject(args.at(1));
+#endif
+
+    app.setReady();
     return app.exec();
 }

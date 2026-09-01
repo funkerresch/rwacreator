@@ -1,3 +1,16 @@
+/*
+ * This file is part of the Rwa Creator.
+ * An open-source cross-platform Middleware for creating interactive Soundwalks
+ *
+ * Copyright (C) 2015 - 2022 Thomas Resch
+ *
+ * License: MIT
+ *
+ * rwamapview.h
+ * by Thomas Resch
+ *
+ */
+
 #ifndef RWASCENEATTRIBUTEVIEW_H
 #define RWASCENEATTRIBUTEVIEW_H
 
@@ -11,7 +24,7 @@ public:
 
 public slots:
     void updateSceneArea();
-    void setCurrentScene(RwaScene *currentScene);
+    void setCurrentScene(RwaScene *scene);
 
     void receiveEditingFinished();
 private slots:
