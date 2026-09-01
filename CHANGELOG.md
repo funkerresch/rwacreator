@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `libpd` submodule updated to 0.16.1.
+
 ## [1.5.5] - 2026-08-29
 
 ### Fixed
