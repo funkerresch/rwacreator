@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `libpd_set_queued_printhook()` wrote through a null pointer. Init now runs
   first, then the hooks are installed.
 
+- "Send Project to Sharing Server" creating empty / bogus zip archives when
+  project path contains spaces. Replaced both `popen()` shell invocations in
+  `exportZip()` (`zip` and `createfilelist.sh`) with `QProcess` calls using
+  argument lists, which bypasses shell parsing entirely.
+
 ### Changed
 
 - `libpd` submodule updated to 0.16.1.
