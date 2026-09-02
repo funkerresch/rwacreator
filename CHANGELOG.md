@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.6] - 2026-09-02
+
+### Changed
+
+- Updated libpd to version 0.16.1 (Pd 0.56-5).
+
 ### Fixed
 
 - Crash (SIGSEGV) at startup after updating the `libpd` submodule to 0.16.1.
@@ -20,10 +26,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   project path contains spaces. Replaced both `popen()` shell invocations in
   `exportZip()` (`zip` and `createfilelist.sh`) with `QProcess` calls using
   argument lists, which bypasses shell parsing entirely.
-
-### Changed
-
-- `libpd` submodule updated to 0.16.1.
 
 ## [1.5.5] - 2026-08-29
 
