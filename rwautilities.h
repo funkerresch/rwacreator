@@ -68,6 +68,8 @@ public:
     static bool coordinateWithinPolygon3(std::vector<double> p, std::vector<std::vector<double> > &corners);
     static void debug2Terminal(const std::string file, const std::string func, int32_t line, const std::string message);
     static bool coordinateWithinRectangle1(std::vector<double> p, std::vector<double> corner1, std::vector<double> corner2);
+    static double wrap360(double degrees);   // -> [0, 360)
+    static double wrap180(double degrees);   // -> (-180, 180]
     static double calculateElevationEasy(std::vector<double> p1, std::vector<double> p2, double elevation, int headDirection);
     static double calculateDistanceWithAltitude(double hDist, double vDist);
 };

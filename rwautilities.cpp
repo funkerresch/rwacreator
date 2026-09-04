@@ -342,6 +342,26 @@ double RwaUtilities::calculateDistance1(std::vector<double> p1, std::vector<doub
     return d;
 }
 
+double RwaUtilities::wrap360(double degrees)
+{
+    double wrapped = fmod(degrees, 360.0);
+    if(wrapped < 0)
+        wrapped += 360.0;
+    if(wrapped >= 360.0) // fmod rounding (e.g. -1e-17 + 360)
+        wrapped = 0.0;
+    return wrapped + 0.0; // normalise -0.0
+}
+
+double RwaUtilities::wrap180(double degrees)
+{
+    double wrapped = fmod(degrees, 360.0);
+    if(wrapped > 180.0)
+        wrapped -= 360.0;
+    else if(wrapped <= -180.0)
+        wrapped += 360.0;
+    return wrapped + 0.0;
+}
+
 double RwaUtilities::calculateBearing1(std::vector<double> p1, std::vector<double> p2)
 {
     double radians;
