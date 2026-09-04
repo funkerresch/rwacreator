@@ -69,8 +69,9 @@ build/debug
 build/cmake-debug
 build/qmake-debug
 
-# Python tool venvs
+# Python tool venvs and cache
 tools/*/.venv/
+tools/*/__pycache__
 
 # Pd externals libdir (pd_externals/rwa-lib)
 !pd_externals/rwa-lib/Makefile

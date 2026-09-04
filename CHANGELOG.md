@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `fixeddistance`, sub-metre distance. `rwatrace` scenarios now accept
   fractional `azimuth`/`elevation`.
 
+- Routine that instruments copies of the pooled pd patchers to test the recent
+  changes to the distance / damping calculation paths.
+
 ### Changed
 
 - The distance/azimuth/elevation block of `RwaRuntime::sendData2Asset` moved
