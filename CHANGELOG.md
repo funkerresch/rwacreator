@@ -25,6 +25,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   This change allows setting the spatial parameters before the pach becomes active,
   including the ramp start value for interpolation.
 
+- Pooled Pd patches are updated in preparation for the implementation of float
+  spatial params:
+  - Linear damping branch has a minimum of 1cm distance to avoid division by
+    zero errors.
+  - The `[line]` objects for smoothing of distance are set to the initial
+    distance between listener and asset channel, avoiding the ramp between
+    values of previous activations or interpolation from the 1000 m distance
+    default.
+  - The damping calculation in the late-reflection subpatcher has been
+    simplified, identical between 0 and ~223 m.
+  - The gain of 1 in the no-damping (damping function 2) case is sent to all
+    channels in multi-channel patches.
+  - An edge case of 90° elevation at asset activation is prevented: The
+    `rwa_binauralsimple~` would ignore the 90° an set a value of 0 until other
+    angles are set, causing the spatialisation to start at ear level and jump up
+    once the listener moves from below the asset.
+
 ## [1.5.6] - 2026-09-02
 
 ### Changed
