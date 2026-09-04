@@ -1,4 +1,5 @@
 #include "rwagraphicsview.h"
+#include <cmath>
 #include "rwastyles.h"
 #include "rwathemedicon.h"
 #include <math.h>
@@ -548,13 +549,13 @@ void RwaGraphicsView::resizeArea(QPointF myPoint, RwaArea *currentArea)
     std::vector<double> myPoint1(2, 0.0);
     myPoint1[0] = myPoint.x();
     myPoint1[1] = myPoint.y();
-    int32_t newRadius = RwaUtilities::calculateDistanceInMeters(currentArea->getCoordinates(), myPoint1);
+    int32_t newRadius = static_cast<int32_t>(std::lround(RwaUtilities::calculateDistanceInMeters(currentArea->getCoordinates(), myPoint1)));
     std::vector<double> tmp = currentArea->getCoordinates();
     tmp[1] = (myPoint.y());
-    int32_t newWidth = RwaUtilities::calculateDistanceInMeters(tmp, myPoint1);
+    int32_t newWidth = static_cast<int32_t>(std::lround(RwaUtilities::calculateDistanceInMeters(tmp, myPoint1)));
     tmp = currentArea->getCoordinates();
     tmp[0] = (myPoint.x());
-    int32_t newHeight = RwaUtilities::calculateDistanceInMeters(tmp, myPoint1);
+    int32_t newHeight = static_cast<int32_t>(std::lround(RwaUtilities::calculateDistanceInMeters(tmp, myPoint1)));
 
     if(editAreaRadius)
         currentArea->setRadius(newRadius);

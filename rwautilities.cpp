@@ -312,7 +312,7 @@ std::vector<double> RwaUtilities::calculateDestination1(std::vector<double> coor
     return destination;
 }
 
-int32_t RwaUtilities::calculateDistanceInMeters(std::vector<double> p1, std::vector<double> p2) // calculates Distance in km
+double RwaUtilities::calculateDistanceInMeters(std::vector<double> p1, std::vector<double> p2)
 {
     double R = 6373000; // Earth Radius in meters
     double lat1 = degrees2radians(p1[1]);
@@ -321,8 +321,7 @@ int32_t RwaUtilities::calculateDistanceInMeters(std::vector<double> p1, std::vec
     double dlat = degrees2radians( p2[1] - p1[1]);
     double a = pow((sin(dlat/2)),2) + cos(lat1) * cos(lat2) * pow((sin(dlon/2)),2) ;
     double c = 2 * atan2( sqrt(a), sqrt(1-a) ) ;
-    int32_t d = static_cast<int32_t>(R * c);
-    return d;
+    return R * c;
 }
 
 double RwaUtilities::calculateDistanceWithAltitude(double hDist, double vDist) // calculates Distance in km

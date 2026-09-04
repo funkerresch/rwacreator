@@ -58,7 +58,7 @@ public:
     static double degrees2radians(double degrees);
     static double radians2degrees(double radians);
     static double calculateDistance1(std::vector<double> p1, std::vector<double> p2);
-    static int32_t calculateDistanceInMeters(std::vector<double> p1, std::vector<double> p2);
+    static double calculateDistanceInMeters(std::vector<double> p1, std::vector<double> p2);
     static std::vector<double> calculateDestination1(std::vector<double> coordinates, double radius, double bearingInDegrees);
     static std::string getFileName(std::string fullpath);
     static double calculateBearing1(std::vector<double> p1, std::vector<double> p2);

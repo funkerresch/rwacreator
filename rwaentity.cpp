@@ -1,4 +1,5 @@
 #include "rwaentity.h"
+#include <cmath>
 
 RwaEntity::RwaEntity(string entityName, int32_t type)
 {
@@ -8,21 +9,21 @@ RwaEntity::RwaEntity(string entityName, int32_t type)
     timeInCurrentState = 0;
     currentScene = nullptr;
     currentState = nullptr;
-    headOrientation = std::vector<float>(3, 0.0); // so far only azimuth and elevation
+    headOrientation = std::vector<double>(3, 0.0); // so far only azimuth and elevation
     setCoordinates(std::vector<double>(2,0));
 }
 
-int32_t RwaEntity::azimuth()
+double RwaEntity::azimuth() const
 {
-    return static_cast<int32_t>(headOrientation[0]);
+    return headOrientation[0];
 }
 
-int32_t RwaEntity::elevation()
+double RwaEntity::elevation() const
 {
-    return static_cast<int32_t>(headOrientation[1]);
+    return headOrientation[1];
 }
 
-void RwaEntity::setAzimuth(int32_t azimuth)
+void RwaEntity::setAzimuth(double azimuth)
 {
     if(azimuth >= 0)
     {
@@ -33,7 +34,7 @@ void RwaEntity::setAzimuth(int32_t azimuth)
         azimuth = 0;
 }
 
-void RwaEntity::setElevation(int32_t elevation)
+void RwaEntity::setElevation(double elevation)
 {
     if(elevation >= -90 && elevation <= 90)
         headOrientation[1] = elevation;
