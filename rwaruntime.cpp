@@ -861,7 +861,41 @@ float RwaRuntime::effectiveGain(RwaAsset1 *asset)
     return gain;
 }
 
-void RwaRuntime::sendInitValues2pd(RwaAsset1 *asset, int patcherTag)
+/**
+ * Send to Pd: Where the asset's channels are, as heard from the entity:
+ * one "-distanceN"/"-azimuthN"/ "-elevationN" triple per channel.
+ *
+ * called by sendInitValues2pd and sendData2Asset
+ */
+void RwaRuntime::sendSpatialData2pd(RwaEntity *entity, RwaAsset1 *asset, int patcherTag)
+{
+    if(asset->type == RWAASSETTYPE_PD && !asset->headtrackerRelative2Source)
+    {
+        // The patch spatialises on its own from the raw head orientation:
+        // one set of data, azimuth/elevation are the head values, not source-relative.
+        calculateChannelBearingAndDistance(entity, asset, 0);
+        double totalDistance = RwaUtilities::calculateDistanceWithAltitude(asset->channelDistance[0], asset->getElevation());
+        sendDistance(0, patcherTag, totalDistance);
+        sendBearing(0, patcherTag, entity->azimuth());
+        sendElevation(0, patcherTag, entity->elevation());
+    }
+    else
+    {
+        int numChannels = asset->playbackChannelCount();
+
+        for(int i = 0; i < numChannels; i++)
+        {
+            calculateChannelBearingAndDistance(entity, asset, i);
+            double elevation = RwaUtilities::calculateElevationEasy(entity->getCoordinates(), asset->channelcoordinates[i], asset->getElevation(), entity->elevation());
+            double totalDistance = RwaUtilities::calculateDistanceWithAltitude(asset->channelDistance[i], asset->getElevation());
+            sendDistance(i, patcherTag, totalDistance);
+            sendBearing(i, patcherTag, asset->channelBearing[i]);
+            sendElevation(i, patcherTag, elevation);
+        }
+    }
+}
+
+void RwaRuntime::sendInitValues2pd(RwaEntity *entity, RwaAsset1 *asset, int patcherTag)
 {
     if(logSim)
         qDebug();
@@ -1014,6 +1048,12 @@ void RwaRuntime::sendInitValues2pd(RwaAsset1 *asset, int patcherTag)
      libpd_float(pdReceiver, (float)(1 + (seedSource() & 0xFFFFFE)));
      pdMutex->unlock();
 
+     // Last before "-play":
+     // "-dampingfunction" and "-smoothdist" have already setup the damping chain,
+     // the patch should override any spatial values from preceding patch activations
+     // and initialise objects / ramp-starts with the new values
+     sendSpatialData2pd(entity, asset, patcherTag);
+
      fullAssetPath << assetPath << asset->fileName;
      sprintf(pdReceiver,"%d-play", patcherTag);
      pdMutex->lock();
@@ -1037,7 +1077,7 @@ void RwaRuntime::processAssets(RwaEntity *entity)
         if(!entity->isActiveAsset(asset->uniqueId) && !asset->getBlocked() && !asset->mute && !asset->getBlockedForever())
         {
             patcherTag = findFreePatcher(asset);
-            sendInitValues2pd(asset, patcherTag);
+            sendInitValues2pd(entity, asset, patcherTag);
 
             if(asset->playOnlyOnce)
                 asset->setBlockedForever(true);
@@ -1155,30 +1195,7 @@ void RwaRuntime::sendData2Asset(RwaEntity *entity, RwaEntity::AssetMapItem item)
         pdMutex->unlock();
     }
 
-    if(asset->type == RWAASSETTYPE_PD && !asset->headtrackerRelative2Source)
-    {
-        // The patch spatialises on its own from the raw head orientation:
-        // one set of data, azimuth/elevation are the head values, not source-relative.
-        calculateChannelBearingAndDistance(entity, asset, 0);
-        double totalDistance = RwaUtilities::calculateDistanceWithAltitude(asset->channelDistance[0], asset->getElevation());
-        sendDistance(0, intPatcherTag, totalDistance);
-        sendBearing(0, intPatcherTag, entity->azimuth());
-        sendElevation(0, intPatcherTag, entity->elevation());
-    }
-    else
-    {
-        int numChannels = asset->playbackChannelCount();
-
-        for(int i = 0; i < numChannels; i++)
-        {
-            calculateChannelBearingAndDistance(entity, asset, i);
-            double elevation = RwaUtilities::calculateElevationEasy(entity->getCoordinates(), asset->channelcoordinates[i], asset->getElevation(), entity->elevation());
-            double totalDistance = RwaUtilities::calculateDistanceWithAltitude(asset->channelDistance[i], asset->getElevation());
-            sendDistance(i, intPatcherTag, totalDistance);
-            sendBearing(i, intPatcherTag, asset->channelBearing[i]);
-            sendElevation(i, intPatcherTag, elevation);
-        }
-    }
+    sendSpatialData2pd(entity, asset, intPatcherTag);
 
     if(!asset->getReachedEndPosition())
     {
@@ -1461,7 +1478,7 @@ void RwaRuntime::startBackgroundState(RwaEntity *entity)
              }
 
              patcherTag = findFreePatcher(asset);
-             sendInitValues2pd(asset, patcherTag); // sends "-gain" itself
+             sendInitValues2pd(entity, asset, patcherTag); // sends "-gain" ans spatial params itself
 
              entity->addBackgroundAsset(asset->uniqueId, asset, patcherTag);
              if(logSim)

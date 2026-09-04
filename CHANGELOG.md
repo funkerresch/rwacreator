@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The distance/azimuth/elevation block of `RwaRuntime::sendData2Asset` moved
+  into `sendSpatialData2pd`, shared with `sendInitValues2pd`. The two paths must
+  compute this identically. Verified with `rwatrace` that the extraction is
+  purely additive. The streamed values are unchanged, the only new messages are
+  the ones sent before `-play`.
+
+- Per-channel `-distanceN` / `-azimuthN` / `-elevationN` are now sent once at
+  asset activation, from `RwaRuntime::sendInitValues2pd`, immediately before
+  `-play`. Until now the first set of spatial parameters a patch saw arrived one
+  scheduler tick (25 ms) after `-play`. Also, a recycled patch
+  (`findFreePatcher`) still held the values of the asset that used the slot
+  before: the `[line]` in the damping chain ramped the distance gain in from a
+  previous value, and the binaural wrapper spent a tick on the previous azimuth.
+  This change allows setting the spatial parameters before the pach becomes active,
+  including the ramp start value for interpolation.
+
 ## [1.5.6] - 2026-09-02
 
 ### Changed

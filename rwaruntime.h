@@ -160,7 +160,8 @@ RwaRuntime(QObject *parent, const char *pdpath, const char *assetPath, float sam
     int32_t findFreePatcher(RwaAsset1 *asset);
     static pdPatcher *findDynamicPatcher(int32_t patcherTag);
 
-    void sendInitValues2pd(RwaAsset1 *asset, int patcherTag);
+    void sendSpatialData2pd(RwaEntity *entity, RwaAsset1 *asset, int patcherTag); // distance/azimuth/elevation per channel
+    void sendInitValues2pd(RwaEntity *entity, RwaAsset1 *asset, int patcherTag);
     static float effectiveGain(RwaAsset1 *asset); // asset gain x owning state gain x owning scene gain
     void update(RwaEntity *entity);
     void sendData2activeAssets(RwaEntity *entity);
