@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `rwatrace` fixture `tools/trace/spatial/` + scenario
+  `spatial-edge.scenario.json` with an independent checker
+  (`check_trace.py`): fractional/negative/>360 yaw, pitch 90/-95/120/-150,
+  listener on the source (altitude 0 and 5), `minDistance`, `fixedazimuth`,
+  `fixeddistance`, sub-metre distance. `rwatrace` scenarios now accept
+  fractional `azimuth`/`elevation`.
+
 ### Changed
 
 - The distance/azimuth/elevation block of `RwaRuntime::sendData2Asset` moved
@@ -41,6 +50,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `rwa_binauralsimple~` would ignore the 90° an set a value of 0 until other
     angles are set, causing the spatialisation to start at ear level and jump up
     once the listener moves from below the asset.
+
+- Distance, azimuth and elevation are now floating point end to end. Head yaw
+  and pitch from the headtracker were truncated to whole degrees in
+  `RwaSimulator` and stored through an `int32_t` API in `RwaEntity`; the bearing
+  returned `(int)degrees % 360`; and the default distance path
+  (`minDistance == -1`) used `calculateDistanceInMeters`, which cast the
+  haversine result to `int32_t`, so the damping curve stepped at 1 m and hit
+  exactly 0 in the last meter. All of that is `double` now. Distance follows one
+  path for both `minDistance` settings (`calculateDistanceInMeters`, then
+  `max(d, minDistance)` when `minDistance >= 0`).
+
+- Source-relative azimuth and elevation come from one head rotation
+  (`RwaUtilities::calculateRelativeDirection`: yaw + pitch, roll ignored)
+  instead of `bearing - yaw` and `elevation - pitch`. Identical at pitch 0;
+  with a pitched head the source stays where it is in the world (looking up at
+  an overhead source keeps it overhead instead of drifting in azimuth), and
+  pitch past vertical flips the azimuth by 180° as it should. Relative
+  elevation is in $[-90, 90]$ by construction (`atan2`/`hypot`, no `asin`, no
+  clamp). Head pitch is wrapped to $(-180, 180]$ rather than clamped/dropped, so
+  custom Pd patches in raw-head mode receive the full range (as on the Player).
+
+- Fixed orientation (`fixedazimuth`) assets: neither yaw nor pitch is applied;
+  their elevation is the geometric world elevation. Previously the head pitch was
+  still subtracted while the yaw was ignored.
+
+- Channel placement of rotating multichannel assets no longer truncates the
+  rotation angle to whole degrees every tick.
+
+- Dead `RwaAsset1::lastChannelBearing` removed.
+
+### Fixed
+
+- `fixedazimuth`, `fixedelevation` and `fixeddistance` were exported as decimals
+  but imported with `toInt()`.
+
+- Negative head yaw was silently dropped by `RwaEntity::setAzimuth` (it assigned
+  the parameter, not the member). Yaw is now wrapped to $[0, 360)$.
+
+- Elevation `NaN` / rare 90° when the listener stood exactly on a source:
+  `atan(altitude / distance)` divided by the (truncated) distance 0. Every
+  existing `rwatrace` fixture with a background asset on the scene centre showed
+  this as `"val": null` on `-elevation1`. Now `atan2(altitude, distance)`, and
+  the three `send*` functions drop non-finite values
+  (the binaural external casts to `int`, where `NaN` is undefined behaviour).
+
+- `fixedazimuth + channel offset` was sent without wrapping (could exceed 360).
 
 ## [1.5.6] - 2026-09-02
 
