@@ -1146,6 +1146,8 @@ void RwaRuntime::sendDistance(int channel, int patcherTag, float distance)
 
 void RwaRuntime::sendBearing(int channel, int patcherTag, float bearing)
 {
+    if(!std::isfinite(bearing))
+        return;
     char azimuth2pd[20];
     sprintf(azimuth2pd,"%d-azimuth%d", patcherTag, channel+1);
     pdMutex->lock();
@@ -1155,6 +1157,8 @@ void RwaRuntime::sendBearing(int channel, int patcherTag, float bearing)
 
 void RwaRuntime::sendElevation(int channel, int patcherTag, float elevation)
 {
+    if(!std::isfinite(elevation))
+        return;
     char elevation2pd[20];
     sprintf(elevation2pd,"%d-elevation%d", patcherTag, channel+1);
     pdMutex->lock();

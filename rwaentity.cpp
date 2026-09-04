@@ -25,6 +25,8 @@ double RwaEntity::elevation() const
 
 void RwaEntity::setAzimuth(double azimuth)
 {
+    if(!std::isfinite(azimuth))
+        return;
     if(azimuth >= 0)
     {
         azimuth %= 360;
@@ -36,6 +38,8 @@ void RwaEntity::setAzimuth(double azimuth)
 
 void RwaEntity::setElevation(double elevation)
 {
+    if(!std::isfinite(elevation))
+        return;
     if(elevation >= -90 && elevation <= 90)
         headOrientation[1] = elevation;
     else
