@@ -104,7 +104,6 @@ public:
     int32_t currentReflection;
     float channelDistance[64];
     float channelBearing[64];
-    float lastChannelBearing[64];
     float channelRotateFreq[64];
     float channelGain[64];
     bool hasCustomChannelPosition[64];

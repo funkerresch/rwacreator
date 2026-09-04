@@ -39,7 +39,6 @@ RwaAsset1::RwaAsset1(const std::string &data, std::vector<double> gps, qint32 ty
         this->customchannelcoordinates[i].resize(2);
         this->customchannelcoordinates[i][0] = 0.0;
         this->customchannelcoordinates[i][1] = 0.0;
-        this->lastChannelBearing[i] = 0;
         this->channelBearing[i] = 0;
         this->channelDistance[i] = 0;
         this->channelGain[i] = 1.;
@@ -143,7 +142,6 @@ void RwaAsset1::copyAttributes(RwaAsset1 *dest)
         dest->reflectioncoordinates[i][1] = this->reflectioncoordinates[i][1];
         dest->customchannelcoordinates[i][0] = this->customchannelcoordinates[i][0];
         dest->customchannelcoordinates[i][1] = this->customchannelcoordinates[i][1];
-        dest->lastChannelBearing[i] = this->lastChannelBearing[i];
         dest->channelBearing[i] = this->channelBearing[i];
         dest->channelDistance[i] = this->channelDistance[i];
         dest->channelGain[i] = this->channelGain[i];
