@@ -1,4 +1,6 @@
 #include "rwaruntime.h"
+#include <algorithm>
+#include <cmath>
 
 std::list <RwaEntity *> RwaRuntime::entities;
 bool RwaRuntime::debug;
@@ -886,10 +888,29 @@ void RwaRuntime::sendSpatialData2pd(RwaEntity *entity, RwaAsset1 *asset, int pat
         for(int i = 0; i < numChannels; i++)
         {
             calculateChannelBearingAndDistance(entity, asset, i);
-            double elevation = RwaUtilities::calculateElevationEasy(entity->getCoordinates(), asset->channelcoordinates[i], asset->getElevation(), entity->elevation());
-            double totalDistance = RwaUtilities::calculateDistanceWithAltitude(asset->channelDistance[i], asset->getElevation());
+            const double horizontalDistance = std::max(static_cast<double>(asset->channelDistance[i]), 0.0);
+            const double altitude = asset->getElevation();
+            // atan2 is finite at horizontalDistance == 0 (0 or +-90), unlike atan(altitude / d).
+            const double worldElevation = RwaUtilities::radians2degrees(atan2(altitude, horizontalDistance));
+            const double totalDistance = RwaUtilities::calculateDistanceWithAltitude(horizontalDistance, altitude);
+
+            double azimuth, elevation;
+            if(asset->getFixedAzimuth() < 0)
+            {
+                RwaUtilities::RelativeDirection rel = RwaUtilities::calculateRelativeDirection(asset->channelBearing[i], worldElevation, entity->azimuth(), entity->elevation());
+                azimuth = rel.azimuth;
+                elevation = rel.elevation;
+            }
+            else
+            {
+                // fixed orientation: the source keeps its place relative to the head,
+                // so neither yaw nor pitch is applied.
+                azimuth = asset->channelBearing[i];
+                elevation = worldElevation;
+            }
+
             sendDistance(i, patcherTag, totalDistance);
-            sendBearing(i, patcherTag, asset->channelBearing[i]);
+            sendBearing(i, patcherTag, azimuth);
             sendElevation(i, patcherTag, elevation);
         }
     }
@@ -1105,38 +1126,33 @@ void RwaRuntime::calculateChannelBearingAndDistance(RwaEntity *entity, RwaAsset1
         if(asset->playbackType == RWAPLAYBACKTYPE_MONO || asset->playbackType == RWAPLAYBACKTYPE_STEREO)
             channelRadius = 0;
 
-        std::vector<double> destination = RwaUtilities::calculateDestination1(asset->getCurrentPosition(), channelRadius, (qint32)(offset+asset->currentRotateAngleOffset)%360);
+        std::vector<double> destination = RwaUtilities::calculateDestination1(asset->getCurrentPosition(), channelRadius, RwaUtilities::wrap360(offset + asset->currentRotateAngleOffset));
         asset->channelcoordinates[channel] = destination;
     }
 
-    if(asset->getFixedDistance() < 0)
+    if(asset->getFixedDistance() < 0) // -1 = default value = use actual distance
     {
-        if(asset->minDistance < 0)
-        {
-            asset->channelDistance[channel] = RwaUtilities::calculateDistanceInMeters(entity->getCoordinates(), asset->channelcoordinates[channel]); // we do not want assets moving through us
-        }
-        else
-        {
-            asset->channelDistance[channel] = RwaUtilities::calculateDistance1(entity->getCoordinates(), asset->channelcoordinates[channel])*1000;
-            if(asset->channelDistance[channel] < asset->minDistance)
-                asset->channelDistance[channel] = asset->minDistance;
-        }
+        double distance = RwaUtilities::calculateDistanceInMeters(entity->getCoordinates(), asset->channelcoordinates[channel]);
+        if(asset->minDistance >= 0 && distance < asset->minDistance)
+            distance = asset->minDistance; // keeps the listener from walking "through" the source
+        asset->channelDistance[channel] = distance;
     }
     else
         asset->channelDistance[channel] = asset->getFixedDistance();
 
-    if(asset->getFixedAzimuth() < 0)
-    {
-        asset->lastChannelBearing[channel] = asset->channelBearing[channel];
-        asset->channelBearing[channel] = RwaUtilities::calculateBearing1(entity->getCoordinates(), asset->channelcoordinates[channel], entity->azimuth());
-       // qDebug() << asset->channelBearing[channel];
-    }
+    // channelBearing holds the world bearing of the channel as seen from the listener; the head
+    // rotation is applied in sendData2Asset. A fixed azimuth is already listener-relative and is
+    // stored as the final value (no head rotation is applied to it, see sendData2Asset).
+    if(asset->getFixedAzimuth() < 0) // -1 = default value = use actual azimuth
+        asset->channelBearing[channel] = RwaUtilities::calculateWorldBearing(entity->getCoordinates(), asset->channelcoordinates[channel]);
     else
-        asset->channelBearing[channel] = asset->getFixedAzimuth() + offset;
+        asset->channelBearing[channel] = RwaUtilities::wrap360(asset->getFixedAzimuth() + offset);
 }
 
 void RwaRuntime::sendDistance(int channel, int patcherTag, float distance)
 {
+    if(!std::isfinite(distance))
+        return;
     char distance2pd[20];
     sprintf(distance2pd,"%d-distance%d", patcherTag, channel+1);
     pdMutex->lock();

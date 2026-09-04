@@ -61,16 +61,41 @@ public:
     static double calculateDistanceInMeters(std::vector<double> p1, std::vector<double> p2);
     static std::vector<double> calculateDestination1(std::vector<double> coordinates, double radius, double bearingInDegrees);
     static std::string getFileName(std::string fullpath);
+
+    /**
+     * Calculate bearing with the engine's +180 convention (180 = "ahead"), kept for the moving-asset direction.
+     */
     static double calculateBearing1(std::vector<double> p1, std::vector<double> p2);
     static void calculatePolygonOffset2(double offset, std::vector<std::vector<double> > &corners, std::vector<std::vector<double> > &offsetCorners);
-    static double calculateBearing1(std::vector<double> p1, std::vector<double> p2, int headDirection);
     static bool coordinateWithinRectangle1(std::vector<double> p, std::vector<double> center, double width, double height);
     static bool coordinateWithinPolygon3(std::vector<double> p, std::vector<std::vector<double> > &corners);
     static void debug2Terminal(const std::string file, const std::string func, int32_t line, const std::string message);
     static bool coordinateWithinRectangle1(std::vector<double> p, std::vector<double> corner1, std::vector<double> corner2);
     static double wrap360(double degrees);   // -> [0, 360)
     static double wrap180(double degrees);   // -> (-180, 180]
-    static double calculateElevationEasy(std::vector<double> p1, std::vector<double> p2, double elevation, int headDirection);
+
+    /**
+     * Calculate world bearing from p1 to p2, clockwise from north, [0, 360).
+     */
+    static double calculateWorldBearing(std::vector<double> p1, std::vector<double> p2);
+
+    struct RelativeDirection { double azimuth; double elevation; };
+    /**
+     * Calculate source direction relative to the head, from one rotation (yaw + pitch, roll ignored).
+     * All angles in degrees.
+     *
+     * bearing: world bearing of the source, clockwise from north
+     * elevation: world elevation of the source (atan2(altitude, horizontal distance))
+     * headYaw: clockwise from north
+     * headPitch: positive up
+     *
+     * azimuth is returned in [0, 360). (engine +180 convention, see the Pd patches [expr 360 - $f1] -> [+ 180])
+     * elevation is in [-90, 90] by construction.
+     *
+     * note: this is mirrored in the Player (RwaUtilities.swift, calculateRelativeDirection).
+     * keep the operation order identical so both engines produce the same numbers.
+     */
+    static RelativeDirection calculateRelativeDirection(double bearing, double elevation, double headYaw, double headPitch);
     static double calculateDistanceWithAltitude(double hDist, double vDist);
 };
 
