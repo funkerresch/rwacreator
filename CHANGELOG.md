@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.6] - 2026-09-02
+
+### Changed
+
+- Updated libpd to version 0.16.1 (Pd 0.56-5).
+
+### Fixed
+
+- Crash (SIGSEGV) at startup after updating the `libpd` submodule to 0.16.1.
+  `RwaRuntime` set the queued receiver hooks (and the concatenated print hook)
+  before calling `libpd_queued_init()`. Since libpd 0.14 those hooks live in
+  per-instance storage that is only allocated by init, so the first
+  `libpd_set_queued_printhook()` wrote through a null pointer. Init now runs
+  first, then the hooks are installed.
+
+- "Send Project to Sharing Server" creating empty / bogus zip archives when
+  project path contains spaces. Replaced both `popen()` shell invocations in
+  `exportZip()` (`zip` and `createfilelist.sh`) with `QProcess` calls using
+  argument lists, which bypasses shell parsing entirely.
+
 ## [1.5.5] - 2026-08-29
 
 ### Fixed

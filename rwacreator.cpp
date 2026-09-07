@@ -30,8 +30,8 @@
 #include <QTimer>
 #include <QBuffer>
 #include <QCryptographicHash>
+#include <QProcess>
 #include <qdebug.h>
-#include <unistd.h>
 #include "rwainputdialog.h"
 
 Q_DECLARE_METATYPE(QDockWidget::DockWidgetFeatures)
@@ -964,23 +964,21 @@ void RwaCreator::exportZip()
     if(zipFile.exists())
         zipFile.remove();
 
-    QString zipGame = QString("cd %1 && zip -r -X %2.zip %3").arg(backend->completeSharingServerPathWithEscape).arg(baseName).arg(baseName);
-    FILE* pipe = popen(zipGame.toStdString().c_str(), "w");
-    if (!pipe)
+    QProcess zipProcess;
+    zipProcess.setWorkingDirectory(directory);
+    zipProcess.start("zip", QStringList() << "-r" << "-X" << baseName+".zip" << baseName);
+    if(!zipProcess.waitForFinished(-1) || zipProcess.exitStatus() != QProcess::NormalExit || zipProcess.exitCode() != 0)
     {
-       qCritical() << "Could not zip";
-       return;
+        qCritical() << "Could not zip:" << zipProcess.errorString() << zipProcess.readAllStandardError();
+        return;
     }
 
-    while(pclose(pipe) != -1)
-        ;
-
     dir.removeRecursively(); // removing new version
-    QString initFolder = backend->applicationSupportPathWithEscape;
-    QString createList = QString("cd %1 && ./createfilelist.sh").arg(initFolder);
-    pipe = popen(createList.toStdString().c_str(), "w");
-    while(pclose(pipe) != -1)
-        ;
+    QString initFolder = backend->applicationSupportPath;
+    QProcess createListProcess;
+    createListProcess.setWorkingDirectory(initFolder);
+    createListProcess.start("./createfilelist.sh", QStringList());
+    createListProcess.waitForFinished(-1);
 
     setWindowTitle(backend->projectName + " Successfully sent ZIP to Sharing Server");
     QTimer::singleShot(2000, [this]{setWindowTitle(backend->projectName);});
