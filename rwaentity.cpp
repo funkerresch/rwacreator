@@ -1,4 +1,6 @@
 #include "rwaentity.h"
+#include "rwautilities.h"
+#include <cmath>
 
 RwaEntity::RwaEntity(string entityName, int32_t type)
 {
@@ -8,37 +10,34 @@ RwaEntity::RwaEntity(string entityName, int32_t type)
     timeInCurrentState = 0;
     currentScene = nullptr;
     currentState = nullptr;
-    headOrientation = std::vector<float>(3, 0.0); // so far only azimuth and elevation
+    headOrientation = std::vector<double>(3, 0.0); // so far only azimuth and elevation
     setCoordinates(std::vector<double>(2,0));
 }
 
-int32_t RwaEntity::azimuth()
+double RwaEntity::azimuth() const
 {
-    return static_cast<int32_t>(headOrientation[0]);
+    return headOrientation[0];
 }
 
-int32_t RwaEntity::elevation()
+double RwaEntity::elevation() const
 {
-    return static_cast<int32_t>(headOrientation[1]);
+    return headOrientation[1];
 }
 
-void RwaEntity::setAzimuth(int32_t azimuth)
+void RwaEntity::setAzimuth(double azimuth)
 {
-    if(azimuth >= 0)
-    {
-        azimuth %= 360;
-        headOrientation[0] = azimuth;
-    }
-    else
-        azimuth = 0;
+    if(!std::isfinite(azimuth))
+        return;
+    headOrientation[0] = RwaUtilities::wrap360(azimuth);
 }
 
-void RwaEntity::setElevation(int32_t elevation)
+void RwaEntity::setElevation(double elevation)
 {
-    if(elevation >= -90 && elevation <= 90)
-        headOrientation[1] = elevation;
-    else
-        elevation = 0;
+    if(!std::isfinite(elevation))
+        return;
+    // No clamp: pitch past vertical is a valid pose. Custom Pd patches in raw-head mode get the
+    // full range; the source-relative elevation comes out of calculateRelativeDirection in [-90, 90].
+    headOrientation[1] = RwaUtilities::wrap180(elevation);
 }
 
 void RwaEntity::moveMyChildren(double dx, double dy)

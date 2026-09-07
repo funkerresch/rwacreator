@@ -1,0 +1,22 @@
+{
+  "schema": "rwa-scenario/1",
+  "description": "Spatial edge cases for float distance/azimuth/elevation: fractional, negative and >360 head yaw; head pitch 90, -95, 120, -150 (past vertical); listener exactly on a source (altitude 0 and 5); minDistance, fixedAzimuth, fixedDistance; sub-metre distance. Check with tools/trace/spatial/check_trace.py.",
+  "game": "spatial/spatial.rwa",
+  "startScene": "Scene 0",
+  "durationMs": 9000,
+  "timeline": [
+    { "t": 0,    "pos": { "lon": 7.58600000, "lat": 47.57700000 } },
+    { "t": 0,    "azimuth": 0 },
+    { "t": 0,    "elevation": 0 },
+    { "t": 1000, "azimuth": 12.5 },
+    { "t": 2000, "azimuth": -45 },
+    { "t": 3000, "azimuth": 725 },
+    { "t": 4000, "azimuth": 0 },
+    { "t": 4000, "elevation": 90 },
+    { "t": 5000, "elevation": -95 },
+    { "t": 6000, "elevation": 120 },
+    { "t": 7000, "elevation": -150 },
+    { "t": 8000, "elevation": 0 },
+    { "t": 8000, "pos": { "lon": 7.58600000, "lat": 47.57700450 } }
+  ]
+}

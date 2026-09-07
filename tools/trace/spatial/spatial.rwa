@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE rwa>
+<rwa version="1.0">
+    <game currentscene="Scene 0"/>
+    <scene currentstate="BACKGROUND" name="Scene 0" lon="7.58600000" lat="47.57700000" zoom="19" numberofstates="2" areatype="1" radius="500" width="-1" height="-1" level="1" exitoffset="0" fallbackdisabled="0" minstaytime="0">
+        <corners>
+            <lon>7.58600000</lon>
+            <lat>47.57700000</lat>
+            <lon>7.58600000</lon>
+            <lat>47.57700000</lat>
+            <lon>7.58600000</lon>
+            <lat>47.57700000</lat>
+            <lon>7.58600000</lon>
+            <lat>47.57700000</lat>
+        </corners>
+        <exitoffsetcorners/>
+        <state name="FALLBACK" type="1" areatype="1" zoom="17" assetsfollowstate="1" defaultplaybacktype="3" lockposition="0" statewithinstate="0" leaveafterassetsfinish="0" leaveonlyafterassetsfinish="0" enteronlyonce="0" timeout="0" minstaytime="0">
+            <enterconditions>
+                <gps isgps="0" lon="7.58600000" lat="47.57700000" radius="10" width="-1" height="-1" exitoffset="0"/>
+                <requiredstates/>
+                <corners/>
+                <exitoffsetcorners/>
+            </enterconditions>
+            <actions/>
+            <assets/>
+        </state>
+        <state name="BACKGROUND" type="2" areatype="1" zoom="17" assetsfollowstate="1" defaultplaybacktype="3" lockposition="0" statewithinstate="0" leaveafterassetsfinish="0" leaveonlyafterassetsfinish="0" enteronlyonce="0" timeout="0" minstaytime="0">
+            <enterconditions>
+                <gps isgps="0" lon="7.58600000" lat="47.57700000" radius="10" width="-1" height="-1" exitoffset="0"/>
+                <requiredstates/>
+                <corners/>
+                <exitoffsetcorners/>
+            </enterconditions>
+            <actions/>
+            <assets>
+                <asset url="assets/horizon.pd" uuid="{bbbbbbbb-0000-0000-0000-000000000001}" elevation="0" lon="7.58600000" lat="47.57717981" mindistance="-1" fixedazimuth="-1" fixeddistance="-1" fixedelevation="-1" headtrackerrelative2source="1" startpositionlon="7.58600000" startpositionlat="47.57717981" type="3" gain="1" playbacktype="8" damping="1" dampingfactor="30" dampingtrim="2" dampingmin="0" dampingmax="1" smoothdist="10" fadein="0" fadeout="0" crossfadetime="0" duration="0" channelcount="0" lockposition="0" alwaysplayfrombeginning="1" loop="1" mute="0" hascoordinates="0" loopuntilendposition="0" gps2pd="0" isexclusive="0" channelradius="0" rawsensors2pd="0" playonlyonce="0" speed="0" move="0" rotateoffset="0" rotatefrequency="0" rotate="0" offset="0" reflectioncount="0" individualchannelpositions="0">
+                    <channelpositions/>
+                    <reflectionpositions/>
+                </asset>
+                <asset url="assets/elevated.pd" uuid="{bbbbbbbb-0000-0000-0000-000000000002}" elevation="5" lon="7.58600000" lat="47.57717981" mindistance="-1" fixedazimuth="-1" fixeddistance="-1" fixedelevation="-1" headtrackerrelative2source="1" startpositionlon="7.58600000" startpositionlat="47.57717981" type="3" gain="1" playbacktype="8" damping="1" dampingfactor="30" dampingtrim="2" dampingmin="0" dampingmax="1" smoothdist="10" fadein="0" fadeout="0" crossfadetime="0" duration="0" channelcount="0" lockposition="0" alwaysplayfrombeginning="1" loop="1" mute="0" hascoordinates="0" loopuntilendposition="0" gps2pd="0" isexclusive="0" channelradius="0" rawsensors2pd="0" playonlyonce="0" speed="0" move="0" rotateoffset="0" rotatefrequency="0" rotate="0" offset="0" reflectioncount="0" individualchannelpositions="0">
+                    <channelpositions/>
+                    <reflectionpositions/>
+                </asset>
+                <asset url="assets/onspot0.pd" uuid="{bbbbbbbb-0000-0000-0000-000000000003}" elevation="0" lon="7.58600000" lat="47.57700000" mindistance="-1" fixedazimuth="-1" fixeddistance="-1" fixedelevation="-1" headtrackerrelative2source="1" startpositionlon="7.58600000" startpositionlat="47.57700000" type="3" gain="1" playbacktype="8" damping="1" dampingfactor="30" dampingtrim="2" dampingmin="0" dampingmax="1" smoothdist="10" fadein="0" fadeout="0" crossfadetime="0" duration="0" channelcount="0" lockposition="0" alwaysplayfrombeginning="1" loop="1" mute="0" hascoordinates="0" loopuntilendposition="0" gps2pd="0" isexclusive="0" channelradius="0" rawsensors2pd="0" playonlyonce="0" speed="0" move="0" rotateoffset="0" rotatefrequency="0" rotate="0" offset="0" reflectioncount="0" individualchannelpositions="0">
+                    <channelpositions/>
+                    <reflectionpositions/>
+                </asset>
+                <asset url="assets/onspot5.pd" uuid="{bbbbbbbb-0000-0000-0000-000000000004}" elevation="5" lon="7.58600000" lat="47.57700000" mindistance="-1" fixedazimuth="-1" fixeddistance="-1" fixedelevation="-1" headtrackerrelative2source="1" startpositionlon="7.58600000" startpositionlat="47.57700000" type="3" gain="1" playbacktype="8" damping="1" dampingfactor="30" dampingtrim="2" dampingmin="0" dampingmax="1" smoothdist="10" fadein="0" fadeout="0" crossfadetime="0" duration="0" channelcount="0" lockposition="0" alwaysplayfrombeginning="1" loop="1" mute="0" hascoordinates="0" loopuntilendposition="0" gps2pd="0" isexclusive="0" channelradius="0" rawsensors2pd="0" playonlyonce="0" speed="0" move="0" rotateoffset="0" rotatefrequency="0" rotate="0" offset="0" reflectioncount="0" individualchannelpositions="0">
+                    <channelpositions/>
+                    <reflectionpositions/>
+                </asset>
+                <asset url="assets/mindist.pd" uuid="{bbbbbbbb-0000-0000-0000-000000000005}" elevation="0" lon="7.58601333" lat="47.57700000" mindistance="3" fixedazimuth="-1" fixeddistance="-1" fixedelevation="-1" headtrackerrelative2source="1" startpositionlon="7.58601333" startpositionlat="47.57700000" type="3" gain="1" playbacktype="8" damping="1" dampingfactor="30" dampingtrim="2" dampingmin="0" dampingmax="1" smoothdist="10" fadein="0" fadeout="0" crossfadetime="0" duration="0" channelcount="0" lockposition="0" alwaysplayfrombeginning="1" loop="1" mute="0" hascoordinates="0" loopuntilendposition="0" gps2pd="0" isexclusive="0" channelradius="0" rawsensors2pd="0" playonlyonce="0" speed="0" move="0" rotateoffset="0" rotatefrequency="0" rotate="0" offset="0" reflectioncount="0" individualchannelpositions="0">
+                    <channelpositions/>
+                    <reflectionpositions/>
+                </asset>
+                <asset url="assets/fixedazi.pd" uuid="{bbbbbbbb-0000-0000-0000-000000000006}" elevation="0" lon="7.58600000" lat="47.57717981" mindistance="-1" fixedazimuth="45.5" fixeddistance="-1" fixedelevation="-1" headtrackerrelative2source="1" startpositionlon="7.58600000" startpositionlat="47.57717981" type="3" gain="1" playbacktype="8" damping="1" dampingfactor="30" dampingtrim="2" dampingmin="0" dampingmax="1" smoothdist="10" fadein="0" fadeout="0" crossfadetime="0" duration="0" channelcount="0" lockposition="0" alwaysplayfrombeginning="1" loop="1" mute="0" hascoordinates="0" loopuntilendposition="0" gps2pd="0" isexclusive="0" channelradius="0" rawsensors2pd="0" playonlyonce="0" speed="0" move="0" rotateoffset="0" rotatefrequency="0" rotate="0" offset="0" reflectioncount="0" individualchannelpositions="0">
+                    <channelpositions/>
+                    <reflectionpositions/>
+                </asset>
+                <asset url="assets/fixeddist.pd" uuid="{bbbbbbbb-0000-0000-0000-000000000007}" elevation="0" lon="7.58600000" lat="47.57717981" mindistance="-1" fixedazimuth="-1" fixeddistance="2.5" fixedelevation="-1" headtrackerrelative2source="1" startpositionlon="7.58600000" startpositionlat="47.57717981" type="3" gain="1" playbacktype="8" damping="1" dampingfactor="30" dampingtrim="2" dampingmin="0" dampingmax="1" smoothdist="10" fadein="0" fadeout="0" crossfadetime="0" duration="0" channelcount="0" lockposition="0" alwaysplayfrombeginning="1" loop="1" mute="0" hascoordinates="0" loopuntilendposition="0" gps2pd="0" isexclusive="0" channelradius="0" rawsensors2pd="0" playonlyonce="0" speed="0" move="0" rotateoffset="0" rotatefrequency="0" rotate="0" offset="0" reflectioncount="0" individualchannelpositions="0">
+                    <channelpositions/>
+                    <reflectionpositions/>
+                </asset>
+                <asset url="assets/rawhead.pd" uuid="{bbbbbbbb-0000-0000-0000-000000000008}" elevation="0" lon="7.58600000" lat="47.57717981" mindistance="-1" fixedazimuth="-1" fixeddistance="-1" fixedelevation="-1" headtrackerrelative2source="0" startpositionlon="7.58600000" startpositionlat="47.57717981" type="3" gain="1" playbacktype="8" damping="1" dampingfactor="30" dampingtrim="2" dampingmin="0" dampingmax="1" smoothdist="10" fadein="0" fadeout="0" crossfadetime="0" duration="0" channelcount="0" lockposition="0" alwaysplayfrombeginning="1" loop="1" mute="0" hascoordinates="0" loopuntilendposition="0" gps2pd="0" isexclusive="0" channelradius="0" rawsensors2pd="0" playonlyonce="0" speed="0" move="0" rotateoffset="0" rotatefrequency="0" rotate="0" offset="0" reflectioncount="0" individualchannelpositions="0">
+                    <channelpositions/>
+                    <reflectionpositions/>
+                </asset>
+            </assets>
+        </state>
+    </scene>
+</rwa>

@@ -78,6 +78,11 @@ walkthrough and the list of currently known divergences.
   game paths in scenario files are informational, only the CLI options count.
 - `scenechange/`: two-scene fixture games for the scene-transition scenarios
   (see its README).
+- `spatial/`: fixture + `check_trace.py` for the float distance / azimuth /
+  elevation chain (`scenarios/spatial-edge.scenario.json`): fractional, negative
+  and > 360 yaw, pitch 90/−95/120/−150, listener on the source, `minDistance`,
+  `fixedazimuth`, `fixeddistance` (see its README). `azimuth`/`elevation`
+  scenario inputs may be fractional.
 - `gainhierarchy/`: fixture for hierarchical gain (scene \* state \* asset,
   `scenarios/gainhierarchy.scenario.json`): expect `-gain` 0.125 for the GPS
   state's asset and 0.5 for the background asset on every tick (see its README).

@@ -231,7 +231,7 @@ void RwaSimulator::receiveAzimuth(float azimuth)
         return;
 
     RwaEntity *entity = entities.front();
-    entity->setAzimuth(static_cast<int32_t>(azimuth));
+    entity->setAzimuth(azimuth);
 }
 
 void RwaSimulator::receiveElevation(float elevation)
@@ -240,7 +240,7 @@ void RwaSimulator::receiveElevation(float elevation)
         return;
 
     RwaEntity *entity = entities.front();
-    entity->setElevation(static_cast<int32_t>(elevation));
+    entity->setElevation(elevation);
 }
 
 void RwaSimulator::receiveZ(float Z)

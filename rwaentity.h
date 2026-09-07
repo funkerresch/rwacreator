@@ -54,8 +54,8 @@ public:
     float timeInCurrentState;
     float timeInCurrentScene;
 
-    void setElevation(int32_t elevation);
-    void setAzimuth(int32_t azimuth);
+    void setElevation(double elevation); // head pitch, degrees, positive up; wrapped to (-180, 180]
+    void setAzimuth(double azimuth);     // head yaw, degrees clockwise from north; wrapped to [0, 360)
 
     void loadGameScript();
     void addAttribute(string attributeName, double floatValue);
@@ -89,13 +89,13 @@ public:
     RwaScene *getCurrentScene();
     RwaState *getCurrentState();
     RwaScene *getScene(std::string sceneName);
-    int32_t azimuth();
-    int32_t elevation();
+    double azimuth() const;
+    double elevation() const;
 
 private:
     RwaScene *currentScene;
     RwaState *currentState;
-    std::vector<float> headOrientation;
+    std::vector<double> headOrientation;
 };
 
 #endif // RWAENTITY_H

@@ -708,13 +708,13 @@ void RwaImport::readAssets()
                     item->setElevation(xml.attributes().value("elevation").toFloat());
 
                 if(xml.attributes().hasAttribute("fixedazimuth"))
-                    item->setFixedAzimuth(xml.attributes().value("fixedazimuth").toInt());
+                    item->setFixedAzimuth(xml.attributes().value("fixedazimuth").toFloat());
 
                 if(xml.attributes().hasAttribute("fixedelevation"))
-                    item->setFixedElevation(xml.attributes().value("fixedelevation").toInt());
+                    item->setFixedElevation(xml.attributes().value("fixedelevation").toFloat());
 
                 if(xml.attributes().hasAttribute("fixeddistance"))
-                    item->setFixedDistance(xml.attributes().value("fixeddistance").toInt());
+                    item->setFixedDistance(xml.attributes().value("fixeddistance").toFloat());
 
                 // The file is the source of truth for channel count, duration and
                 // sample rate; the channelcount/duration XML attributes are only

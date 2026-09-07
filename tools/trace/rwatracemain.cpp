@@ -247,13 +247,13 @@ int main(int argc, char *argv[])
             }
             if(input.contains("azimuth"))
             {
-                entity->setAzimuth(input.value("azimuth").toInt());
+                entity->setAzimuth(input.value("azimuth").toDouble());
                 QJsonObject echoAz{{"ev", "input"}, {"kind", "azimuth"}, {"value", input.value("azimuth")}};
                 writeEvent(echoAz);
             }
             if(input.contains("elevation"))
             {
-                entity->setElevation(input.value("elevation").toInt());
+                entity->setElevation(input.value("elevation").toDouble());
                 QJsonObject echoEl{{"ev", "input"}, {"kind", "elevation"}, {"value", input.value("elevation")}};
                 writeEvent(echoEl);
             }

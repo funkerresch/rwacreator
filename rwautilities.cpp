@@ -312,7 +312,7 @@ std::vector<double> RwaUtilities::calculateDestination1(std::vector<double> coor
     return destination;
 }
 
-int32_t RwaUtilities::calculateDistanceInMeters(std::vector<double> p1, std::vector<double> p2) // calculates Distance in km
+double RwaUtilities::calculateDistanceInMeters(std::vector<double> p1, std::vector<double> p2)
 {
     double R = 6373000; // Earth Radius in meters
     double lat1 = degrees2radians(p1[1]);
@@ -321,8 +321,7 @@ int32_t RwaUtilities::calculateDistanceInMeters(std::vector<double> p1, std::vec
     double dlat = degrees2radians( p2[1] - p1[1]);
     double a = pow((sin(dlat/2)),2) + cos(lat1) * cos(lat2) * pow((sin(dlon/2)),2) ;
     double c = 2 * atan2( sqrt(a), sqrt(1-a) ) ;
-    int32_t d = static_cast<int32_t>(R * c);
-    return d;
+    return R * c;
 }
 
 double RwaUtilities::calculateDistanceWithAltitude(double hDist, double vDist) // calculates Distance in km
@@ -343,45 +342,72 @@ double RwaUtilities::calculateDistance1(std::vector<double> p1, std::vector<doub
     return d;
 }
 
+double RwaUtilities::wrap360(double degrees)
+{
+    double wrapped = fmod(degrees, 360.0);
+    if(wrapped < 0)
+        wrapped += 360.0;
+    if(wrapped >= 360.0) // fmod rounding (e.g. -1e-17 + 360)
+        wrapped = 0.0;
+    return wrapped + 0.0; // normalise -0.0
+}
+
+double RwaUtilities::wrap180(double degrees)
+{
+    double wrapped = fmod(degrees, 360.0);
+    if(wrapped > 180.0)
+        wrapped -= 360.0;
+    else if(wrapped <= -180.0)
+        wrapped += 360.0;
+    return wrapped + 0.0;
+}
+
+double RwaUtilities::calculateWorldBearing(std::vector<double> p1, std::vector<double> p2)
+{
+    double phi1 = degrees2radians(p1[1]);
+    double phi2 = degrees2radians(p2[1]);
+    double lam1 = degrees2radians(p1[0]);
+    double lam2 = degrees2radians(p2[0]);
+
+    double radians = atan2(sin(lam2-lam1)*cos(phi2),cos(phi1)*sin(phi2) - sin(phi1)*cos(phi2)*cos(lam2-lam1));
+    return wrap360(radians2degrees(radians));
+}
+
 double RwaUtilities::calculateBearing1(std::vector<double> p1, std::vector<double> p2)
 {
-    double radians;
-    double degrees;
-    double phi1 = degrees2radians(p1[1]);
-    double phi2 = degrees2radians(p2[1]);
-    double lam1 = degrees2radians(p1[0]);
-    double lam2 = degrees2radians(p2[0]);
-
-    radians = atan2(sin(lam2-lam1)*cos(phi2),cos(phi1)*sin(phi2) - sin(phi1)*cos(phi2)*cos(lam2-lam1));
-    degrees = radians2degrees(radians);
-    //return degrees;
-    return (((int)degrees+180) % 360); // offset for working correctly with the earplug~ in pd
+    return wrap360(calculateWorldBearing(p1, p2) + 180.0);
 }
 
-double RwaUtilities::calculateBearing1(std::vector<double> p1, std::vector<double> p2, int headDirection)
+RwaUtilities::RelativeDirection RwaUtilities::calculateRelativeDirection(double bearing, double elevation, double headYaw, double headPitch)
 {
-    double radians;
-    double degrees;
-    double phi1 = degrees2radians(p1[1]);
-    double phi2 = degrees2radians(p2[1]);
-    double lam1 = degrees2radians(p1[0]);
-    double lam2 = degrees2radians(p2[0]);
+    const double b = degrees2radians(bearing);
+    const double e = degrees2radians(elevation);
+    const double psi = degrees2radians(headYaw);
+    const double theta = degrees2radians(headPitch);
 
-    radians = atan2(sin(lam2-lam1)*cos(phi2),cos(phi1)*sin(phi2) - sin(phi1)*cos(phi2)*cos(lam2-lam1));
-    degrees = radians2degrees(radians);
-    degrees -= headDirection;
-    degrees += 360;
-    return (((int)degrees+180) % 360); // offset for working correctly with the earplug~ in pd
-}
+    // source unit vector (east, north, up)
+    const double vx = cos(e) * sin(b);
+    const double vy = cos(e) * cos(b);
+    const double vz = sin(e);
 
-double RwaUtilities::calculateElevationEasy(std::vector<double> p1, std::vector<double> p2, double elevation, int headDirection)
-{
-    double d = static_cast<double>(calculateDistanceInMeters(p1, p2));
-    double vd = elevation;
-    double relativeElevation = atan(vd/d);
-    relativeElevation = radians2degrees(relativeElevation);
-    relativeElevation -= headDirection;
-    return relativeElevation;
+    // head axes: forward, up, right
+    const double fx = cos(theta) * sin(psi);
+    const double fy = cos(theta) * cos(psi);
+    const double fz = sin(theta);
+    const double ux = -sin(theta) * sin(psi);
+    const double uy = -sin(theta) * cos(psi);
+    const double uz = cos(theta);
+    const double rx = cos(psi);
+    const double ry = -sin(psi);
+
+    const double xf = vx * fx + vy * fy + vz * fz;
+    const double xr = vx * rx + vy * ry;
+    const double xu = vx * ux + vy * uy + vz * uz;
+
+    RelativeDirection rel;
+    rel.azimuth = wrap360(radians2degrees(atan2(xr, xf)) + 180.0);
+    rel.elevation = radians2degrees(atan2(xu, hypot(xf, xr)));
+    return rel;
 }
 
 bool RwaUtilities::coordinateWithinRectangle1(std::vector<double> p, std::vector<double> corner1, std::vector<double> corner2)
